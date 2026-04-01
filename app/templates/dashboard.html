@@ -1,6 +1,6 @@
 ﻿{% extends "base.html" %}
 {% block title %}Control Ejecutivo | Servicia{% endblock %}
-{% block content %}
+{% block content %}`r`n{# Dashboard ejecutivo: tarjetas de progreso + KPIs + checklist visual #}
 {% set total_folios = (active_count or 0) + (closed_count or 0) %}
 {% set close_rate = ((closed_count or 0) * 100 // total_folios) if total_folios else 0 %}
 {% set risk_rate = ((critical_count or 0) * 100 // total_folios) if total_folios else 0 %}
@@ -112,3 +112,4 @@
   </article>
 </section>
 {% endblock %}
+

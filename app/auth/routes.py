@@ -1,3 +1,11 @@
+"""Rutas de autenticacion y decoradores de acceso.
+
+Incluye:
+- Login/logout web por sesion.
+- Generacion de JWT para clientes API.
+- Decoradores reutilizables para proteger vistas por autenticacion/rol.
+"""
+
 from functools import wraps
 
 from flask import flash, jsonify, redirect, render_template, request, session, url_for
@@ -9,6 +17,7 @@ from app.models import User
 
 
 def login_required(view_func):
+    """Decorador: exige sesion activa para entrar a una vista."""
     @wraps(view_func)
     def wrapped(*args, **kwargs):
         if "user_id" not in session:
@@ -19,6 +28,7 @@ def login_required(view_func):
 
 
 def roles_required(*allowed_roles):
+    """Decorador: exige que el rol actual este dentro de `allowed_roles`."""
     def decorator(view_func):
         @wraps(view_func)
         def wrapped(*args, **kwargs):
@@ -35,6 +45,7 @@ def roles_required(*allowed_roles):
 
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
+    """Pantalla de login y validacion de credenciales (GET/POST)."""
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
@@ -68,6 +79,7 @@ def login():
 @auth_bp.route("/logout", methods=["POST"])
 @login_required
 def logout():
+    """Cierra sesion web y registra evento en auditoria."""
     user_id = session.get("user_id")
     session.clear()
     log_action(user_id=user_id, action="logout", entity="auth")
@@ -76,6 +88,7 @@ def logout():
 
 @auth_bp.route("/api/token", methods=["POST"])
 def token():
+    """Endpoint API para emitir JWT usando email/password."""
     payload = request.get_json(silent=True) or {}
     email = str(payload.get("email", "")).strip().lower()
     password = str(payload.get("password", ""))

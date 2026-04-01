@@ -1,4 +1,9 @@
-﻿from datetime import datetime, timezone
+﻿"""Modelos de base de datos (SQLAlchemy).
+
+Cada clase representa una tabla y sus relaciones/reglas.
+"""
+
+from datetime import datetime, timezone
 
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -6,6 +11,7 @@ from app.extensions import db
 
 
 class Role(db.Model):
+    """Tabla `Role` en la base de datos."""
     __tablename__ = "roles"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -13,6 +19,7 @@ class Role(db.Model):
 
 
 class User(db.Model):
+    """Tabla `User` en la base de datos."""
     __tablename__ = "users"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -32,6 +39,7 @@ class User(db.Model):
 
 
 class Provider(db.Model):
+    """Tabla `Provider` en la base de datos."""
     __tablename__ = "providers"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -49,6 +57,7 @@ class Provider(db.Model):
 
 
 class AuthorizedAccount(db.Model):
+    """Tabla `AuthorizedAccount` en la base de datos."""
     __tablename__ = "authorized_accounts"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -66,6 +75,7 @@ class AuthorizedAccount(db.Model):
 
 
 class Folio(db.Model):
+    """Tabla `Folio` en la base de datos."""
     __tablename__ = "folios"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -94,6 +104,7 @@ class Folio(db.Model):
 
 
 class Deliverable(db.Model):
+    """Tabla `Deliverable` en la base de datos."""
     __tablename__ = "deliverables"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -110,6 +121,7 @@ class Deliverable(db.Model):
 
 
 class Transfer(db.Model):
+    """Tabla `Transfer` en la base de datos."""
     __tablename__ = "transfers"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -127,6 +139,7 @@ class Transfer(db.Model):
 
 
 class AuditLog(db.Model):
+    """Tabla `AuditLog` en la base de datos."""
     __tablename__ = "audit_logs"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -141,6 +154,7 @@ class AuditLog(db.Model):
 
 
 class ProviderCompliance(db.Model):
+    """Tabla `ProviderCompliance` en la base de datos."""
     __tablename__ = "provider_compliance"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -164,6 +178,7 @@ class ProviderCompliance(db.Model):
 
 
 class FolioWorkflow(db.Model):
+    """Tabla `FolioWorkflow` en la base de datos."""
     __tablename__ = "folio_workflow"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -182,6 +197,7 @@ class FolioWorkflow(db.Model):
 
 
 class FolioDeliverableItem(db.Model):
+    """Tabla `FolioDeliverableItem` en la base de datos."""
     __tablename__ = "folio_deliverable_items"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -201,6 +217,7 @@ class FolioDeliverableItem(db.Model):
 
 
 class CfdiRecord(db.Model):
+    """Tabla `CfdiRecord` en la base de datos."""
     __tablename__ = "cfdi_records"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -222,6 +239,7 @@ class CfdiRecord(db.Model):
 
 
 class BudgetConfig(db.Model):
+    """Tabla `BudgetConfig` en la base de datos."""
     __tablename__ = "budget_config"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -234,6 +252,7 @@ class BudgetConfig(db.Model):
 
 
 class BankMovement(db.Model):
+    """Tabla `BankMovement` en la base de datos."""
     __tablename__ = "bank_movements"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -255,6 +274,7 @@ class BankMovement(db.Model):
 
 
 class ReconciliationAlert(db.Model):
+    """Tabla `ReconciliationAlert` en la base de datos."""
     __tablename__ = "reconciliation_alerts"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -281,6 +301,7 @@ class ReconciliationAlert(db.Model):
 
 
 class MonthlyDirectionReport(db.Model):
+    """Tabla `MonthlyDirectionReport` en la base de datos."""
     __tablename__ = "monthly_direction_reports"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -295,6 +316,7 @@ class MonthlyDirectionReport(db.Model):
 
 
 class EvidenceFile(db.Model):
+    """Tabla `EvidenceFile` en la base de datos."""
     __tablename__ = "evidence_files"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -320,6 +342,7 @@ class EvidenceFile(db.Model):
 
 
 class SignatureAck(db.Model):
+    """Tabla `SignatureAck` en la base de datos."""
     __tablename__ = "signature_acks"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -331,3 +354,4 @@ class SignatureAck(db.Model):
     __table_args__ = (
         db.CheckConstraint("area IN ('ui', 'contabilidad')", name="ck_ack_area"),
     )
+

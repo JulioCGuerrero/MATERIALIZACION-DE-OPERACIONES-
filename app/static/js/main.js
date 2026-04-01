@@ -1,4 +1,14 @@
-﻿(() => {
+﻿/*
+  JS global de UI:
+  1) auto-cierre de mensajes flash,
+  2) animaciones de entrada (reveal),
+  3) ayudas de login (relleno rapido + toggle de password).
+*/
+
+(() => {
+  // ------------------------------
+  // 1) Auto-cierre de alerts
+  // ------------------------------
   const alerts = document.querySelectorAll('.alert');
   if (alerts.length > 0) {
     window.setTimeout(() => {
@@ -11,6 +21,9 @@
     }, 5200);
   }
 
+  // ------------------------------
+  // 2) Efecto reveal al entrar en viewport
+  // ------------------------------
   const revealTargets = Array.from(document.querySelectorAll('.page > *, .panel, .kpi, .rel-card, .tc'));
   if (revealTargets.length === 0) return;
 
@@ -35,10 +48,14 @@
 })();
 
 (() => {
+  // ------------------------------
+  // 3) Helpers de login
+  // ------------------------------
   const emailInput = document.querySelector('#email');
   const passInput = document.querySelector('#password');
   if (!emailInput || !passInput) return;
 
+  // Botones de acceso rapido por rol demo.
   document.querySelectorAll('.js-fill-user').forEach((btn) => {
     btn.addEventListener('click', () => {
       emailInput.value = btn.dataset.email || '';
@@ -47,6 +64,7 @@
     });
   });
 
+  // Mostrar/ocultar password para evitar errores de captura.
   const toggleBtn = document.querySelector('.js-toggle-pass');
   if (!toggleBtn) return;
 

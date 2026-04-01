@@ -1,3 +1,16 @@
+"""Rutas del modulo de operacion contable.
+
+Este archivo concentra la parte mas grande del proceso:
+- cumplimiento SAT/EFOS,
+- entregables con evidencia,
+- traspasos,
+- CFDI,
+- conciliacion,
+- presupuestos,
+- reportes,
+- acuses/firma.
+"""
+
 import os
 import re
 import uuid
@@ -52,12 +65,17 @@ STATUS_LABELS = {
 
 
 def _parse_date(value):
+    """Convierte `YYYY-MM-DD` a objeto `date`.
+
+    Si viene vacio, regresa `None`.
+    """
     if not value:
         return None
     return datetime.strptime(value, "%Y-%m-%d").date()
 
 
 def _store_uploaded_file(file_storage, category, folio_id=None, deliverable_id=None):
+    """Guarda un archivo fisico y crea su registro en BD."""
     if not file_storage or not file_storage.filename:
         return None
 
@@ -81,6 +99,7 @@ def _store_uploaded_file(file_storage, category, folio_id=None, deliverable_id=N
 
 
 def _refresh_folio_status(folio):
+    """Recalcula workflow + estatus del folio segun sus datos actuales."""
     workflow = ensure_workflow(folio)
     items = FolioDeliverableItem.query.filter_by(folio_id=folio.id).all()
     has_transfer = Transfer.query.filter_by(folio_id=folio.id).count() > 0
@@ -101,6 +120,7 @@ def _refresh_folio_status(folio):
 @operations_bp.route("/")
 @login_required
 def index():
+    """Home del modulo Operacion (KPIs y accesos rapidos)."""
     open_alerts = ReconciliationAlert.query.filter_by(status="abierta").count()
     high_alerts = ReconciliationAlert.query.filter_by(status="abierta", severity="alta").count()
     pending_cfdi = Folio.query.filter(Folio.status.in_(["pendiente", "en_proceso", "alerta", "critico"])).count()
@@ -119,6 +139,7 @@ def index():
 @operations_bp.route("/evidencias/<int:evidence_id>")
 @login_required
 def download_evidence(evidence_id):
+    """Descarga un archivo de evidencia previamente cargado."""
     evidence = EvidenceFile.query.get_or_404(evidence_id)
     return send_from_directory(
         current_app.config["UPLOAD_FOLDER"],
@@ -132,6 +153,7 @@ def download_evidence(evidence_id):
 @login_required
 @roles_required("contabilidad", "direccion")
 def compliance():
+    """Alta/edicion de cumplimiento SAT por proveedor."""
     if request.method == "POST":
         provider_id = int(request.form.get("provider_id", "0"))
         provider = Provider.query.get(provider_id)
@@ -178,6 +200,7 @@ def compliance():
 @login_required
 @roles_required("ui", "contabilidad", "direccion")
 def deliverables(folio_id):
+    """Gestion del checklist de entregables por folio."""
     folio = Folio.query.get_or_404(folio_id)
     workflow = ensure_workflow(folio)
     db.session.add(workflow)
@@ -232,6 +255,7 @@ def deliverables(folio_id):
 @login_required
 @roles_required("tesoreria", "contabilidad", "direccion")
 def transfers():
+    """Registro de traspasos SPEI con reglas de bloqueo."""
     folios = Folio.query.order_by(Folio.created_at.desc()).all()
     accounts = AuthorizedAccount.query.filter_by(is_active=True).all()
     if request.method == "POST":
@@ -297,6 +321,7 @@ def transfers():
 @login_required
 @roles_required("contabilidad", "direccion")
 def cfdi():
+    """Vinculacion de CFDI (metadatos y archivos XML/PDF)."""
     folios = Folio.query.order_by(Folio.created_at.desc()).all()
     if request.method == "POST":
         folio_id = int(request.form.get("folio_id", "0"))
@@ -342,6 +367,7 @@ def cfdi():
 
 
 def _parse_bank_pdf(file_storage):
+    """Parser base de PDF bancario (extrae lineas con montos)."""
     if PdfReader is None:
         raise RuntimeError("pypdf no esta instalado")
     tmp_name = f"tmp_{uuid.uuid4().hex}.pdf"
@@ -380,6 +406,7 @@ def _parse_bank_pdf(file_storage):
 @login_required
 @roles_required("contabilidad", "direccion")
 def reconciliation():
+    """Conciliacion bancaria: manual y via carga de PDF."""
     folios = Folio.query.order_by(Folio.created_at.desc()).all()
     if request.method == "POST":
         action = request.form.get("action", "manual")
@@ -479,6 +506,7 @@ def reconciliation():
 @login_required
 @roles_required("contabilidad", "direccion")
 def resolve_alert(alert_id):
+    """Marca una alerta como resuelta y guarda nota de resolucion."""
     alert = ReconciliationAlert.query.get_or_404(alert_id)
     alert.status = "resuelta"
     alert.resolved_at = datetime.now(timezone.utc)
@@ -495,6 +523,7 @@ def resolve_alert(alert_id):
 @login_required
 @roles_required("contabilidad", "direccion")
 def budgets():
+    """Carga de presupuestos SINGA: manual o importacion Excel."""
     folios = Folio.query.order_by(Folio.created_at.desc()).all()
     if request.method == "POST":
         action = request.form.get("action", "single")
@@ -561,6 +590,7 @@ def budgets():
 @login_required
 @roles_required("contabilidad", "direccion")
 def generate_report():
+    """Genera reporte mensual automatico con KPIs actuales."""
     period = request.form.get("period", "").strip()
     if not period:
         flash("Debes indicar periodo (YYYY-MM).", "error")
@@ -596,6 +626,7 @@ def generate_report():
 @login_required
 @roles_required("contabilidad", "direccion")
 def reports():
+    """Alta manual/listado de reportes mensuales a Direccion."""
     if request.method == "POST":
         period = request.form.get("period", "").strip()
         if MonthlyDirectionReport.query.filter_by(period=period).first():
@@ -623,6 +654,7 @@ def reports():
 @login_required
 @roles_required("ui", "contabilidad", "direccion")
 def acknowledgements():
+    """Registro de firma/acuse por area (UI y Contabilidad)."""
     if request.method == "POST":
         area = request.form.get("area", "").strip()
         signer = request.form.get("signer_name", "").strip()

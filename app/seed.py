@@ -1,4 +1,9 @@
-﻿from datetime import date
+﻿"""Carga de datos iniciales (seed) para entorno demo/desarrollo.
+
+El seed es idempotente: si ya existen registros, no inserta duplicados.
+"""
+
+from datetime import date
 
 from app.extensions import db
 from app.models import (
@@ -13,9 +18,10 @@ from app.models import (
 )
 from app.operations.services import ensure_deliverables, ensure_workflow
 
-
+# Catalogo base de roles.
 ROLES = ["direccion", "ui", "contabilidad", "tesoreria", "auditor"]
 
+# Usuarios demo por area.
 USERS = [
     ("Salo", "direccion", "salo@batia.local"),
     ("M. Gonzalez", "tesoreria", "mgonzalez@batia.local"),
@@ -25,6 +31,7 @@ USERS = [
     ("P. Ramirez", "contabilidad", "pramirez@batia.local"),
 ]
 
+# Proveedores de ejemplo.
 PROVIDERS = [
     ("Limpiadores SA", "outsourcing"),
     ("Insumos Alfa", "materiales"),
@@ -34,6 +41,8 @@ PROVIDERS = [
 
 
 def seed_data():
+    """Inicializa catalogos, usuarios, proveedores y muestras operativas."""
+    # Crea tablas si aun no existen.
     db.create_all()
 
     if Role.query.count() == 0:
@@ -124,6 +133,7 @@ def seed_data():
         )
         db.session.commit()
 
+    # Configuracion SAT por proveedor (demo).
     for provider in Provider.query.all():
         compliance = ProviderCompliance.query.filter_by(provider_id=provider.id).first()
         if not compliance:
@@ -139,6 +149,7 @@ def seed_data():
             db.session.add(compliance)
     db.session.commit()
 
+    # Asegura workflow + checklist para cada folio.
     for folio in Folio.query.order_by(Folio.id.asc()).all():
         workflow = ensure_workflow(folio)
         db.session.add(workflow)
@@ -146,6 +157,7 @@ def seed_data():
             db.session.add(deliverable)
     db.session.commit()
 
+    # Marca algunos entregables como cargados para que el demo luzca "vivo".
     if FolioDeliverableItem.query.count() > 0:
         first_folio = Folio.query.filter_by(singa_number="#17172").first()
         if first_folio:

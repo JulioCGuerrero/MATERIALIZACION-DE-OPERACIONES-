@@ -1,4 +1,14 @@
-﻿:root {
+﻿/*
+  Hoja de estilos principal.
+
+  Guia rapida para aprender:
+  - :root              -> variables globales (colores, fuentes, radios, sombras)
+  - body/topbar        -> estructura visual base de toda la app
+  - .panel/.kpi/.table -> componentes reutilizables
+  - .login-*           -> estilos dedicados de pantalla de acceso
+  - @media             -> comportamiento responsive
+*/
+:root {
   --ink-900: #0b1736;
   --ink-800: #142650;
   --ink-700: #1d3870;
@@ -1100,3 +1110,4 @@ td form select {
     grid-template-columns: 1fr;
   }
 }
+

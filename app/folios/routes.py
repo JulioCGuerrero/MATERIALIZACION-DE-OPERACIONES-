@@ -1,4 +1,13 @@
-﻿from decimal import Decimal, InvalidOperation
+﻿"""Rutas del centro de folios.
+
+Aqui vive la pantalla unificada de:
+- listado/filtrado,
+- alta de folio,
+- historial simple,
+- cambio rapido de estatus.
+"""
+
+from decimal import Decimal, InvalidOperation
 
 from flask import flash, redirect, render_template, request, session, url_for
 from sqlalchemy import or_
@@ -10,19 +19,23 @@ from app.folios import folios_bp
 from app.models import AuditLog, AuthorizedAccount, Folio, Provider
 from app.operations.services import ensure_deliverables, ensure_workflow
 
-
+# Roles permitidos para crear folios desde la UI.
 ALLOWED_CREATOR_ROLES = {"ui", "direccion"}
+# Roles permitidos para mover estatus manualmente.
 ALLOWED_STATUS_UPDATE_ROLES = {"ui", "contabilidad", "direccion"}
+# Catalogo de estatus validos.
 ALLOWED_FOLIO_STATUSES = {"pendiente", "en_proceso", "listo_para_cierre", "cerrado", "alerta", "critico"}
 
 
 def _build_folio_query():
+    """Arma una consulta SQLAlchemy aplicando filtros de URL."""
     q = request.args.get("q", "").strip()
     status = request.args.get("status", "").strip()
     provider_type = request.args.get("provider_type", "").strip()
 
     query = Folio.query.join(Provider)
 
+    # Filtro de texto (folio, proveedor o responsable).
     if q:
         like_term = f"%{q}%"
         query = query.filter(
@@ -43,18 +56,24 @@ def _build_folio_query():
 
 
 def _render_folios_page(*, status_code=200, form_data=None):
+    """Renderiza la pagina de folios completa.
+
+    Se usa en GET y tambien en errores de POST para mantener el formulario.
+    """
     query, filters = _build_folio_query()
     items = query.order_by(Folio.created_at.desc()).all()
     providers = Provider.query.order_by(Provider.name.asc()).all()
+
     tab = request.args.get("tab", "resumen").strip().lower()
     if tab not in {"resumen", "alta", "historial"}:
         tab = "resumen"
-    current_query = request.query_string.decode("utf-8")
 
+    # Conteo por estatus para KPIs del tab Resumen.
     status_counts = {k: 0 for k in ALLOWED_FOLIO_STATUSES}
     for folio in items:
         status_counts[folio.status] = status_counts.get(folio.status, 0) + 1
 
+    # Ultimos eventos de auditoria relacionados a folios.
     recent_audits = (
         AuditLog.query.filter_by(entity="folio")
         .order_by(AuditLog.created_at.desc())
@@ -71,7 +90,7 @@ def _render_folios_page(*, status_code=200, form_data=None):
         can_create=session.get("role") in ALLOWED_CREATOR_ROLES,
         form_data=form_data or {},
         tab=tab,
-        current_query=current_query,
+        current_query=request.query_string.decode("utf-8"),
         status_counts=status_counts,
         recent_audits=recent_audits,
     ), status_code
@@ -80,6 +99,11 @@ def _render_folios_page(*, status_code=200, form_data=None):
 @folios_bp.route("/", methods=["GET", "POST"])
 @login_required
 def list_folios():
+    """Endpoint principal del modulo.
+
+    - GET: muestra la vista
+    - POST: crea folio nuevo
+    """
     if request.method == "GET":
         return _render_folios_page()
 
@@ -93,6 +117,7 @@ def list_folios():
     budget_amount = request.form.get("budget_amount", "0").strip()
     contract_amount = request.form.get("contract_amount", "0").strip()
 
+    # Se conserva el input para repintar formulario en caso de error.
     form_data = {
         "singa_number": singa_number,
         "provider_id": provider_id or "",
@@ -110,6 +135,7 @@ def list_folios():
         flash("Proveedor invalido.", "error")
         return _render_folios_page(status_code=400, form_data=form_data)
 
+    # Regla dura: sin cuenta autorizada, no se crea folio.
     has_authorized_account = AuthorizedAccount.query.filter_by(provider_id=provider.id, is_active=True).count() > 0
     if not has_authorized_account:
         flash("Bloqueo duro: no se puede crear un folio con proveedor sin cuenta autorizada.", "error")
@@ -128,6 +154,7 @@ def list_folios():
         flash("Montos invalidos. Verifica los campos numericos.", "error")
         return _render_folios_page(status_code=400, form_data=form_data)
 
+    # Validaciones de montos.
     if budget_decimal <= 0:
         flash("El presupuesto autorizado debe ser mayor a cero.", "error")
         return _render_folios_page(status_code=400, form_data=form_data)
@@ -141,6 +168,7 @@ def list_folios():
         return _render_folios_page(status_code=400, form_data=form_data)
 
     try:
+        # Persistencia del folio.
         folio = Folio(
             singa_number=singa_number,
             provider_id=provider.id,
@@ -164,6 +192,8 @@ def list_folios():
         entity_id=folio.id,
         details=f"singa={folio.singa_number}",
     )
+
+    # Al crear folio se inicializa flujo y checklist base.
     workflow = ensure_workflow(folio)
     db.session.add(workflow)
     for deliverable in ensure_deliverables(folio):
@@ -178,6 +208,7 @@ def list_folios():
 @login_required
 @roles_required("ui", "direccion")
 def create_folio():
+    """Ruta legacy: redirige al tab de alta de la vista unificada."""
     if request.method == "POST":
         return list_folios()
     return redirect(url_for("folios.list_folios", tab="alta"))
@@ -186,6 +217,7 @@ def create_folio():
 @folios_bp.route("/<int:folio_id>/estado", methods=["POST"])
 @login_required
 def update_folio_status(folio_id):
+    """Actualiza estatus de un folio desde la tabla (accion rapida)."""
     if session.get("role") not in ALLOWED_STATUS_UPDATE_ROLES:
         flash("No tienes permisos para actualizar estatus.", "error")
         return redirect(url_for("folios.list_folios"))
@@ -208,6 +240,7 @@ def update_folio_status(folio_id):
         entity_id=folio.id,
         details=f"from={old_status};to={new_status}",
     )
+
     flash("Estatus de folio actualizado.", "success")
     next_url = request.form.get("next", "").strip()
     if next_url and next_url.startswith("/"):
