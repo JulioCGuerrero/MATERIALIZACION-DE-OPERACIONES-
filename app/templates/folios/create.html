@@ -1,12 +1,15 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% block title %}Nuevo Folio | Servicia{% endblock %}
 {% block content %}
-<section class="card">
-  <h1>Nuevo folio SINGA</h1>
-  <p>Regla activa: solo proveedores con cuenta autorizada por Dirección.</p>
+<section class="panel">
+  <div class="panel-head">
+    <h2>Nuevo folio SINGA</h2>
+    <span class="badge badge-red">Regla dura activa</span>
+  </div>
+  <p class="panel-note">Solo se permiten proveedores con cuenta autorizada por Direccion.</p>
 
   <form method="post" class="form-grid" novalidate>
-    <label for="singa_number">Número de folio SINGA</label>
+    <label for="singa_number">Numero de folio SINGA</label>
     <input id="singa_number" name="singa_number" type="text" required placeholder="#17199">
 
     <label for="provider_id">Proveedor autorizado</label>
@@ -17,7 +20,7 @@
       {% endfor %}
     </select>
 
-    <label for="communication_responsible">Responsable de comunicación</label>
+    <label for="communication_responsible">Responsable de comunicacion</label>
     <input id="communication_responsible" name="communication_responsible" type="text" required>
 
     <label for="contract_amount">Monto contrato</label>
@@ -26,7 +29,7 @@
     <label for="budget_amount">Presupuesto SINGA autorizado</label>
     <input id="budget_amount" name="budget_amount" type="number" step="0.01" min="0.01" required>
 
-    <button class="btn" type="submit">Guardar folio</button>
+    <button class="btn btn-primary" type="submit">Guardar folio</button>
   </form>
 </section>
 {% endblock %}

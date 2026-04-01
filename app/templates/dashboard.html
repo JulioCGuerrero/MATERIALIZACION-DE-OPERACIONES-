@@ -1,27 +1,114 @@
-{% extends "base.html" %}
-{% block title %}Dashboard | Servicia{% endblock %}
+﻿{% extends "base.html" %}
+{% block title %}Control Ejecutivo | Servicia{% endblock %}
 {% block content %}
-<section class="dashboard-header">
-  <h1>Dashboard Ejecutivo</h1>
-  <p>Vista consolidada del piloto Batia con semáforo inicial de riesgo.</p>
+{% set total_folios = (active_count or 0) + (closed_count or 0) %}
+{% set close_rate = ((closed_count or 0) * 100 // total_folios) if total_folios else 0 %}
+{% set risk_rate = ((critical_count or 0) * 100 // total_folios) if total_folios else 0 %}
+
+<section class="release-strip">
+  <article class="rel-card rel-blue">
+    <div class="rel-accent"></div>
+    <div class="rel-top">
+      <h3 class="rel-name">UI · Materializacion</h3>
+      <span class="rel-days">{{ active_count or 0 }} activos</span>
+    </div>
+    <p class="rel-desc">Carga de evidencia operativa, checklist por tipo de proveedor y entrega para revision.</p>
+    <div class="rel-progress">
+      <div class="rel-progress-bg"></div>
+      <div class="rel-progress-fill" style="width: {{ close_rate }}%"></div>
+    </div>
+    <div class="rel-footer">
+      <span class="rel-pct">{{ close_rate }}% cierre</span>
+      <a class="btn btn-secondary btn-xs" href="{{ url_for('folios.list_folios') }}">Ver folios</a>
+    </div>
+  </article>
+
+  <article class="rel-card rel-gold">
+    <div class="rel-accent"></div>
+    <div class="rel-top">
+      <h3 class="rel-name">Contabilidad · Riesgo Fiscal</h3>
+      <span class="rel-days">{{ open_alerts or 0 }} alertas</span>
+    </div>
+    <p class="rel-desc">Validacion SAT/EFOS, CFDI, cruces mensuales y resolucion de alertas IA en plazo.</p>
+    <div class="rel-progress">
+      <div class="rel-progress-bg"></div>
+      <div class="rel-progress-fill" style="width: {{ 100 - risk_rate if (100 - risk_rate) > 0 else 0 }}%"></div>
+    </div>
+    <div class="rel-footer">
+      <span class="rel-pct">{{ risk_rate }}% riesgo</span>
+      <a class="btn btn-secondary btn-xs" href="{{ url_for('operations.reconciliation') }}">Conciliar</a>
+    </div>
+  </article>
+
+  <article class="rel-card rel-green">
+    <div class="rel-accent"></div>
+    <div class="rel-top">
+      <h3 class="rel-name">Direccion · Tablero de Mando</h3>
+      <span class="rel-days">{{ report_count or 0 }} reportes</span>
+    </div>
+    <p class="rel-desc">Semaforo ejecutivo, riesgos SAT y recomendaciones con responsable y fecha compromiso.</p>
+    <div class="rel-progress">
+      <div class="rel-progress-bg"></div>
+      <div class="rel-progress-fill" style="width: {{ close_rate }}%"></div>
+    </div>
+    <div class="rel-footer">
+      <span class="rel-pct">{{ close_rate }}% completado</span>
+      <a class="btn btn-secondary btn-xs" href="{{ url_for('operations.reports') }}">Reportes</a>
+    </div>
+  </article>
 </section>
 
-<section class="kpi-grid" aria-label="Indicadores clave">
-  <article class="kpi-card">
-    <h2>Folios activos</h2>
-    <p>{{ active_count or 0 }}</p>
+<section class="kpi-row" aria-label="Indicadores clave">
+  <article class="kpi kpi-a">
+    <p class="kpi-lbl">Folios activos</p>
+    <p class="kpi-val kv-b">{{ active_count or 0 }}</p>
   </article>
-  <article class="kpi-card">
-    <h2>Folios cerrados</h2>
-    <p>{{ closed_count or 0 }}</p>
+  <article class="kpi kpi-b">
+    <p class="kpi-lbl">Folios cerrados</p>
+    <p class="kpi-val kv-g">{{ closed_count or 0 }}</p>
   </article>
-  <article class="kpi-card warning">
-    <h2>Folios críticos</h2>
-    <p>{{ critical_count or 0 }}</p>
+  <article class="kpi kpi-c">
+    <p class="kpi-lbl">Folios criticos</p>
+    <p class="kpi-val kv-gold">{{ critical_count or 0 }}</p>
   </article>
-  <article class="kpi-card">
-    <h2>Eventos de auditoría</h2>
-    <p>{{ audit_count or 0 }}</p>
+  <article class="kpi kpi-d">
+    <p class="kpi-lbl">Eventos de auditoria</p>
+    <p class="kpi-val kv-n">{{ audit_count or 0 }}</p>
+  </article>
+  <article class="kpi kpi-c">
+    <p class="kpi-lbl">Alertas abiertas</p>
+    <p class="kpi-val kv-gold">{{ open_alerts or 0 }}</p>
+  </article>
+  <article class="kpi kpi-b">
+    <p class="kpi-lbl">Reportes direccion</p>
+    <p class="kpi-val kv-g">{{ report_count or 0 }}</p>
+  </article>
+</section>
+
+<section class="vel-banner {% if critical_count and critical_count > 0 %}vel-slow{% else %}vel-fast{% endif %}">
+  <span class="vel-icon">{% if critical_count and critical_count > 0 %}!{% else %}✓{% endif %}</span>
+  <div class="vel-text">Estado de control mensual: {% if critical_count and critical_count > 0 %}existen folios criticos con atencion prioritaria.{% else %}sin riesgo critico abierto.{% endif %}</div>
+  <span class="vel-delta">{{ critical_count or 0 }} criticos</span>
+</section>
+
+<section class="tracker-grid">
+  <article class="tc">
+    <div class="tc-head">
+      <h3 class="tc-title">Ruta UI</h3>
+      <span class="tc-prog">Evidencia y checklist</span>
+    </div>
+    <div class="task-item"><span class="t-chk done">✓</span><span class="t-nm">Registrar folio SINGA</span></div>
+    <div class="task-item"><span class="t-chk">•</span><span class="t-nm">Subir entregables por tipo</span></div>
+    <div class="task-item"><span class="t-chk">•</span><span class="t-nm">Enviar a cierre mensual</span></div>
+  </article>
+  <article class="tc">
+    <div class="tc-head">
+      <h3 class="tc-title">Ruta Contabilidad</h3>
+      <span class="tc-prog">Fiscal y conciliacion</span>
+    </div>
+    <div class="task-item"><span class="t-chk">•</span><span class="t-nm">Validar SAT/EFOS</span></div>
+    <div class="task-item"><span class="t-chk">•</span><span class="t-nm">Vincular CFDI por folio</span></div>
+    <div class="task-item"><span class="t-chk">•</span><span class="t-nm">Correr conciliacion IA</span></div>
   </article>
 </section>
 {% endblock %}

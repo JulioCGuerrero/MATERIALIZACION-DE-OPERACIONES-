@@ -1,7 +1,17 @@
-from datetime import date
+﻿from datetime import date
 
 from app.extensions import db
-from app.models import AuthorizedAccount, Folio, Provider, Role, User
+from app.models import (
+    AuthorizedAccount,
+    Folio,
+    FolioDeliverableItem,
+    FolioWorkflow,
+    Provider,
+    ProviderCompliance,
+    Role,
+    User,
+)
+from app.operations.services import ensure_deliverables, ensure_workflow
 
 
 ROLES = ["direccion", "ui", "contabilidad", "tesoreria", "auditor"]
@@ -14,7 +24,6 @@ USERS = [
     ("C. Morales", "ui", "cmorales@batia.local"),
     ("P. Ramirez", "contabilidad", "pramirez@batia.local"),
 ]
-
 
 PROVIDERS = [
     ("Limpiadores SA", "outsourcing"),
@@ -89,8 +98,8 @@ def seed_data():
                     provider_id=limpia.id,
                     provider_type="outsourcing",
                     communication_responsible="R. Fuentes",
-                    contract_amount=148500,
-                    budget_amount=150000,
+                    contract_amount=150000,
+                    budget_amount=148500,
                     status="en_proceso",
                 ),
                 Folio(
@@ -98,8 +107,8 @@ def seed_data():
                     provider_id=alfa.id,
                     provider_type="materiales",
                     communication_responsible="C. Morales",
-                    contract_amount=89200,
-                    budget_amount=90000,
+                    contract_amount=90000,
+                    budget_amount=89200,
                     status="cerrado",
                 ),
                 Folio(
@@ -115,18 +124,33 @@ def seed_data():
         )
         db.session.commit()
 
-    # Mant. Delta intentionally has no authorized account
-    mant = Provider.query.filter_by(name="Mant. Delta").first()
-    if mant and not Folio.query.filter_by(singa_number="#17148").first():
-        db.session.add(
-            Folio(
-                singa_number="#17148",
-                provider_id=mant.id,
-                provider_type="outsourcing",
-                communication_responsible="R. Fuentes",
-                contract_amount=320000,
-                budget_amount=1,
-                status="critico",
+    for provider in Provider.query.all():
+        compliance = ProviderCompliance.query.filter_by(provider_id=provider.id).first()
+        if not compliance:
+            compliance = ProviderCompliance(
+                provider_id=provider.id,
+                sat_opinion_status="vigente" if provider.name != "Mant. Delta" else "no_cargada",
+                sat_valid_until=date(2026, 12, 31) if provider.name != "Mant. Delta" else None,
+                efos_flag=False,
+                activity_match=provider.name != "Mant. Delta",
+                rfc_matches_account=provider.name != "Mant. Delta",
+                notes="Semilla inicial",
             )
-        )
+            db.session.add(compliance)
+    db.session.commit()
+
+    for folio in Folio.query.order_by(Folio.id.asc()).all():
+        workflow = ensure_workflow(folio)
+        db.session.add(workflow)
+        for deliverable in ensure_deliverables(folio):
+            db.session.add(deliverable)
+    db.session.commit()
+
+    if FolioDeliverableItem.query.count() > 0:
+        first_folio = Folio.query.filter_by(singa_number="#17172").first()
+        if first_folio:
+            for item in FolioDeliverableItem.query.filter_by(folio_id=first_folio.id).limit(3).all():
+                if not item.uploaded:
+                    item.uploaded = True
+                    db.session.add(item)
         db.session.commit()

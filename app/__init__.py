@@ -1,3 +1,5 @@
+import os
+
 from flask import Flask
 
 from app.config import Config
@@ -5,11 +7,13 @@ from app.extensions import db, migrate, jwt
 from app.auth import auth_bp
 from app.main import main_bp
 from app.folios import folios_bp
+from app.operations import operations_bp
 
 
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
+    os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
     db.init_app(app)
     migrate.init_app(app, db)
@@ -18,6 +22,7 @@ def create_app(config_class=Config):
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(folios_bp, url_prefix="/folios")
+    app.register_blueprint(operations_bp, url_prefix="/operacion")
 
     @app.context_processor
     def inject_globals():

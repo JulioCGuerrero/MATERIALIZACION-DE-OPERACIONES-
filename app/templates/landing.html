@@ -1,11 +1,29 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% block title %}Bienvenido | Servicia{% endblock %}
 {% block content %}
-<section class="hero">
-  <h1>Control contable trazable para auditorías en minutos</h1>
-  <p>
-    Plataforma piloto para Batia: integra UI, Contabilidad, Tesorería y Dirección en un solo flujo confiable.
-  </p>
-  <a class="btn" href="{{ url_for('auth.login') }}">Iniciar sesión</a>
+<section class="hero-card">
+  <div class="hero-copy">
+    <p class="eyebrow">Plataforma Operativa</p>
+    <h2>Control contable trazable para auditorias en minutos</h2>
+    <p>Integra UI, Contabilidad, Tesoreria y Direccion en un solo flujo de folios SINGA con reglas duras y bitacora de auditoria.</p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="{{ url_for('auth.login') }}">Entrar al sistema</a>
+      <a class="btn btn-secondary" href="{{ url_for('main.dashboard') }}">Ver dashboard</a>
+    </div>
+  </div>
+  <div class="hero-side">
+    <div class="mini-stat">
+      <span>Modelo</span>
+      <strong>App Factory + Blueprints</strong>
+    </div>
+    <div class="mini-stat">
+      <span>Stack</span>
+      <strong>Flask + SQLAlchemy</strong>
+    </div>
+    <div class="mini-stat">
+      <span>Base</span>
+      <strong>SQLite configurable</strong>
+    </div>
+  </div>
 </section>
 {% endblock %}

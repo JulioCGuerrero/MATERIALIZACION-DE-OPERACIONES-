@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="es-MX">
   <head>
     <meta charset="utf-8">
@@ -6,50 +6,72 @@
     <title>{% block title %}Servicia{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
   </head>
-  <body>
+  <body class="{% if request.endpoint == 'auth.login' %}auth-view{% endif %}">
+    <div class="ambient-layer" aria-hidden="true">
+      <span class="orb orb-a"></span>
+      <span class="orb orb-b"></span>
+      <span class="orb orb-c"></span>
+    </div>
     <a class="skip-link" href="#main-content">Saltar al contenido principal</a>
 
     <header class="topbar" role="banner">
-      <div class="brand">
-        <span class="brand-mark" aria-hidden="true">S</span>
-        <div>
-          <strong>Servicia</strong>
-          <p>Aseguramiento Contable · {{ company_name }}</p>
-        </div>
+      <div class="topbar-left">
+        <div class="tb-kicker">CONTROL ROOM</div>
+        <div class="tb-name">SERVICIA - ASEGURAMIENTO CONTABLE</div>
+        <div class="tb-sub">PILOTO {{ company_name|upper }} · TRAZABILIDAD VIVA</div>
       </div>
       {% if session.get('user_id') %}
-      <div class="session-box" aria-label="Sesión de usuario">
-        <span>{{ session.get('user_name') }} · {{ session.get('role') }}</span>
+      <div class="topbar-right">
+        <div class="session-box" aria-label="Sesion de usuario">
+          <span>{{ session.get('user_name') }} - {{ session.get('role') }}</span>
+        </div>
         <form action="{{ url_for('auth.logout') }}" method="post">
-          <button class="btn btn-ghost" type="submit">Salir</button>
+          <button class="btn btn-top" type="submit">Salir</button>
         </form>
+      </div>
+      {% else %}
+      <div class="topbar-right">
+        <a class="btn btn-top accent" href="{{ url_for('auth.login') }}">Iniciar sesion</a>
       </div>
       {% endif %}
     </header>
 
-    {% if session.get('user_id') %}
-    <nav class="nav" aria-label="Navegación principal">
-      <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
-      <a href="{{ url_for('folios.list_folios') }}">Folios SINGA</a>
-      {% if session.get('role') in ['ui', 'direccion'] %}
-      <a href="{{ url_for('folios.create_folio') }}">Nuevo folio</a>
+    <div class="container">
+      <section class="brand-strip">
+        <div>
+          <h1>Servicia</h1>
+          <p>Plataforma de control financiero con flujos auditables, alertas activas y ejecución por roles.</p>
+        </div>
+        <div class="brand-tags">
+          <span class="tag">UI Ops</span>
+          <span class="tag">Contabilidad IA</span>
+          <span class="tag">Tesoreria</span>
+          <span class="tag">Direccion</span>
+        </div>
+      </section>
+
+      {% if session.get('user_id') %}
+      <nav class="tabs" aria-label="Navegacion principal">
+        <a class="tab {% if request.endpoint == 'main.dashboard' %}active{% endif %}" href="{{ url_for('main.dashboard') }}">Dashboard</a>
+        <a class="tab {% if request.endpoint == 'folios.list_folios' %}active{% endif %}" href="{{ url_for('folios.list_folios') }}">Folios</a>
+        <a class="tab {% if request.endpoint and request.endpoint.startswith('operations.') %}active{% endif %}" href="{{ url_for('operations.index') }}">Operacion</a>
+      </nav>
       {% endif %}
-    </nav>
-    {% endif %}
 
-    <main id="main-content" class="page" tabindex="-1">
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-          <section class="alerts" aria-live="polite" aria-label="Mensajes del sistema">
-            {% for category, message in messages %}
-              <article class="alert alert-{{ category }}">{{ message }}</article>
-            {% endfor %}
-          </section>
-        {% endif %}
-      {% endwith %}
+      <main id="main-content" class="page" tabindex="-1">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <section class="alerts" aria-live="polite" aria-label="Mensajes del sistema">
+              {% for category, message in messages %}
+                <article class="alert alert-{{ category }}">{{ message }}</article>
+              {% endfor %}
+            </section>
+          {% endif %}
+        {% endwith %}
 
-      {% block content %}{% endblock %}
-    </main>
+        {% block content %}{% endblock %}
+      </main>
+    </div>
 
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
   </body>

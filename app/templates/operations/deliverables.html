@@ -1,0 +1,61 @@
+﻿{% extends "base.html" %}
+{% block title %}Entregables | Servicia{% endblock %}
+{% block content %}
+<section class="panel">
+  <div class="panel-head">
+    <h2>Entregables del folio {{ folio.singa_number }}</h2>
+    <span class="badge badge-blue">{{ folio.provider.name }}</span>
+  </div>
+  <p class="panel-note">Flujo compartido: UI y Contabilidad deben completar checklist para habilitar cierre. Vencidos: {{ overdue_count }}</p>
+</section>
+
+<section class="panel">
+  <div class="panel-head"><h3>Estado de flujo</h3></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Paso</th><th>Estado</th></tr></thead>
+      <tbody>
+        <tr><td>1. UI registra folio</td><td>{{ 'OK' if workflow.step_1_ui_folio else 'Pendiente' }}</td></tr>
+        <tr><td>2. Contabilidad valida SAT/EFOS</td><td>{{ 'OK' if workflow.step_2_contab_sat else 'Pendiente' }}</td></tr>
+        <tr><td>3. UI sube entregables</td><td>{{ 'OK' if workflow.step_3_ui_deliverables else 'Pendiente' }}</td></tr>
+        <tr><td>4. Tesoreria registra traspaso</td><td>{{ 'OK' if workflow.step_4_tesoreria_transfer else 'Pendiente' }}</td></tr>
+        <tr><td>5. Contabilidad vincula CFDI</td><td>{{ 'OK' if workflow.step_5_contab_cfdi else 'Pendiente' }}</td></tr>
+        <tr><td>6. Contabilidad corre conciliacion</td><td>{{ 'OK' if workflow.step_6_contab_reconciliation else 'Pendiente' }}</td></tr>
+        <tr><td>7. UI marca listo para cierre</td><td>{{ 'OK' if workflow.step_7_ui_ready_to_close else 'Pendiente' }}</td></tr>
+        <tr><td>8. Contabilidad cierra expediente</td><td>{{ 'OK' if workflow.step_8_contab_closed else 'Pendiente' }}</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="panel table-panel">
+  <div class="panel-head"><h3>Checklist</h3></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Area</th><th>Entregable</th><th>Limite</th><th>KPI</th><th>Estado</th><th>Accion</th></tr></thead>
+      <tbody>
+      {% for item in items %}
+      <tr>
+        <td>{{ item.owner_area }}</td>
+        <td>{{ item.name }}</td>
+        <td>{{ item.due_date.strftime('%Y-%m-%d') if item.due_date else '-' }}</td>
+        <td>{{ kpi_status_for_item(item) }}</td>
+        <td>{{ 'Subido' if item.uploaded else 'Pendiente' }}</td>
+        <td>
+          <form method="post" enctype="multipart/form-data">
+            <input type="hidden" name="deliverable_id" value="{{ item.id }}">
+            <label><input type="checkbox" name="uploaded" {% if item.uploaded %}checked{% endif %}> Completo</label>
+            <input type="file" name="evidence_file" accept=".pdf,.jpg,.jpeg,.png,.xml,.xlsx,.doc,.docx">
+            {% if evidence_map.get(item.id) %}
+            <a class="btn btn-secondary btn-xs" href="{{ url_for('operations.download_evidence', evidence_id=evidence_map.get(item.id)[0].id) }}">Ultimo archivo</a>
+            {% endif %}
+            <button class="btn btn-primary" type="submit">Actualizar</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

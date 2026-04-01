@@ -1,4 +1,4 @@
-import os
+﻿import os
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -10,3 +10,5 @@ class Config:
     SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "sqlite:///servicia.db")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     COMPANY_NAME = os.getenv("COMPANY_NAME", "Batia")
+    UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER", os.path.join(os.getcwd(), "uploads"))
+    MAX_CONTENT_LENGTH = 16 * 1024 * 1024

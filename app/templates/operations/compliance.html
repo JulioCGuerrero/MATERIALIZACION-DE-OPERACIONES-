@@ -1,0 +1,48 @@
+﻿{% extends "base.html" %}
+{% block title %}Cumplimiento SAT | Servicia{% endblock %}
+{% block content %}
+<section class="panel">
+  <div class="panel-head"><h2>Cumplimiento de proveedores</h2></div>
+  <p class="panel-note">Regla critica: sin opinion SAT vigente y sin EFOS no se habilita pago.</p>
+</section>
+
+<section class="panel table-panel">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Proveedor</th><th>Estatus SAT</th><th>Vigencia</th><th>EFOS</th><th>Actividad</th><th>RFC cuenta</th><th>Accion</th></tr>
+      </thead>
+      <tbody>
+      {% for provider in providers %}
+      {% set c = compliance_map.get(provider.id) %}
+      <tr>
+        <td>{{ provider.name }}</td>
+        <td>{{ status_labels.get(c.sat_opinion_status) if c else 'No cargada' }}</td>
+        <td>{{ c.sat_valid_until.strftime('%Y-%m-%d') if c and c.sat_valid_until else '-' }}</td>
+        <td>{{ 'Si' if c and c.efos_flag else 'No' }}</td>
+        <td>{{ 'OK' if c and c.activity_match else 'Pendiente' }}</td>
+        <td>{{ 'OK' if c and c.rfc_matches_account else 'Pendiente' }}</td>
+        <td>
+          <form method="post" class="form-grid" enctype="multipart/form-data">
+            <input type="hidden" name="provider_id" value="{{ provider.id }}">
+            <select name="sat_opinion_status">
+              <option value="no_cargada" {% if not c or c.sat_opinion_status == 'no_cargada' %}selected{% endif %}>No cargada</option>
+              <option value="vigente" {% if c and c.sat_opinion_status == 'vigente' %}selected{% endif %}>Vigente</option>
+              <option value="vencida" {% if c and c.sat_opinion_status == 'vencida' %}selected{% endif %}>Vencida</option>
+            </select>
+            <input type="date" name="sat_valid_until" value="{{ c.sat_valid_until.strftime('%Y-%m-%d') if c and c.sat_valid_until else '' }}">
+            <label><input type="checkbox" name="efos_flag" {% if c and c.efos_flag %}checked{% endif %}> EFOS</label>
+            <label><input type="checkbox" name="activity_match" {% if c and c.activity_match %}checked{% endif %}> Actividad valida</label>
+            <label><input type="checkbox" name="rfc_matches_account" {% if c and c.rfc_matches_account %}checked{% endif %}> RFC coincide</label>
+            <input name="notes" type="text" placeholder="Notas" value="{{ c.notes if c and c.notes else '' }}">
+            <input name="sat_file" type="file" accept=".pdf,.jpg,.jpeg,.png">
+            <button class="btn btn-primary" type="submit">Guardar</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

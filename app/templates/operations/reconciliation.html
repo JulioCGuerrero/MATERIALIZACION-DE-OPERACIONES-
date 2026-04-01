@@ -1,0 +1,113 @@
+﻿{% extends "base.html" %}
+{% block title %}Conciliacion | Servicia{% endblock %}
+{% block content %}
+<section class="panel">
+  <div class="panel-head"><h2>Conciliacion bancaria IA</h2></div>
+  <p class="panel-note">Cruza banco vs folio vs CFDI y genera alertas de riesgo automaticas.</p>
+</section>
+
+<section class="panel">
+  <form method="post" class="form-grid">
+    <label>Periodo (YYYY-MM)</label>
+    <input name="period" placeholder="2026-04" required>
+
+    <label>Banco</label>
+    <input name="bank" required placeholder="Banorte o BBVA">
+
+    <label>Fecha movimiento</label>
+    <input type="date" name="movement_date" required>
+
+    <label>Tipo</label>
+    <select name="movement_type">
+      <option value="deposito">Deposito</option>
+      <option value="retiro">Retiro</option>
+    </select>
+
+    <label>Referencia</label>
+    <input name="reference" required>
+
+    <label>Monto</label>
+    <input name="amount" type="number" step="0.01" min="0.01" required>
+
+    <label>Folio (opcional)</label>
+    <select name="folio_id">
+      <option value="">Sin folio</option>
+      {% for folio in folios %}
+      <option value="{{ folio.id }}">{{ folio.singa_number }} - {{ folio.provider.name }}</option>
+      {% endfor %}
+    </select>
+
+    <label><input type="checkbox" name="account_authorized" checked> Cuenta autorizada en plataforma</label>
+    <button class="btn btn-primary" type="submit">Correr conciliacion</button>
+  </form>
+</section>
+
+<section class="panel">
+  <div class="panel-head"><h3>Carga automatica desde PDF bancario</h3></div>
+  <form method="post" class="form-grid" enctype="multipart/form-data">
+    <input type="hidden" name="action" value="upload_pdf">
+    <label>Periodo (YYYY-MM)</label>
+    <input name="period" placeholder="2026-04" required>
+    <label>Banco</label>
+    <input name="bank" placeholder="Banorte o BBVA" required>
+    <label>Estado de cuenta PDF</label>
+    <input type="file" name="bank_pdf" accept=".pdf" required>
+    <button class="btn btn-secondary" type="submit">Subir y detectar movimientos</button>
+  </form>
+</section>
+
+<section class="panel table-panel">
+  <div class="panel-head"><h3>Movimientos</h3></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Periodo</th><th>Fecha</th><th>Tipo</th><th>Folio</th><th>Monto</th><th>Conciliado</th></tr></thead>
+      <tbody>
+      {% for row in movements %}
+      <tr>
+        <td>{{ row.period }}</td>
+        <td>{{ row.movement_date.strftime('%Y-%m-%d') }}</td>
+        <td>{{ row.movement_type }}</td>
+        <td>{{ row.folio.singa_number if row.folio else '-' }}</td>
+        <td>${{ "{:,.2f}".format(row.amount) }}</td>
+        <td>{{ 'Si' if row.is_reconciled else 'No' }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6">Sin movimientos.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="panel table-panel">
+  <div class="panel-head"><h3>Alertas IA</h3></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Fecha</th><th>Tipo</th><th>Severidad</th><th>Estatus</th><th>Folio</th><th>Accion</th></tr></thead>
+      <tbody>
+      {% for alert in alerts %}
+      <tr>
+        <td>{{ alert.created_at.strftime('%Y-%m-%d') }}</td>
+        <td>{{ alert.alert_type }}</td>
+        <td>{{ alert.severity }}</td>
+        <td>{{ alert.status }}</td>
+        <td>{{ alert.folio.singa_number if alert.folio else '-' }}</td>
+        <td>
+          {% if alert.status == 'abierta' %}
+          <form method="post" action="{{ url_for('operations.resolve_alert', alert_id=alert.id) }}">
+            <input type="text" name="resolution" placeholder="Resolucion / accion tomada">
+            <button class="btn btn-secondary" type="submit">Resolver</button>
+          </form>
+          {% else %}
+          Cerrada
+          {% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6">Sin alertas.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

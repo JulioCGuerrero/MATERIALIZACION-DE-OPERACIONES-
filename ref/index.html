@@ -1,0 +1,1335 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Servicia · Project Tracker</title>
+<style>
+:root{
+  --navy:#0F2044;--navy2:#1A3160;
+  --blue:#185FA5;--blue-l:rgba(24,95,165,0.09);
+  --green:#3B6D11;--green-l:rgba(59,109,17,0.09);
+  --gold:#BA7517;--gold-l:rgba(186,117,23,0.09);
+  --red:#A32D2D;--red-l:rgba(163,45,45,0.08);
+  --purple:#7C3AED;--purple-l:rgba(124,58,237,0.08);
+  --teal:#0D7377;--teal-l:rgba(13,115,119,0.09);
+  --bg:#F5F3EE;--bg2:#FDFCF9;--bg3:#ECEAE4;
+  --border:rgba(15,32,68,0.10);--border2:rgba(15,32,68,0.20);
+  --text:#1A1A2E;--dim:#4A5568;--muted:#8A94A8;
+  --r:8px;--r2:12px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+.topbar{background:var(--navy);color:#fff;padding:0 20px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200}
+.tb-name{font-size:13px;font-weight:600}
+.tb-sub{font-size:8px;opacity:.4;letter-spacing:1.5px;font-family:monospace}
+.tb-r{display:flex;align-items:center;gap:6px}
+.tb-clock{font-family:monospace;font-size:11px;opacity:.45}
+.btn-top{padding:5px 12px;border-radius:5px;font-size:11px;cursor:pointer;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;transition:.15s;white-space:nowrap}
+.btn-top:hover{background:rgba(255,255,255,0.18)}
+.btn-top.accent{background:rgba(184,146,42,0.25);border-color:rgba(255,255,255,0.3)}
+
+.container{max-width:1280px;margin:0 auto;padding:16px}
+
+/* RELEASES */
+.release-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.rel-card{border-radius:var(--r);border:1px solid;padding:11px 14px;position:relative;overflow:hidden}
+.rel-accent{position:absolute;left:0;top:0;bottom:0;width:3px}
+.rel-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;gap:8px}
+.rel-name{font-size:12px;font-weight:700}
+.rel-date-input{font-size:11px;font-family:monospace;border:1px solid;border-radius:4px;padding:2px 7px;background:transparent;cursor:pointer;outline:none;font-weight:600;transition:.15s}
+.rel-date-input:hover{filter:brightness(0.9)}
+.rel-desc{font-size:10px;line-height:1.5;margin-bottom:6px;opacity:.75}
+.rel-criteria{display:flex;flex-direction:column;gap:2px;margin-bottom:7px}
+.rel-crit{font-size:9px;font-family:monospace;padding-left:11px;position:relative;line-height:1.5;opacity:.65}
+.rel-crit::before{content:'·';position:absolute;left:2px}
+.rel-progress{height:3px;border-radius:2px;overflow:hidden;margin-bottom:4px}
+.rel-progress-bg{height:100%;border-radius:2px;opacity:.15}
+.rel-progress-fill{height:100%;border-radius:2px;transition:width .5s;margin-top:-100%}
+.rel-footer{display:flex;align-items:center;justify-content:space-between}
+.rel-pct{font-size:9px;font-family:monospace;opacity:.6}
+.rel-days{font-size:9px;font-family:monospace;font-weight:700}
+
+/* KPI */
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}
+.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:11px 13px;position:relative;overflow:hidden}
+.kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.kpi-a::after{background:var(--blue)}.kpi-b::after{background:var(--green)}
+.kpi-c::after{background:var(--gold)}.kpi-d::after{background:var(--navy)}.kpi-e::after{background:var(--purple)}
+.kpi-lbl{font-size:9px;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;margin-bottom:4px;font-family:monospace}
+.kpi-val{font-size:22px;font-weight:700;line-height:1;margin-bottom:2px}
+.kv-b{color:var(--blue)}.kv-g{color:var(--green)}.kv-gold{color:var(--gold)}.kv-n{color:var(--navy)}.kv-p{color:var(--purple)}
+.kpi-sub{font-size:10px;color:var(--muted)}
+.kpi-delta{font-size:10px;font-weight:600;margin-top:3px}
+.delta-pos{color:var(--green)}.delta-neg{color:var(--red)}.delta-zero{color:var(--muted)}
+.prog-outer{height:3px;background:var(--bg3);border-radius:2px;margin-top:5px;overflow:hidden}
+.prog-inner{height:100%;border-radius:2px;background:var(--blue);transition:width .5s}
+
+/* VELOCITY */
+.vel-banner{display:flex;align-items:center;gap:10px;padding:9px 14px;border-radius:var(--r);margin-bottom:14px;font-size:11px;border:1px solid;transition:all .3s}
+.vel-neutral{background:var(--bg2);border-color:var(--border);color:var(--dim)}
+.vel-fast{background:rgba(59,109,17,0.07);border-color:rgba(59,109,17,0.25);color:var(--green)}
+.vel-slow{background:var(--red-l);border-color:rgba(163,45,45,0.25);color:var(--red)}
+.vel-icon{font-size:15px;flex-shrink:0}
+.vel-text{flex:1;line-height:1.5}
+.vel-delta{font-family:monospace;font-weight:700;font-size:13px;flex-shrink:0}
+
+/* TABS */
+.tabs{display:flex;gap:3px;margin-bottom:14px;border-bottom:1px solid var(--border)}
+.tab{padding:7px 14px;font-size:12px;cursor:pointer;border-radius:6px 6px 0 0;border:1px solid transparent;border-bottom:none;color:var(--muted);transition:.15s;margin-bottom:-1px}
+.tab:hover{color:var(--text);background:var(--bg3)}
+.tab.active{background:var(--bg2);color:var(--navy);border-color:var(--border);font-weight:600}
+.panel{display:none}.panel.active{display:block}
+
+/* GANTT */
+.gantt-outer{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden}
+.g-hdr,.g-row,.g-phase{display:grid;grid-template-columns:260px 80px 1fr;align-items:center;}
+.g-hdr{background:var(--bg3);border-bottom:1px solid var(--border);padding:6px 0;}
+.gh{font-size:9px;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;padding:0 10px;font-family:monospace}
+.gh-weeks{display:flex;padding:0 8px;overflow:hidden}
+.gw{flex:1;text-align:center;font-size:9px;color:var(--muted);font-family:monospace;min-width:0}
+.g-phase{background:linear-gradient(90deg,var(--bg3),transparent);border-bottom:1px solid var(--border);border-top:1px solid var(--border);padding:5px 10px;margin-top:2px;grid-template-columns:1fr;}
+.g-phase-inner{display:flex;align-items:center;justify-content:space-between}
+.g-phase-lbl{font-size:11px;font-weight:600;color:var(--navy)}
+.g-phase-meta{font-size:9px;color:var(--muted);font-family:monospace}
+.g-row{border-bottom:1px solid var(--border);min-height:34px;transition:background .1s;}
+.g-row:hover{background:rgba(15,32,68,0.02)}
+.g-row:last-child{border-bottom:none}
+.g-row.done-row{opacity:.5}
+.g-name-cell{display:flex;align-items:center;gap:0;padding:4px 0;overflow:hidden}
+.g-edit-btn{display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:.25;transition:.15s;font-size:12px;padding:0 6px;flex-shrink:0;height:34px}
+.g-edit-btn:hover{opacity:1}
+.g-name{font-size:11px;color:var(--dim);line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:6px}
+.g-name.done{text-decoration:line-through;color:var(--muted)}
+.g-who-cell{padding:0 6px}
+.badge{font-size:9px;padding:2px 7px;border-radius:10px;font-family:monospace;font-weight:600;white-space:nowrap;display:inline-block}
+.b-sr{background:var(--blue-l);color:var(--blue)}.b-jr{background:var(--green-l);color:var(--green)}.b-both{background:var(--gold-l);color:var(--gold)}
+.g-chart-cell{height:34px;position:relative;padding:0 8px}
+.g-chart-inner{position:relative;height:100%;width:100%}
+.g-chart-inner::before{content:'';position:absolute;inset:0;background-image:repeating-linear-gradient(90deg,transparent,transparent calc(100% / var(--tw,10) - .5px),var(--border) calc(100% / var(--tw,10) - .5px),var(--border) calc(100% / var(--tw,10)));pointer-events:none;opacity:.5;}
+.g-bar-ghost{position:absolute;height:6px;border-radius:3px;top:50%;transform:translateY(-8px);opacity:.2;pointer-events:none}
+.g-bar{position:absolute;height:10px;border-radius:3px;top:50%;transform:translateY(-50%);cursor:pointer;transition:all .25s}
+.g-bar:hover{opacity:.75;height:12px}
+.gb-sr{background:var(--blue)}.gb-jr{background:var(--green)}.gb-both{background:var(--gold)}
+.g-bar-done{opacity:.35;background:var(--muted)!important}
+.g-bar-shifted{box-shadow:0 0 0 2px rgba(59,109,17,.5)}
+
+/* CALENDAR */
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.cal-title{font-size:14px;font-weight:600;color:var(--navy)}
+.btn-nav{background:var(--bg2);border:1px solid var(--border2);color:var(--dim);padding:5px 12px;border-radius:6px;font-size:11px;cursor:pointer;transition:.15s}
+.btn-nav:hover{background:var(--bg3)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-dow{text-align:center;font-size:9px;font-weight:600;color:var(--muted);padding:3px 0;font-family:monospace}
+.cal-day{min-height:68px;background:var(--bg2);border:1px solid var(--border);border-radius:5px;padding:4px 5px;position:relative}
+.cal-day.other-month{background:var(--bg3);opacity:.4}
+.cal-day.today{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue)}
+.cal-day.holiday{background:var(--red-l)}
+.cal-day.weekend{background:var(--bg3);opacity:.55}
+.cal-num{font-size:10px;font-weight:600;color:var(--muted);margin-bottom:2px}
+.cal-day.today .cal-num{color:var(--blue)}
+.cal-ev{font-size:8px;padding:1px 4px;border-radius:2px;margin-bottom:1px;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;border-left:2px solid}
+.cal-ev:hover{opacity:.75}
+.ev-sr{background:var(--blue-l);color:var(--blue);border-color:var(--blue)}
+.ev-jr{background:var(--green-l);color:var(--green);border-color:var(--green)}
+.ev-both{background:var(--gold-l);color:var(--gold);border-color:var(--gold)}
+.ev-done{background:rgba(100,100,100,0.06);color:var(--muted);border-color:var(--muted);text-decoration:line-through}
+.ev-milestone{background:rgba(15,32,68,.07);color:var(--navy);border-color:var(--navy);font-weight:600}
+.ev-holiday{background:var(--red-l);color:var(--red);border-color:var(--red)}
+.ev-release{font-weight:700;border-width:2px}
+.ev-more{font-size:8px;color:var(--muted)}
+.cal-legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px}
+.cl-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--dim)}
+.cl-dot{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+
+/* TRACKER */
+.tracker-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tc{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden}
+.tc-head{padding:9px 13px;border-bottom:1px solid var(--border);background:var(--bg3);display:flex;align-items:center;justify-content:space-between}
+.tc-title{font-size:12px;font-weight:600;color:var(--navy)}
+.tc-prog{font-size:10px;color:var(--muted);font-family:monospace}
+.task-item{display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid var(--border);transition:.1s}
+.task-item:last-child{border-bottom:none}
+.task-item:hover{background:rgba(15,32,68,0.02)}
+.t-chk{width:15px;height:15px;border-radius:3px;border:1.5px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;cursor:pointer;transition:.15s}
+.t-chk.done{background:var(--green);border-color:var(--green);color:#fff}
+.t-nm{font-size:11px;flex:1;color:var(--dim);cursor:pointer}
+.t-nm.done{text-decoration:line-through;color:var(--muted)}
+.t-saved{font-size:9px;font-family:monospace;white-space:nowrap}
+.t-saved.pos{color:var(--green)}.t-saved.neg{color:var(--red)}
+.t-edit{font-size:11px;opacity:.3;cursor:pointer;padding:2px 5px;transition:.15s;flex-shrink:0}
+.t-edit:hover{opacity:1}
+
+/* HOURS */
+.hours-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.hc{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:14px}
+.hc-title{font-size:13px;font-weight:600;margin-bottom:2px}
+.hc-meta{font-size:10px;color:var(--muted);margin-bottom:10px;font-family:monospace}
+.h-row{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.h-lbl{font-size:10px;color:var(--muted);width:160px;text-align:right;flex-shrink:0;font-family:monospace}
+.h-track{flex:1;height:11px;background:var(--bg3);border-radius:3px;overflow:hidden;border:1px solid var(--border);position:relative}
+.h-plan{position:absolute;top:0;left:0;height:100%;border-radius:3px;opacity:.2}
+.h-real{position:absolute;top:0;left:0;height:100%;border-radius:3px;transition:width .5s}
+.h-num{font-size:10px;color:var(--muted);width:52px;text-align:right;font-family:monospace;flex-shrink:0}
+
+/* ══ UI / SISTEMAS TAB ══ */
+.ui-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.ui-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden}
+.ui-card-head{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ui-card-head h3{font-size:12px;font-weight:700;color:var(--navy)}
+.ui-tag{font-size:9px;font-family:monospace;padding:2px 7px;border-radius:8px;font-weight:600}
+.tag-cont{background:var(--teal-l);color:var(--teal)}
+.tag-dir{background:var(--purple-l);color:var(--purple)}
+.tag-tes{background:var(--blue-l);color:var(--blue)}
+.tag-ext{background:var(--gold-l);color:var(--gold)}
+.tag-sist{background:rgba(163,45,45,0.09);color:var(--red)}
+.ui-item{display:flex;align-items:flex-start;gap:10px;padding:9px 14px;border-bottom:1px solid var(--border);font-size:11px;transition:.1s}
+.ui-item:last-child{border-bottom:none}
+.ui-item:hover{background:rgba(15,32,68,.02)}
+.ui-status{width:16px;height:16px;border-radius:3px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;margin-top:1px}
+.ui-st-pend{background:var(--gold-l);color:var(--gold);border:1.5px solid var(--gold)}
+.ui-st-done{background:var(--green-l);color:var(--green);border:1.5px solid var(--green)}
+.ui-st-miss{background:var(--red-l);color:var(--red);border:1.5px solid var(--red)}
+.ui-st-block{background:rgba(124,58,237,.1);color:var(--purple);border:1.5px solid var(--purple)}
+.ui-content{flex:1}
+.ui-label{font-weight:600;color:var(--dim);margin-bottom:2px}
+.ui-desc{font-size:10px;color:var(--muted);line-height:1.5}
+.ui-owner{font-size:9px;font-family:monospace;margin-top:3px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.ui-owner span{padding:1px 6px;border-radius:4px}
+.ui-note{background:rgba(186,117,23,.07);border:1px solid rgba(186,117,23,.2);border-radius:6px;padding:9px 12px;margin:8px 14px;font-size:10px;color:var(--gold);line-height:1.6}
+.ui-note strong{color:#92620a}
+.ui-full{grid-column:1/-1}
+.ui-section-hdr{padding:8px 14px 4px;font-size:9px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);font-family:monospace;border-bottom:1px solid var(--border);background:var(--bg3)}
+.ui-legend{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;font-size:10px;color:var(--dim)}
+.ui-legend-item{display:flex;align-items:center;gap:5px}
+.ui-legend-dot{width:12px;height:12px;border-radius:3px;flex-shrink:0}
+.rule-strip{background:rgba(163,45,45,.05);border:1px solid rgba(163,45,45,.2);border-radius:var(--r);padding:10px 14px;margin-bottom:10px;font-size:11px;color:var(--red)}
+.rule-strip strong{display:block;margin-bottom:4px;font-size:12px}
+.rule-item{display:flex;align-items:flex-start;gap:6px;padding:3px 0;color:var(--dim);font-size:10px}
+.rule-item::before{content:'→';color:var(--red);flex-shrink:0;margin-top:1px}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(10,18,40,.45);z-index:500;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r2);width:580px;max-width:96vw;max-height:92vh;overflow-y:auto;box-shadow:0 12px 40px rgba(10,18,40,.2)}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--border);background:var(--bg3);position:sticky;top:0;z-index:10}
+.modal-title{font-size:14px;font-weight:600;color:var(--navy)}
+.modal-close{font-size:18px;cursor:pointer;color:var(--muted);line-height:1;padding:2px 6px;border-radius:4px}
+.modal-close:hover{background:var(--bg3);color:var(--text)}
+.modal-body{padding:16px 18px}
+.msec{font-size:9px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin:12px 0 8px;font-family:monospace;display:flex;align-items:center;gap:8px}
+.msec::after{content:'';flex:1;height:1px;background:var(--border)}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:4px}
+.f-full{grid-column:1/-1}
+.fl{font-size:9px;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;margin-bottom:4px;font-family:monospace}
+.fi{background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:7px 10px;font-size:12px;color:var(--text);outline:none;transition:.15s;width:100%}
+.fi:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(24,95,165,.07)}
+textarea.fi{resize:vertical;min-height:56px;line-height:1.5;font-family:'Segoe UI',sans-serif}
+select.fi{cursor:pointer;font-family:'Segoe UI',sans-serif}
+.fi[type=range]{padding:8px 0;border:none;background:transparent;accent-color:var(--blue)}
+.fi[type=date]{cursor:pointer}
+.range-row{display:flex;align-items:center;gap:8px}
+.rv{font-family:monospace;font-size:12px;color:var(--blue);min-width:36px;text-align:right;font-weight:600}
+.comp-box{background:var(--green-l);border:1px solid rgba(59,109,17,.2);border-radius:var(--r);padding:12px 14px;margin-top:4px}
+.comp-box.off{background:var(--bg3);border-color:var(--border)}
+.delta-preview{display:flex;align-items:center;gap:10px;margin-top:10px;padding:8px 10px;background:var(--bg2);border-radius:6px;border:1px solid var(--border);font-size:11px;font-family:monospace}
+.dp-lbl{color:var(--dim);flex:1}
+.dp-val{font-weight:700;font-size:13px}
+.dp-pos{color:var(--green)}.dp-neg{color:var(--red)}.dp-zero{color:var(--muted)}
+.tl-preview{display:flex;align-items:center;gap:6px;margin-top:8px;padding:8px 10px;background:var(--bg3);border-radius:6px;border:1px solid var(--border)}
+.tl-bar{flex:1;height:8px;background:var(--bg);border-radius:3px;overflow:hidden;border:1px solid var(--border);position:relative}
+.tl-ghost{position:absolute;top:0;height:100%;border-radius:3px;opacity:.2}
+.tl-fill{position:absolute;top:0;height:100%;border-radius:3px;transition:all .2s}
+.tl-lbl{font-size:9px;color:var(--muted);font-family:monospace;white-space:nowrap}
+.modal-foot{display:flex;gap:8px;justify-content:flex-end;padding:11px 18px;border-top:1px solid var(--border);background:var(--bg3)}
+.btn-save{background:var(--navy);color:#fff;border:none;border-radius:6px;padding:8px 20px;font-size:12px;cursor:pointer;font-weight:600;transition:.15s}
+.btn-save:hover{background:var(--navy2)}
+.btn-cancel{background:transparent;border:1px solid var(--border2);color:var(--dim);border-radius:6px;padding:8px 14px;font-size:12px;cursor:pointer}
+.btn-cancel:hover{background:var(--bg3)}
+.btn-del{background:var(--red-l);border:1px solid rgba(163,45,45,.2);color:var(--red);border-radius:6px;padding:8px 13px;font-size:12px;cursor:pointer;margin-right:auto}
+.btn-del:hover{background:rgba(163,45,45,.15)}
+
+.toast{position:fixed;bottom:22px;right:22px;background:var(--navy);color:rgba(255,255,255,.9);padding:10px 16px;border-radius:8px;font-size:11.5px;font-family:monospace;z-index:9999;opacity:0;transform:translateY(8px);transition:all .3s;pointer-events:none;max-width:320px;line-height:1.5;box-shadow:0 4px 16px rgba(0,0,0,.2)}
+.toast.show{opacity:1;transform:translateY(0)}
+#tooltip{position:fixed;background:var(--navy);color:rgba(255,255,255,.88);border-radius:6px;padding:8px 12px;font-size:10.5px;pointer-events:none;opacity:0;transition:opacity .15s;z-index:9999;max-width:220px;line-height:1.8;font-family:monospace}
+
+@media(max-width:700px){
+  .kpi-row{grid-template-columns:repeat(3,1fr)}
+  .release-strip{grid-template-columns:1fr}
+  .tracker-grid,.hours-grid,.ui-grid{grid-template-columns:1fr}
+  .g-hdr,.g-row{grid-template-columns:160px 70px 1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <div class="tb-name">◈ Servicia · Aseguramiento Contable · Project Tracker</div>
+    <div class="tb-sub">AUTO-SCHEDULE · RELEASES FIJOS · BATIA PILOTO</div>
+  </div>
+  <div class="tb-r">
+    <span class="tb-clock" id="clock"></span>
+    <button class="btn-top" onclick="addTask()">+ Tarea</button>
+    <button class="btn-top" onclick="resetState()">↺ Reset</button>
+    <button class="btn-top accent" onclick="exportHTML()">⬇ Exportar</button>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="release-strip" id="release-strip"></div>
+
+  <div class="kpi-row">
+    <div class="kpi kpi-a">
+      <div class="kpi-lbl">// Progreso</div>
+      <div class="kpi-val kv-b" id="k-pct">0%</div>
+      <div class="kpi-sub" id="k-tasks">0 / 0 tareas</div>
+      <div class="prog-outer"><div class="prog-inner" id="main-bar" style="width:0%"></div></div>
+    </div>
+    <div class="kpi kpi-b">
+      <div class="kpi-lbl">// H. Senior</div>
+      <div class="kpi-val kv-g" id="k-hsr">—</div>
+      <div class="kpi-sub">plan original</div>
+      <div class="kpi-delta" id="k-hsr-d"></div>
+    </div>
+    <div class="kpi kpi-c">
+      <div class="kpi-lbl">// H. Junior</div>
+      <div class="kpi-val kv-gold" id="k-hjr">—</div>
+      <div class="kpi-sub">plan original</div>
+      <div class="kpi-delta" id="k-hjr-d"></div>
+    </div>
+    <div class="kpi kpi-d">
+      <div class="kpi-lbl">// MVP estimado</div>
+      <div class="kpi-val kv-n" id="k-mvp">—</div>
+      <div class="kpi-sub">
+        Inicio: <input type="date" id="start-input" style="border:none;background:transparent;font-size:10px;color:var(--muted);cursor:pointer;outline:none" onchange="applyStart()">
+      </div>
+      <div class="kpi-delta" id="k-mvp-d"></div>
+    </div>
+    <div class="kpi kpi-e">
+      <div class="kpi-lbl">// Semanas</div>
+      <div class="kpi-val kv-p" id="k-weeks">—</div>
+      <div class="kpi-sub" id="k-dates">—</div>
+    </div>
+  </div>
+
+  <div class="vel-banner vel-neutral" id="vel-banner">
+    <span class="vel-icon">📊</span>
+    <span class="vel-text" id="vel-text">Sin tareas completadas aún. El delta aparecerá aquí.</span>
+    <span class="vel-delta" id="vel-delta"></span>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('gantt',this)">Gantt</div>
+    <div class="tab" onclick="switchTab('calendar',this)">Calendario</div>
+    <div class="tab" onclick="switchTab('tracker',this)">Avances ✓</div>
+    <div class="tab" onclick="switchTab('hours',this)">Horas</div>
+    <div class="tab" onclick="switchTab('ui',this)">UI · Insumos Externos 📋</div>
+  </div>
+
+  <div id="p-gantt" class="panel active">
+    <div class="gantt-outer">
+      <div class="g-hdr">
+        <div class="gh">Tarea</div>
+        <div class="gh">Rol</div>
+        <div class="gh-weeks" id="g-weeks-hdr"></div>
+      </div>
+      <div id="gantt-body"></div>
+    </div>
+  </div>
+
+  <div id="p-calendar" class="panel">
+    <div class="cal-nav">
+      <button class="btn-nav" onclick="prevMonth()">← anterior</button>
+      <div class="cal-title" id="cal-title"></div>
+      <button class="btn-nav" onclick="nextMonth()">siguiente →</button>
+    </div>
+    <div id="cal-wrap"></div>
+    <div class="cal-legend">
+      <div class="cl-item"><div class="cl-dot" style="background:var(--blue)"></div>Senior</div>
+      <div class="cl-item"><div class="cl-dot" style="background:var(--green)"></div>Junior</div>
+      <div class="cl-item"><div class="cl-dot" style="background:var(--muted)"></div>Completada</div>
+      <div class="cl-item"><div class="cl-dot" style="background:var(--navy)"></div>Milestone</div>
+      <div class="cl-item"><div class="cl-dot" style="background:var(--red)"></div>Festivo</div>
+    </div>
+  </div>
+
+  <div id="p-tracker" class="panel">
+    <div style="font-size:11px;color:var(--muted);margin-bottom:10px">✓ Clic en el checkbox para completar · ✏ para editar · El resto se recorre automáticamente al cerrar</div>
+    <div class="tracker-grid" id="tracker-body"></div>
+  </div>
+
+  <div id="p-hours" class="panel">
+    <div class="hours-grid">
+      <div class="hc"><div class="hc-title" style="color:var(--blue)">Senior</div><div class="hc-meta" id="h-sr-meta"></div><div id="h-sr-bars"></div></div>
+      <div class="hc"><div class="hc-title" style="color:var(--green)">Junior</div><div class="hc-meta" id="h-jr-meta"></div><div id="h-jr-bars"></div></div>
+    </div>
+  </div>
+
+  <!-- ══ UI / INSUMOS EXTERNOS ══ -->
+  <div id="p-ui" class="panel">
+    <div style="background:rgba(13,115,119,.07);border:1px solid rgba(13,115,119,.25);border-radius:var(--r);padding:12px 16px;margin-bottom:16px;font-size:11px;color:var(--teal);line-height:1.7">
+      <strong style="font-size:12px;display:block;margin-bottom:4px">📋 Insumos que UI necesita — pero no genera</strong>
+      La Unidad de Inteligencia <strong>solo programa</strong>: estructuras de datos, interfaces, lógica de presentación y flujos técnicos.
+      Todo lo que aparece aquí es decisión de <strong>Contabilidad, Sistemas, Tesorería o Dirección</strong> y debe estar definido
+      <em>antes</em> de que UI pueda implementarlo. Un ítem bloqueado = tarea de desarrollo detenida.
+    </div>
+
+    <div class="ui-legend">
+      <div class="ui-legend-item"><div class="ui-legend-dot" style="background:var(--gold);border:1.5px solid var(--gold)"></div>Pendiente — en espera</div>
+      <div class="ui-legend-item"><div class="ui-legend-dot" style="background:var(--green);border:1.5px solid var(--green)"></div>Recibido — listo para implementar</div>
+      <div class="ui-legend-item"><div class="ui-legend-dot" style="background:var(--red);border:1.5px solid var(--red)"></div>Falta — bloquea desarrollo</div>
+      <div class="ui-legend-item"><div class="ui-legend-dot" style="background:var(--purple);border:1.5px solid var(--purple)"></div>En definición — en progreso con el área</div>
+    </div>
+
+    <div class="ui-grid">
+
+      <!-- CONTABILIDAD -->
+      <div class="ui-card">
+        <div class="ui-card-head">
+          <h3>Contabilidad</h3>
+          <span class="ui-tag tag-cont">Área Contable</span>
+        </div>
+        <div class="ui-section-hdr">Reglas de negocio que UI debe implementar</div>
+        <div class="ui-item">
+          <div class="ui-status ui-st-pend">?</div>
+          <div class="ui-content">
+            <div class="ui-label">Catálogo de tipos de proveedor y sus checklists</div>
+            <div class="ui-desc">Lista definitiva: Outsourcing / Materiales / Servicios y exactamente qué entregables genera cada uno. UI construye el checklist dinámico con base en esto.</div>
+            <div class="ui-owner"><span class="ui-tag tag-cont">Contabilidad</span> define · <span class="ui-tag tag-sist">UI</span> implementa</div>
+          </div>
+        </div>
+        <div class="ui-item">
+          <div class="ui-status ui-st-pend">?</div>
+          <div class="ui-content">
+            <div class="ui-label">Reglas de validación de CFDI</div>
+            <div class="ui-desc">Qué campos validar (uso, objeto de impuesto, régimen fiscal), qué errores son bloqueantes vs. advertencia, y qué mensaje mostrar al usuario.</div>
+            <div class="ui-owner"><span class="ui-tag tag-cont">Contabilidad</span> define · <span class="ui-tag tag-sist">UI</span> implementa</div>
+          </div>
+        </div>
+        <div class="ui-item">
+          <div class="ui-status ui-st-miss">!</div>
+          <div class="ui-content">
+            <div class="ui-label">Umbrales del semáforo de riesgo</div>
+            <div class="ui-desc">¿Qué porcentaje de CFDIs conciliados es verde / amarillo / rojo? ¿Cuántos días sin opinión SAT activan alerta? UI no puede construir el semáforo sin estos valores.</div>
+            <div class="ui-owner"><span class="ui-tag tag-cont">Contabilidad</span> · <span class="ui-tag tag-dir">Dirección</span></div>
+          </div>
+        </div>
+        <div class="ui-item">
+          <div class="ui-status ui-st-pend">?</div>
+          <div class="ui-content">
+            <div class="ui-label">Formato del Excel de presupuestos SINGA</div>
+            <div class="ui-desc">Columnas exactas, nombre de hojas, formatos de fecha y moneda. UI parsea el archivo — necesita el esquema antes de programar la importación.</div>
+            <div class="ui-owner"><span class="ui-tag tag-cont">Contabilidad</span> entrega ejemplo · <span class="ui-tag tag-sist">UI</span> implementa parser</div>
+          </div>
+        </div>
+        <div class="ui-item">
+          <div class="ui-status ui-st-block">⊘</div>
+          <div class="ui-content">
+            <div class="ui-label">Lógica de conciliación: ¿qué es un "match"?</div>
+            <div class="ui-desc">¿Folio bancario exacto? ¿Monto con tolerancia? ¿Por fecha ± N días? UI implementa el algoritmo — Contabilidad/Sistemas define las reglas de negocio.</div>
+            <div class="ui-owner"><span class="ui-tag tag-cont">Contabilidad</span> · <span class="ui-tag tag-sist">Sistemas</span></div>
+          </div>
+        </div>
+        <div class="ui-note"><strong>Nota para Contabilidad:</strong> Cada regla de negocio no documentada se convierte en una suposición de UI. Las suposiciones generan bugs en producción. Por favor entregar reglas por escrito, con ejemplos.</div>
+      </div>
+
+      <!-- SISTEMAS / BACKEND -->
+      <div class="ui-card">
+        <div class="ui-card-head">
+          <h3>Sistemas / Backend</h3>
+          <span class="ui-tag tag-sist">Área Técnica</span>
+        </div>
+        <div class="ui-section-hdr">Lo que UI necesita de Sistemas — solo accesos, no arquitectura</div>
+        <div class="ui-item">
+          <div class="ui-status ui-st-block">⊘</div>
+          <div class="ui-content">
+            <div class="ui-label">Permisos en las tablas de BD requeridas</div>
+            <div class="ui-desc">UI define qué tablas necesita (folios, traspasos, proveedores, cuentas, entregables, usuarios) y Sistemas otorga los permisos de lectura/escritura correspondientes.</div>
+            <div class="ui-owner"><span class="ui-tag tag-sist">UI</span> solicita · <span class="ui-tag tag-sist">Sistemas</span> otorga acceso</div>
+          </div>
+        </div>
+        <div class="ui-item">
+          <div class="ui-status ui-st-block">⊘</div>
+          <div class="ui-content">
+            <div class="ui-label">Credenciales de acceso a APIs existentes</div>
+            <div class="ui-desc">Si hay APIs ya levantadas en el stack, UI necesita las credenciales para consumirlas. UI decide cómo integrarlas — Sistemas solo proporciona el acceso.</div>
+            <div class="ui-owner"><span class="ui-tag tag-sist">UI</span> solicita · <span class="ui-tag tag-sist">Sistemas</span> entrega credenciales</div>
+          </div>
+        </div>
+        <div class="ui-item">
+          <div class="ui-status ui-st-pend">?</div>
+          <div class="ui-content">
+            <div class="ui-label">Acceso al ambiente de staging</div>
+            <div class="ui-desc">URL y credenciales del ambiente de pruebas. UI gestiona el deploy y la configuración — Sistemas solo provisiona el ambiente.</div>
+            <div class="ui-owner"><span class="ui-tag tag-sist">Sistemas</span> provisiona ambiente · <span class="ui-tag tag-sist">UI</span> gestiona todo lo demás</div>
+          </div>
+        </div>
+        <div class="ui-note"><strong>Nota:</strong> Arquitectura, lógica de negocio, integraciones y decisiones técnicas son responsabilidad de UI. Sistemas únicamente gestiona permisos de acceso a infraestructura existente.</div>
+      </div>
+
+      <!-- TESORERÍA -->
+      <div class="ui-card">
+        <div class="ui-card-head">
+          <h3>Tesorería</h3>
+          <span class="ui-tag tag-tes">Área Financiera</span>
+        </div>
+        <div class="ui-section-hdr">Flujos y reglas de operación bancaria</div>
+        <div class="ui-item">
+          <div class="ui-status ui-st-pend">?</div>
+          <div class="ui-content">
+            <div class="ui-label">Flujo de autorización de cuentas bancarias</div>
+            <div class="ui-desc">¿Quién autoriza, cuántas firmas se necesitan, qué pasa si el director está fuera? UI construye el flujo de aprobación — Tesorería/Dirección define los pasos.</div>
+            <div class="ui-owner"><span class="ui-tag tag-tes">Tesorería</span> · <span class="ui-tag tag-dir">Dirección</span></div>
+          </div>
+        </div>
+        <div class="ui-item">
+          <div class="ui-status ui-st-pend">?</div>
+          <div class="ui-content">
+            <div class="ui-label">Catálogo de bancos soportados y formatos PDF</div>
+            <div class="ui-desc">Banorte, BBVA, Santander, HSBC, Banamex — ¿cuáles son prioritarios para el piloto? El módulo de IA parsea PDFs distintos según el banco.</div>
+            <div class="ui-owner"><span class="ui-tag tag-tes">Tesorería</span> confirma prioridad · <span class="ui-tag tag-sist">Sistemas</span> implementa parsers</div>
+          </div>
+        </div>
+        <div class="ui-item">
+          <div class="ui-status ui-st-block">⊘</div>
+          <div class="ui-content">
+            <div class="ui-label">Ejemplos reales de estados de cuenta (anonimizados)</div>
+            <div class="ui-desc">Sin PDFs de prueba, UI no puede desarrollar ni validar el módulo de conciliación IA. Se necesitan al menos 2 meses de estados de cuenta de Banorte y BBVA.</div>
+            <div class="ui-owner"><span class="ui-tag tag-tes">Tesorería</span> entrega · <span class="ui-tag tag-sist">UI</span> + <span class="ui-tag tag-sist">Sistemas</span> usan</div>
+          </div>
+        </div>
+        <div class="ui-item">
+          <div class="ui-status ui-st-pend">?</div>
+          <div class="ui-content">
+            <div class="ui-label">Reglas de alertas de monto</div>
+            <div class="ui-desc">¿Qué tolerancia porcentual entre el depósito y el presupuesto SINGA es aceptable antes de alertar? ¿0%? ¿5%? ¿Depende del tipo de proveedor? UI implementa la regla.</div>
+            <div class="ui-owner"><span class="ui-tag tag-tes">Tesorería</span> · <span class="ui-tag tag-cont">Contabilidad</span></div>
+          </div>
+        </div>
+        <div class="ui-note"><strong>Nota para Tesorería:</strong> Los datos bancarios son insumos críticos para el piloto. Sin estados de cuenta reales (aunque sean anonimizados), el módulo de Auditoría IA no se puede calibrar ni validar antes del lanzamiento.</div>
+      </div>
+
+      <!-- DIRECCIÓN -->
+      <div class="ui-card">
+        <div class="ui-card-head">
+          <h3>Dirección General</h3>
+          <span class="ui-tag tag-dir">Decisiones estratégicas</span>
+        </div>
+        <div class="ui-section-hdr">Decisiones que solo Dirección puede tomar</div>
+        <div class="ui-item">
+          <div class="ui-status ui-st-miss">!</div>
+          <div class="ui-content">
+            <div class="ui-label">Alcance del piloto Batia</div>
+            <div class="ui-desc">¿Cuántos proveedores activos en el piloto? ¿Cuántos folios promedio por mes? ¿Cuáles son los 3 casos de uso prioritarios a validar? Esto define qué construye UI primero.</div>
+            <div class="ui-owner"><span class="ui-tag tag-dir">Dirección</span> decide · <span class="ui-tag tag-sist">UI</span> prioriza</div>
+          </div>
+        </div>
+        <div class="ui-item">
+          <div class="ui-status ui-st-pend">?</div>
+          <div class="ui-content">
+            <div class="ui-label">Usuarios del piloto y sus roles</div>
+            <div class="ui-desc">Nombres y roles de las personas que usarán la plataforma en Batia: quién es Tesorería, quién es Contabilidad, quién es el auditor. UI crea las cuentas y configura permisos.</div>
+            <div class="ui-owner"><span class="ui-tag tag-dir">Dirección</span> confirma · <span class="ui-tag tag-sist">UI</span> + <span class="ui-tag tag-sist">Sistemas</span></div>
+          </div>
+        </div>
+        <div class="ui-item">
+          <div class="ui-status ui-st-pend">?</div>
+          <div class="ui-content">
+            <div class="ui-label">KPIs por persona — definición de metas</div>
+            <div class="ui-desc">Valores exactos de las metas (ej. "85 de score", "90% en plazo"). UI construye los módulos de KPI con base en los valores que Dirección establezca.</div>
+            <div class="ui-owner"><span class="ui-tag tag-dir">Dirección</span> define metas · <span class="ui-tag tag-sist">UI</span> implementa módulo</div>
+          </div>
+        </div>
+        <div class="ui-item">
+          <div class="ui-status ui-st-pend">?</div>
+          <div class="ui-content">
+            <div class="ui-label">Contenido del reporte mensual para Dirección</div>
+            <div class="ui-desc">¿Qué datos quiere ver Dirección en la vista ejecutiva? ¿Qué orden, qué gráficas, qué alertas son prioritarias? UI diseña la vista — Dirección define qué mostrar.</div>
+            <div class="ui-owner"><span class="ui-tag tag-dir">Dirección</span> define · <span class="ui-tag tag-sist">UI</span> diseña e implementa</div>
+          </div>
+        </div>
+        <div class="ui-item">
+          <div class="ui-status ui-st-block">⊘</div>
+          <div class="ui-content">
+            <div class="ui-label">Criterios de aceptación del piloto</div>
+            <div class="ui-desc">¿Qué tiene que funcionar para que Dirección apruebe el paso de piloto a producción? Sin criterios claros no hay Go/No-Go posible.</div>
+            <div class="ui-owner"><span class="ui-tag tag-dir">Dirección</span> define antes del v0.1</div>
+          </div>
+        </div>
+        <div class="ui-note"><strong>Nota para Dirección:</strong> Los ítems marcados con ⊘ bloquean tareas de desarrollo activas. Entre más pronto se definan, menos retrasos habrá en el Gantt.</div>
+      </div>
+
+      <!-- REGLAS ABSOLUTAS — full width -->
+      <div class="ui-card ui-full">
+        <div class="ui-card-head">
+          <h3>Reglas absolutas del sistema — Sección D del documento operativo</h3>
+          <span class="ui-tag tag-sist">UI implementa · No decide</span>
+        </div>
+        <div class="ui-section-hdr">Estas reglas están definidas por el documento operativo. UI las implementa como restricciones duras en la plataforma.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+          <div style="padding:12px 16px;border-right:1px solid var(--border)">
+            <div class="rule-item">Ningún folio puede registrarse sin número SINGA. Campo obligatorio — no hay bypass.</div>
+            <div class="rule-item">Ningún traspaso a cuenta no autorizada por Dirección. Lista blanca en BD — UI bloquea el formulario si la cuenta no existe.</div>
+            <div class="rule-item">No se puede pagar sin Opinión SAT vigente cargada. El botón de traspaso permanece bloqueado hasta que Contabilidad suba el documento.</div>
+            <div class="rule-item">No se deduce gasto sin materialización completa. El folio no puede marcarse "Cerrado" hasta que todos los entregables estén al 100%.</div>
+          </div>
+          <div style="padding:12px 16px">
+            <div class="rule-item">Todo debe estar conciliado: Banco ↔ CFDI ↔ Contabilidad ↔ Folio SINGA. El semáforo refleja este estado en tiempo real.</div>
+            <div class="rule-item">Diferencia depósito vs. presupuesto SINGA requiere autorización escrita de Dirección. UI genera alerta y bloquea el cierre hasta recibir confirmación.</div>
+            <div class="rule-item">Alertas de IA deben resolverse en máximo 5 días hábiles. La plataforma genera recordatorios y escala si no se documenta resolución.</div>
+            <div class="rule-item">El flujo de 8 pasos (Sección C) es secuencial. Ningún paso puede saltarse — UI implementa bloqueos de estado en cada transición.</div>
+          </div>
+        </div>
+        <div class="ui-note" style="margin-top:0">
+          <strong>Para UI:</strong> Estas reglas no son opcionales ni configurables. Son restricciones de negocio con implicaciones fiscales. Cualquier duda sobre cómo implementarlas técnicamente debe resolverse con Sistemas y Contabilidad <em>antes</em> de codificar.
+        </div>
+      </div>
+
+    </div><!-- /ui-grid -->
+
+    <!-- REUNIONES -->
+    <div style="margin-top:20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:2px">Reuniones de coordinación con otras áreas</div>
+          <div style="font-size:10px;color:var(--muted)">Responsable: Senior UI · Agendar antes de que cada insumo sea necesario en el Gantt</div>
+        </div>
+        <span class="ui-tag tag-sist" style="font-size:10px;padding:3px 10px" id="mtg-counter">0 / 0 completadas</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px" id="mtg-grid"></div>
+    </div>
+
+  </div><!-- /p-ui -->
+
+</div><!-- /container -->
+
+<!-- MODAL -->
+<div class="overlay" id="overlay" onclick="overlayClick(event)">
+<div class="modal">
+  <div class="modal-head">
+    <div class="modal-title" id="modal-title">Editar tarea</div>
+    <span class="modal-close" onclick="closeModal()">×</span>
+  </div>
+  <div class="modal-body">
+    <div class="msec">Información</div>
+    <div class="fg">
+      <div class="f-full"><div class="fl">Nombre</div><input class="fi" id="f-name" type="text"></div>
+      <div><div class="fl">Rol</div><select class="fi" id="f-who" onchange="previewBar()"><option value="sr">Senior</option><option value="jr">Junior</option><option value="both">Ambos</option></select></div>
+      <div><div class="fl">Fase</div><select class="fi" id="f-phase"></select></div>
+    </div>
+    <div class="msec">Posición en el Gantt</div>
+    <div class="fg">
+      <div><div class="fl">Inicio (semanas)</div><div class="range-row"><input class="fi" type="range" id="f-s" min="0" max="9.75" step="0.25" oninput="previewBar()"><span class="rv" id="rv-s">0</span></div></div>
+      <div><div class="fl">Fin (semanas)</div><div class="range-row"><input class="fi" type="range" id="f-e" min="0.25" max="10" step="0.25" oninput="previewBar()"><span class="rv" id="rv-e">1</span></div></div>
+    </div>
+    <div class="tl-preview">
+      <span class="tl-lbl" id="tl-s">S1</span>
+      <div class="tl-bar"><div class="tl-ghost" id="tl-ghost"></div><div class="tl-fill" id="tl-fill"></div></div>
+      <span class="tl-lbl" id="tl-e">S10</span>
+    </div>
+    <div class="msec">Horas</div>
+    <div class="fg">
+      <div><div class="fl">H. Senior (plan)</div><div class="range-row"><input class="fi" type="range" id="f-hsr" min="0" max="80" step="2" oninput="document.getElementById('rv-hsr').textContent=this.value+'h';updDelta()"><span class="rv" id="rv-hsr">0h</span></div></div>
+      <div><div class="fl">H. Junior (plan)</div><div class="range-row"><input class="fi" type="range" id="f-hjr" min="0" max="120" step="2" oninput="document.getElementById('rv-hjr').textContent=this.value+'h';updDelta()"><span class="rv" id="rv-hjr">0h</span></div></div>
+    </div>
+    <div class="msec">Cierre real</div>
+    <div class="comp-box off" id="comp-box">
+      <div class="fg">
+        <div><div class="fl">¿Completada?</div><select class="fi" id="f-done" onchange="toggleComp()"><option value="0">No — en progreso</option><option value="1">Sí — completada</option></select></div>
+        <div id="fw-date"><div class="fl">Fecha real de cierre</div><input class="fi" type="date" id="f-closedate"></div>
+        <div id="fw-hsr"><div class="fl">H. Senior reales</div><div class="range-row"><input class="fi" type="range" id="f-hsr-r" min="0" max="80" step="1" oninput="document.getElementById('rv-hsr-r').textContent=this.value+'h';updDelta()"><span class="rv" id="rv-hsr-r">0h</span></div></div>
+        <div id="fw-hjr"><div class="fl">H. Junior reales</div><div class="range-row"><input class="fi" type="range" id="f-hjr-r" min="0" max="120" step="1" oninput="document.getElementById('rv-hjr-r').textContent=this.value+'h';updDelta()"><span class="rv" id="rv-hjr-r">0h</span></div></div>
+      </div>
+      <div class="delta-preview" id="delta-preview" style="display:none">
+        <span class="dp-lbl" id="dp-lbl">Delta</span>
+        <span class="dp-val" id="dp-val">—</span>
+      </div>
+    </div>
+    <div class="msec" style="margin-top:14px">Notas</div>
+    <textarea class="fi" id="f-tip" placeholder="Notas / tooltip del Gantt..."></textarea>
+  </div>
+  <div class="modal-foot">
+    <button class="btn-del" id="btn-del" onclick="deleteTask()">🗑 Eliminar</button>
+    <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+    <button class="btn-save" onclick="saveTask()">Guardar y aplicar</button>
+  </div>
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div id="tooltip"></div>
+
+<script>
+// ══ RELEASES ══
+const REL_DEF = [
+  { id:'r0', label:'v0.1 · Piloto Batia — Validación interna', short:'v0.1', color:'#7C3AED',
+    fixedDate:'2026-05-09',
+    desc:'Plataforma en staging con folios SINGA, trazabilidad bancaria y checklist dinámico operativos. Equipo Batia valida flujos.',
+    criteria:['Folios SINGA y trazabilidad bancaria operativos','Checklists dinámicos por tipo de proveedor','Dashboard + semáforo de riesgo básico','Feedback escrito del equipo Batia'],
+    audience:'Equipo Batia + Dirección',
+    gates:['t0','t1','t2','t3','t4','t5','v01a','v01b','v01c'] },
+  { id:'r1', label:'v0.2 · Beta — Auditoría IA + KPIs', short:'v0.2', color:'#0369A1',
+    fixedDate:'2026-05-30',
+    desc:'Módulo de conciliación IA activo. KPIs por persona configurados. Cierre mensual con hitos.',
+    criteria:['Conciliación IA con PDFs bancarios real','KPIs individuales por área','Cierre mensual con timeline de hitos','Lista de ajustes para MVP'],
+    audience:'Batia · UI · Contabilidad · Tesorería',
+    gates:['t6','t7','t8','t9','t10','v02a','v02b','v02c'] },
+  { id:'r2', label:'MVP · Producción · Batia completo', short:'MVP', color:'#15803D',
+    fixedDate:'2026-06-13',
+    desc:'Deploy en producción. Reporte de Dirección, auditoría completa, log de acciones. Listo para siguiente empresa del grupo.',
+    criteria:['Todos los módulos operativos en producción','Reporte mensual para Dirección automático','Log de auditoría completo','Protocolo de onboarding para siguiente empresa'],
+    audience:'Grupo completo · Dirección General',
+    gates:['t11','t12','t13','mvp1','mvp2'] },
+];
+
+function loadReleases(){
+  const sv=JSON.parse(localStorage.getItem('srv3_rels')||'null');
+  return REL_DEF.map(r=>({...r,fixedDate:sv&&sv[r.id]?sv[r.id]:r.fixedDate}));
+}
+function saveReleases(){localStorage.setItem('srv3_rels',JSON.stringify(Object.fromEntries(RELS.map(r=>[r.id,r.fixedDate]))));}
+let RELS=loadReleases();
+
+// ══ DATA ══
+const DEFAULT={
+  start:'2026-03-31',
+  phases:[
+    'Setup · Infraestructura y auth',
+    'Folios SINGA y trazabilidad bancaria',
+    'Entregables y checklists dinámicos',
+    'Auditoría IA · Conciliación bancaria',
+    'KPIs del personal · Cierre mensual',
+    'Reporte Dirección · Log de auditoría',
+    '🔬 v0.1 Validación interna Batia',
+    '🧪 v0.2 Beta cerrada',
+    '🚀 MVP · Producción',
+  ],
+  tasks:[
+    // F1 Setup
+    {id:'t0',phase:0,name:'Arquitectura, BD schema, CI/CD, auth JWT',who:'sr',s:0,e:1.5,hsr:20,hjr:8,done:false,closedDate:null,hsrReal:null,hjrReal:null,tip:'Senior: arquitectura, esquema BD (folios, traspasos, entregables, proveedores, cuentas, usuarios).\nJunior: setup entorno, pipelines, seeders.'},
+    {id:'t1',phase:0,name:'Sistema de roles y permisos (Dirección / UI / Contabilidad / Tesorería / Auditor)',who:'sr',s:0.5,e:2,hsr:12,hjr:8,done:false,closedDate:null,hsrReal:null,hjrReal:null,tip:'Senior: middleware de permisos, matriz de roles.\nJunior: guards en frontend, navegación condicional.'},
+    {id:'t2',phase:0,name:'Shell de la app + navegación por empresa (Batia)',who:'jr',s:0.5,e:2,hsr:0,hjr:24,done:false,closedDate:null,hsrReal:null,hjrReal:null,tip:'Junior: sidebar, topbar, routing por empresa, layout base.'},
+    // F2 Folios y trazabilidad
+    {id:'t3',phase:1,name:'Registro de folio SINGA · formulario y validaciones',who:'both',s:2,e:3.5,hsr:8,hjr:24,done:false,closedDate:null,hsrReal:null,hjrReal:null,tip:'Senior: lógica de validación contra BD de proveedores autorizados.\nJunior: formulario, flujo de creación.'},
+    {id:'t4',phase:1,name:'Trazabilidad bancaria · registro de traspasos',who:'both',s:2,e:3.5,hsr:8,hjr:28,done:false,closedDate:null,hsrReal:null,hjrReal:null,tip:'Senior: lógica de lista blanca de cuentas autorizadas (bloqueo si no autorizada).\nJunior: formulario de traspaso, tabla de traspasos, estados.'},
+    {id:'t5',phase:1,name:'Catálogo de cuentas bancarias autorizadas + flujo de autorización Dirección',who:'both',s:2.5,e:4,hsr:6,hjr:16,done:false,closedDate:null,hsrReal:null,hjrReal:null,tip:'Requiere insumo de Dirección: flujo de aprobación de cuentas.\nJunior: UI del catálogo y formulario de alta.\nSenior: flujo de autorización y audit trail.'},
+    // F3 Entregables
+    {id:'t6',phase:2,name:'Motor de checklists dinámicos por tipo de proveedor',who:'sr',s:4,e:5.5,hsr:16,hjr:8,done:false,closedDate:null,hsrReal:null,hjrReal:null,tip:'Requiere insumo de Contabilidad: catálogo definitivo de entregables por tipo.\nSenior: motor de reglas, generación dinámica.\nJunior: componente de checklist, upload de documentos.'},
+    {id:'t7',phase:2,name:'Subida de documentos + vinculación CFDI a folio',who:'jr',s:4.2,e:5.8,hsr:4,hjr:32,done:false,closedDate:null,hsrReal:null,hjrReal:null,tip:'Junior: upload de archivos (PDF, XML, imágenes), vinculación a folio SINGA, validación básica de CFDI.'},
+    {id:'t8',phase:2,name:'Validación de Opinión SAT · bloqueo de traspaso',who:'both',s:4.5,e:6,hsr:8,hjr:16,done:false,closedDate:null,hsrReal:null,hjrReal:null,tip:'Regla crítica: no se puede registrar traspaso sin Opinión SAT vigente.\nSenior: lógica de bloqueo y alertas de vencimiento.\nJunior: UI de estado SAT por proveedor.'},
+    // F4 IA
+    {id:'t9',phase:3,name:'Parser PDF · estados de cuenta bancarios (Banorte, BBVA)',who:'sr',s:6,e:7.5,hsr:20,hjr:8,done:false,closedDate:null,hsrReal:null,hjrReal:null,tip:'Requiere insumo de Tesorería: PDFs de estados de cuenta reales (anonimizados).\nSenior: parser por banco, extracción de movimientos.\nJunior: UI de subida y vista previa del resultado.'},
+    {id:'t10',phase:3,name:'Motor de conciliación IA · cruce folio SINGA vs. banco',who:'sr',s:6.5,e:8,hsr:20,hjr:12,done:false,closedDate:null,hsrReal:null,hjrReal:null,tip:'Requiere insumo de Contabilidad/Sistemas: reglas de "match" (folio exacto, tolerancia de monto, etc).\nSenior: algoritmo de conciliación, generación de alertas.\nJunior: tabla de resultados, badges de estado.'},
+    {id:'ta',phase:3,name:'Semáforo de riesgo · Dashboard Dirección',who:'both',s:7,e:8,hsr:8,hjr:16,done:false,closedDate:null,hsrReal:null,hjrReal:null,tip:'Requiere insumo de Contabilidad/Dirección: umbrales del semáforo.\nSenior: lógica de cálculo de indicadores.\nJunior: UI del semáforo, cards de KPI.'},
+    // F5 KPIs
+    {id:'t11',phase:4,name:'Módulo de KPIs del personal · cálculo automático',who:'both',s:8,e:9,hsr:12,hjr:24,done:false,closedDate:null,hsrReal:null,hjrReal:null,tip:'Requiere insumo de Dirección: metas numéricas por KPI y por persona.\nSenior: motor de cálculo, queries de métricas.\nJunior: tabla de KPIs, scores, tendencias.'},
+    {id:'t12',phase:4,name:'Cierre mensual · hitos y timeline por área',who:'jr',s:8,e:9,hsr:4,hjr:28,done:false,closedDate:null,hsrReal:null,hjrReal:null,tip:'Junior: timeline de hitos, ring de avance, alertas de vencimiento, historial de cierres.\nSenior: lógica de estados de hitos y notificaciones.'},
+    // F6 Reporte
+    {id:'t13',phase:5,name:'Reporte mensual Dirección · generación automática',who:'both',s:9,e:10,hsr:10,hjr:20,done:false,closedDate:null,hsrReal:null,hjrReal:null,tip:'Requiere insumo de Dirección: qué mostrar en el reporte ejecutivo.\nSenior: agregaciones de datos, lógica del reporte.\nJunior: layout del reporte, exportación PDF.'},
+    {id:'tb',phase:5,name:'Log de auditoría completo · trazabilidad de acciones',who:'sr',s:9,e:10,hsr:10,hjr:8,done:false,closedDate:null,hsrReal:null,hjrReal:null,tip:'Senior: registro de todas las acciones relevantes (quién, qué, cuándo).\nJunior: UI del log, filtros por usuario y fecha.'},
+    // F7 v0.1
+    {id:'v01a',phase:6,name:'🔬 Deploy staging v0.1 · Batia',who:'sr',s:5.5,e:6,hsr:6,hjr:4,done:false,closedDate:null,hsrReal:null,hjrReal:null,tip:'Senior: deploy en staging, acceso para equipo Batia.\nJunior: smoke tests, datos de prueba.'},
+    {id:'v01b',phase:6,name:'Sesión feedback — UI + Contabilidad + Tesorería Batia',who:'both',s:6,e:6.5,hsr:4,hjr:4,done:false,closedDate:null,hsrReal:null,hjrReal:null,tip:'Revisar: flujo de folios, checklists, trazabilidad bancaria.\nDocumentar: errores, confusiones de UX, faltantes.'},
+    {id:'v01c',phase:6,name:'Ajustes post-feedback v0.1',who:'both',s:6.5,e:7.5,hsr:6,hjr:12,done:false,closedDate:null,hsrReal:null,hjrReal:null,tip:'Solo fixes del feedback. No nuevas features.'},
+    // F8 v0.2
+    {id:'v02a',phase:7,name:'🧪 Deploy staging v0.2 · IA activa',who:'sr',s:8,e:8.5,hsr:6,hjr:4,done:false,closedDate:null,hsrReal:null,hjrReal:null,tip:'Deploy completo con módulo de IA y KPIs.\nDatos reales de Batia (anonimizados) cargados.'},
+    {id:'v02b',phase:7,name:'Beta cerrada — equipo completo Batia',who:'both',s:8.5,e:9,hsr:4,hjr:6,done:false,closedDate:null,hsrReal:null,hjrReal:null,tip:'Equipo completo de Batia prueba la plataforma.\nDocumentar: bugs, alertas IA incorrectas, flujos rotos.'},
+    {id:'v02c',phase:7,name:'Ajustes finales pre-MVP',who:'both',s:9,e:9.5,hsr:4,hjr:10,done:false,closedDate:null,hsrReal:null,hjrReal:null,tip:'Solo fixes críticos. Congelar código para producción.'},
+    // F9 MVP
+    {id:'mvp1',phase:8,name:'🚀 Go/No-Go · criterios de aceptación Dirección',who:'sr',s:9.5,e:10,hsr:4,hjr:2,done:false,closedDate:null,hsrReal:null,hjrReal:null,tip:'Requiere insumo de Dirección: criterios de aceptación definidos antes de v0.1.\nChecklist de criterios. Dirección aprueba el lanzamiento.'},
+    {id:'mvp2',phase:8,name:'🚀 MVP · Deploy producción + protocolo onboarding',who:'both',s:10,e:10.5,hsr:8,hjr:6,done:false,closedDate:null,hsrReal:null,hjrReal:null,tip:'Deploy final. Log de auditoría activo. Manual de usuario.\nProtocolo de onboarding para siguiente empresa del grupo.'},
+  ]
+};
+
+let S=JSON.parse(localStorage.getItem('srv3_state')||'null')||deepCopy(DEFAULT);
+let ORIG=deepCopy(DEFAULT.tasks);
+let editId=null;
+let calMonth=null;
+
+function deepCopy(o){return JSON.parse(JSON.stringify(o));}
+function persist(){localStorage.setItem('srv3_state',JSON.stringify(S));}
+function uid(){return 't'+Date.now()+Math.random().toString(36).slice(2,5);}
+
+function ps(){return new Date(S.start+'T00:00:00');}
+function iso(d){return d.toISOString().slice(0,10);}
+function fmt(d){return d.toLocaleDateString('es-MX',{day:'numeric',month:'short'});}
+function fmtFull(d){return d.toLocaleDateString('es-MX',{day:'numeric',month:'short',year:'numeric'});}
+function totalWeeks(){return Math.ceil(Math.max(...S.tasks.map(t=>t.e),1));}
+
+function wkToDate(wf){
+  const days=Math.round(wf*5);
+  let d=new Date(ps());let n=0;
+  while(n<days){d.setDate(d.getDate()+1);if(d.getDay()>0&&d.getDay()<6)n++;}
+  return d;
+}
+function dateToWk(dateStr){
+  const tgt=new Date(dateStr+'T00:00:00');
+  const st=ps();if(tgt<=st)return 0;
+  let d=new Date(st);let wd=0;
+  while(d<tgt){d.setDate(d.getDate()+1);if(d.getDay()>0&&d.getDay()<6)wd++;}
+  return wd/5;
+}
+function mvpDate(){return wkToDate(totalWeeks());}
+
+// RELEASES
+function buildReleaseStrip(){
+  const today=new Date();today.setHours(0,0,0,0);
+  let html='';
+  RELS.forEach(r=>{
+    const tasks=S.tasks.filter(t=>r.gates.includes(t.id));
+    const done=tasks.filter(t=>t.done).length;
+    const total=tasks.length;
+    const pct=total?Math.round(done/total*100):0;
+    const relD=new Date(r.fixedDate+'T00:00:00');
+    const dLeft=Math.round((relD-today)/864e5);
+    let daysStr=dLeft>0?`<span class="rel-days" style="color:${r.color}">${dLeft}d</span>`:
+                dLeft===0?`<span class="rel-days" style="color:#B91C1C">¡Hoy!</span>`:
+                `<span class="rel-days" style="color:#B91C1C">${Math.abs(dLeft)}d pasado</span>`;
+    html+=`<div class="rel-card" style="background:${r.color}0D;border-color:${r.color}30">
+      <div class="rel-accent" style="background:${r.color}"></div>
+      <div class="rel-top">
+        <span class="rel-name" style="color:${r.color}">${r.label}</span>
+        <input type="date" class="rel-date-input" style="color:${r.color};border-color:${r.color}50;background:${r.color}0D"
+          value="${r.fixedDate}" onchange="updateRelDate('${r.id}',this.value)">
+      </div>
+      <div class="rel-desc" style="color:${r.color}BB">${r.desc}</div>
+      <div class="rel-criteria">${r.criteria.map(c=>`<div class="rel-crit" style="color:${r.color}99">${c}</div>`).join('')}</div>
+      <div class="rel-progress">
+        <div class="rel-progress-bg" style="width:100%;background:${r.color}"></div>
+        <div class="rel-progress-fill" style="width:${pct}%;background:${r.color}"></div>
+      </div>
+      <div class="rel-footer">
+        <span class="rel-pct" style="color:${r.color}">${total?`${pct}% · ${done}/${total} tareas`:'Sin tareas'} · ${r.audience}</span>
+        ${daysStr}
+      </div>
+    </div>`;
+  });
+  document.getElementById('release-strip').innerHTML=html;
+}
+function updateRelDate(rid,val){
+  if(!val)return;
+  const r=RELS.find(x=>x.id===rid);if(!r)return;
+  r.fixedDate=val;saveReleases();buildReleaseStrip();buildCalendar();
+  toast(`📅 ${r.label} → ${fmtFull(new Date(val+'T00:00:00'))}`);
+}
+
+// KPI
+function updateKPI(){
+  const total=S.tasks.length,done=S.tasks.filter(t=>t.done).length;
+  const pct=total?Math.round(done/total*100):0;
+  document.getElementById('k-pct').textContent=pct+'%';
+  document.getElementById('k-tasks').textContent=done+' / '+total+' tareas';
+  document.getElementById('main-bar').style.width=pct+'%';
+  const planSr=S.tasks.reduce((a,t)=>a+t.hsr,0);
+  const planJr=S.tasks.reduce((a,t)=>a+t.hjr,0);
+  const realSr=S.tasks.filter(t=>t.done&&t.hsrReal!=null).reduce((a,t)=>a+t.hsrReal,0);
+  const realJr=S.tasks.filter(t=>t.done&&t.hjrReal!=null).reduce((a,t)=>a+t.hjrReal,0);
+  const doneSr=S.tasks.filter(t=>t.done).reduce((a,t)=>a+t.hsr,0);
+  const doneJr=S.tasks.filter(t=>t.done).reduce((a,t)=>a+t.hjr,0);
+  document.getElementById('k-hsr').textContent=planSr+'h';
+  document.getElementById('k-hjr').textContent=planJr+'h';
+  setDelta('k-hsr-d',doneSr-realSr,done,'h ahorradas','h extra');
+  setDelta('k-hjr-d',doneJr-realJr,done,'h ahorradas','h extra');
+  const tw=totalWeeks();
+  document.getElementById('k-weeks').textContent=tw;
+  document.getElementById('k-dates').textContent=fmt(ps())+' → '+fmt(mvpDate());
+  document.getElementById('k-mvp').textContent=fmt(mvpDate());
+  const origMax=Math.max(...ORIG.map(t=>t.e));
+  const curMax=Math.max(...S.tasks.map(t=>t.e));
+  const mvpDelta=origMax-curMax;
+  setDelta('k-mvp-d',mvpDelta*5,done,'días adelantado','días retrasado',true);
+  updateVelocity(mvpDelta,done,total);
+}
+
+function setDelta(id,val,done,posLbl,negLbl,always=false){
+  const el=document.getElementById(id);
+  if(!always&&done===0){el.textContent='';return;}
+  if(Math.abs(val)<0.1){el.innerHTML='<span class="delta-zero">Sin delta</span>';return;}
+  el.innerHTML=val>0?`<span class="delta-pos">↓ ${Math.abs(val).toFixed(val%1?1:0)} ${posLbl}</span>`:`<span class="delta-neg">↑ ${Math.abs(val).toFixed(val%1?1:0)} ${negLbl}</span>`;
+}
+
+function updateVelocity(mvpDelta,done,total){
+  const bn=document.getElementById('vel-banner'),tx=document.getElementById('vel-text'),dv=document.getElementById('vel-delta');
+  const d=Math.round(Math.abs(mvpDelta)*5);
+  if(done===0){bn.className='vel-banner vel-neutral';tx.textContent='Sin tareas completadas aún.';dv.textContent='';return;}
+  const mv=mvpDate();
+  if(mvpDelta>0.1){bn.className='vel-banner vel-fast';tx.innerHTML=`<strong>${done}/${total} tareas.</strong> El equipo va <strong>adelantado</strong> — MVP estimado: <strong>${fmtFull(mv)}</strong>.`;dv.textContent=`+${d}d`;dv.style.color='var(--green)';}
+  else if(mvpDelta<-0.1){bn.className='vel-banner vel-slow';tx.innerHTML=`<strong>${done}/${total} tareas.</strong> El equipo va <strong>retrasado</strong> — MVP estimado: <strong>${fmtFull(mv)}</strong>.`;dv.textContent=`-${d}d`;dv.style.color='var(--red)';}
+  else{bn.className='vel-banner vel-neutral';tx.innerHTML=`<strong>${done}/${total} tareas.</strong> El proyecto va <strong>en tiempo</strong> — MVP: <strong>${fmtFull(mv)}</strong>.`;dv.textContent='En tiempo';dv.style.color='var(--muted)';}
+}
+
+// GANTT
+function buildGantt(){
+  const tw=totalWeeks();
+  document.getElementById('g-weeks-hdr').innerHTML=Array.from({length:tw},(_,i)=>`<div class="gw">S${i+1}</div>`).join('');
+  let html='';
+  S.phases.forEach((ph,pi)=>{
+    const pt=S.tasks.filter(t=>t.phase===pi);
+    if(!pt.length)return;
+    const meta=`${pt.filter(t=>t.done).length}/${pt.length} done · ${pt.reduce((a,t)=>a+t.hsr,0)}h Sr / ${pt.reduce((a,t)=>a+t.hjr,0)}h Jr`;
+    html+=`<div class="g-phase"><div class="g-phase-inner"><span class="g-phase-lbl">F${pi+1} · ${ph}</span><span class="g-phase-meta">${meta}</span></div></div>`;
+    pt.forEach(t=>{
+      const orig=ORIG.find(o=>o.id===t.id);
+      const l=((t.s/tw)*100).toFixed(2),w=(Math.max(0.25,t.e-t.s)/tw*100).toFixed(2);
+      const bc=t.who==='sr'?'gb-sr':t.who==='jr'?'gb-jr':'gb-both';
+      const bge=t.who==='sr'?'b-sr':t.who==='jr'?'b-jr':'b-both';
+      const bl=t.who==='sr'?'Senior':t.who==='jr'?'Junior':'Ambos';
+      const shifted=orig&&Math.abs(t.s-orig.s)>0.05&&!t.done;
+      let ghost='';
+      if(shifted){
+        const ol=((orig.s/tw)*100).toFixed(2),ow=(Math.max(0.25,orig.e-orig.s)/tw*100).toFixed(2);
+        const gc=t.who==='sr'?'var(--blue)':t.who==='jr'?'var(--green)':'var(--gold)';
+        ghost=`<div class="g-bar-ghost" style="left:${ol}%;width:${ow}%;background:${gc}"></div>`;
+      }
+      const tip=buildTip(t,orig);
+      html+=`<div class="g-row${t.done?' done-row':''}">
+        <div class="g-name-cell">
+          <div class="g-edit-btn" onclick="openModal('${t.id}')">✏</div>
+          <div class="g-name${t.done?' done':''}" title="${t.name}">${t.name}</div>
+        </div>
+        <div class="g-who-cell"><span class="badge ${bge}">${bl}</span></div>
+        <div class="g-chart-cell">
+          <div class="g-chart-inner" style="--tw:${tw}">
+            ${ghost}
+            <div class="g-bar ${bc}${t.done?' g-bar-done':''}${shifted?' g-bar-shifted':''}"
+              style="left:${l}%;width:${w}%"
+              onmouseenter="showTip(event,\`${tip}\`)"
+              onmouseleave="hideTip()"
+              onclick="openModal('${t.id}')"></div>
+          </div>
+        </div>
+      </div>`;
+    });
+  });
+  document.getElementById('gantt-body').innerHTML=html;
+}
+
+function buildTip(t,orig){
+  let s=t.tip||t.name;
+  if(orig&&Math.abs(t.s-orig.s)>0.05){const d=((orig.s-t.s)*5).toFixed(1);s+=`\n\n⚡ Auto-schedule: ${parseFloat(d)>0?'+'+d:d} días vs. plan`;}
+  if(t.done){s+=`\n✅ Cerrada: ${t.closedDate||'—'}`;if(t.hsrReal!=null)s+=`\nH. reales: Sr ${t.hsrReal}h · Jr ${t.hjrReal}h`;}
+  return s.replace(/`/g,"'");
+}
+
+// CALENDAR
+const HOLIDAYS=[{date:'2026-04-03',label:'Viernes Santo'},{date:'2026-05-01',label:'Día del Trabajo'},{date:'2026-05-05',label:'Batalla de Puebla'},{date:'2026-06-01',label:'Día del Niño (festivo MX)'}];
+const MNAMES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+function buildCalendar(){
+  const {y,m}=calMonth;
+  document.getElementById('cal-title').textContent=`${MNAMES[m]} ${y}`;
+  const evMap={};
+  S.tasks.forEach(t=>{
+    const sd=wkToDate(t.s),ed=wkToDate(t.e);
+    let cur=new Date(sd);
+    while(cur<=ed){
+      if(cur.getDay()>0&&cur.getDay()<6){
+        const k=iso(cur);
+        if(!evMap[k])evMap[k]=[];
+        const cls=t.done?'ev-done':t.who==='sr'?'ev-sr':t.who==='jr'?'ev-jr':'ev-both';
+        evMap[k].push({label:(t.done?'✓ ':'')+t.name,cls,id:t.id});
+      }
+      cur.setDate(cur.getDate()+1);
+    }
+  });
+  S.phases.forEach((ph,pi)=>{
+    const pt=S.tasks.filter(t=>t.phase===pi);
+    if(!pt.length)return;
+    const maxE=Math.max(...pt.map(t=>t.e));
+    const k=iso(wkToDate(maxE));
+    if(!evMap[k])evMap[k]=[];
+    evMap[k].unshift({label:`🔖 Fin F${pi+1}`,cls:'ev-milestone'});
+  });
+  RELS.forEach(r=>{
+    const k=r.fixedDate;
+    if(!evMap[k])evMap[k]=[];
+    evMap[k].unshift({label:`📌 ${r.short}`,cls:'ev-release',style:`color:${r.color};border-color:${r.color};background:${r.color}15`});
+  });
+  HOLIDAYS.forEach(h=>{
+    if(!evMap[h.date])evMap[h.date]=[];
+    evMap[h.date].unshift({label:h.label,cls:'ev-holiday'});
+  });
+  const today=iso(new Date());
+  let start=new Date(y,m,1);
+  let dow=start.getDay();
+  start.setDate(start.getDate()-(dow===0?6:dow-1));
+  const DOW=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  let html=`<div class="cal-grid">`;
+  DOW.forEach(d=>html+=`<div class="cal-dow">${d}</div>`);
+  let cur=new Date(start);
+  for(let i=0;i<42;i++){
+    const k=iso(cur);
+    const isOther=cur.getMonth()!==m;
+    const isToday=k===today;
+    const isWE=cur.getDay()===0||cur.getDay()===6;
+    const isHol=HOLIDAYS.some(h=>h.date===k);
+    const evs=evMap[k]||[];
+    let cls='cal-day';
+    if(isOther)cls+=' other-month';
+    if(isToday)cls+=' today';
+    if(isHol)cls+=' holiday';
+    if(isWE&&!isToday)cls+=' weekend';
+    const evHtml=evs.slice(0,3).map(ev=>{
+      const sty=ev.style?` style="${ev.style}"`:'';
+      return `<div class="cal-ev ${ev.cls}"${sty}${ev.id?` onclick="openModal('${ev.id}')"`:''}>${ev.label}</div>`;
+    }).join('');
+    const more=evs.length>3?`<div class="ev-more">+${evs.length-3}</div>`:'';
+    html+=`<div class="${cls}"><div class="cal-num">${cur.getDate()}</div>${evHtml}${more}</div>`;
+    cur.setDate(cur.getDate()+1);
+    if(i>=34&&cur.getMonth()!==m)break;
+  }
+  html+=`</div>`;
+  document.getElementById('cal-wrap').innerHTML=html;
+}
+function prevMonth(){calMonth.m--;if(calMonth.m<0){calMonth.m=11;calMonth.y--;}buildCalendar();}
+function nextMonth(){calMonth.m++;if(calMonth.m>11){calMonth.m=0;calMonth.y++;}buildCalendar();}
+
+// TRACKER
+function buildTracker(){
+  let html='';
+  S.phases.forEach((ph,pi)=>{
+    const pt=S.tasks.filter(t=>t.phase===pi);
+    if(!pt.length)return;
+    const dc=pt.filter(t=>t.done).length;
+    html+=`<div class="tc"><div class="tc-head"><div class="tc-title">F${pi+1} · ${ph}</div><div class="tc-prog">${dc}/${pt.length}</div></div><div>`;
+    pt.forEach(t=>{
+      const bge=t.who==='sr'?'b-sr':t.who==='jr'?'b-jr':'b-both';
+      const bl=t.who==='sr'?'Sr':t.who==='jr'?'Jr':'Sr+Jr';
+      const orig=ORIG.find(o=>o.id===t.id);
+      const shifted=orig&&Math.abs(t.s-orig.s)>0.05&&!t.done;
+      let savedHtml='';
+      if(t.done&&(t.hsrReal!=null||t.hjrReal!=null)){
+        const ds=(t.hsr-(t.hsrReal||0))+(t.hjr-(t.hjrReal||0));
+        if(Math.abs(ds)>0)savedHtml=`<span class="t-saved ${ds>0?'pos':'neg'}">${ds>0?'-'+ds:'+'+Math.abs(ds)}h</span>`;
+      } else if(shifted){
+        const d=((orig.s-t.s)*5).toFixed(1);
+        savedHtml=`<span class="t-saved ${parseFloat(d)>0?'pos':'neg'}">⚡${parseFloat(d)>0?'+'+d:d}d</span>`;
+      }
+      html+=`<div class="task-item">
+        <div class="t-chk ${t.done?'done':''}" onclick="quickToggle('${t.id}')">${t.done?'✓':''}</div>
+        <span class="t-nm ${t.done?'done':''}" onclick="openModal('${t.id}')">${t.name}</span>
+        ${savedHtml}
+        <span class="t-edit" onclick="openModal('${t.id}')">✏</span>
+      </div>`;
+    });
+    html+=`</div></div>`;
+  });
+  document.getElementById('tracker-body').innerHTML=html;
+}
+
+function quickToggle(id){
+  const t=S.tasks.find(t=>t.id===id);
+  if(!t)return;
+  if(!t.done)openModal(id,true);
+  else{t.done=false;t.closedDate=null;t.hsrReal=null;t.hjrReal=null;rebuildSchedule();persist();rebuildAll();toast(`↩ "${t.name}" reabierta`);}
+}
+
+// AUTO-SCHEDULE
+function rebuildSchedule(){
+  S.tasks.forEach(t=>{if(!t.done){const o=ORIG.find(o=>o.id===t.id);if(o){t.s=o.s;t.e=o.e;}}});
+  [...S.tasks.filter(t=>t.done)].sort((a,b)=>a.s-b.s).forEach(dt=>{
+    const orig=ORIG.find(o=>o.id===dt.id);if(!orig)return;
+    const delta=orig.e-dt.e;if(Math.abs(delta)<0.01)return;
+    S.tasks.filter(t=>!t.done&&t.s>=orig.s).forEach(t=>{
+      const dur=t.e-t.s;t.s=Math.max(0,parseFloat((t.s-delta).toFixed(2)));t.e=parseFloat((t.s+dur).toFixed(2));
+    });
+  });
+}
+
+// HOURS
+function buildHours(){
+  const bp=role=>S.phases.map((ph,pi)=>{
+    const pt=S.tasks.filter(t=>t.phase===pi);
+    const plan=pt.reduce((a,t)=>a+(role==='sr'?t.hsr:t.hjr),0);
+    const real=pt.filter(t=>t.done&&(role==='sr'?t.hsrReal:t.hjrReal)!=null).reduce((a,t)=>a+(role==='sr'?t.hsrReal:t.hjrReal),0);
+    return{l:ph,plan,real};
+  }).filter(p=>p.plan>0);
+  const srP=bp('sr'),jrP=bp('jr');
+  const mxS=Math.max(...srP.map(p=>p.plan),1),mxJ=Math.max(...jrP.map(p=>p.plan),1);
+  const tSr=srP.reduce((a,p)=>a+p.plan,0),tJr=jrP.reduce((a,p)=>a+p.plan,0);
+  const rSr=srP.reduce((a,p)=>a+p.real,0),rJr=jrP.reduce((a,p)=>a+p.real,0);
+  document.getElementById('h-sr-meta').textContent=`Plan: ${tSr}h${rSr?` · Real: ${rSr}h`:''}`;
+  document.getElementById('h-jr-meta').textContent=`Plan: ${tJr}h${rJr?` · Real: ${rJr}h`:''}`;
+  const rnd=(id,phases,mx,color)=>{
+    document.getElementById(id).innerHTML=phases.map(p=>`
+      <div class="h-row">
+        <div class="h-lbl">${p.l.substring(0,28)}${p.l.length>28?'…':''}</div>
+        <div class="h-track">
+          <div class="h-plan" style="width:${Math.round(p.plan/mx*100)}%;background:${color}"></div>
+          ${p.real?`<div class="h-real" style="width:${Math.round(p.real/mx*100)}%;background:${color}"></div>`:''}
+        </div>
+        <div class="h-num">${p.real?`<span style="color:var(--green)">${p.real}h</span>`:p.plan+'h'}</div>
+      </div>`).join('');
+  };
+  rnd('h-sr-bars',srP,mxS,'var(--blue)');
+  rnd('h-jr-bars',jrP,mxJ,'var(--green)');
+}
+
+// MODAL
+function openModal(id,forceComplete=false){
+  editId=id;
+  const t=S.tasks.find(t=>t.id===id);
+  const isNew=!t;
+  document.getElementById('modal-title').textContent=isNew?'Nueva tarea':'Editar tarea';
+  document.getElementById('btn-del').style.display=isNew?'none':'block';
+  const psel=document.getElementById('f-phase');
+  psel.innerHTML=S.phases.map((ph,i)=>`<option value="${i}"${t&&t.phase===i?' selected':''}>${ph}</option>`).join('');
+  document.getElementById('f-name').value=t?t.name:'';
+  document.getElementById('f-who').value=t?t.who:'jr';
+  const tw=totalWeeks()||10;
+  const sEl=document.getElementById('f-s'),eEl=document.getElementById('f-e');
+  sEl.max=(tw-0.25).toString();eEl.max=(tw+0.5).toString();
+  sEl.value=t?t.s:0;eEl.value=t?t.e:1;
+  document.getElementById('rv-s').textContent=t?t.s:0;
+  document.getElementById('rv-e').textContent=t?t.e:1;
+  document.getElementById('f-hsr').value=t?t.hsr:8;
+  document.getElementById('rv-hsr').textContent=(t?t.hsr:8)+'h';
+  document.getElementById('f-hjr').value=t?t.hjr:16;
+  document.getElementById('rv-hjr').textContent=(t?t.hjr:16)+'h';
+  document.getElementById('f-tip').value=t?t.tip:'';
+  const isDone=forceComplete||(t&&t.done);
+  document.getElementById('f-done').value=isDone?'1':'0';
+  document.getElementById('f-closedate').value=t&&t.closedDate?t.closedDate:iso(new Date());
+  document.getElementById('f-hsr-r').value=t&&t.hsrReal!=null?t.hsrReal:(t?t.hsr:8);
+  document.getElementById('rv-hsr-r').textContent=(t&&t.hsrReal!=null?t.hsrReal:(t?t.hsr:8))+'h';
+  document.getElementById('f-hjr-r').value=t&&t.hjrReal!=null?t.hjrReal:(t?t.hjr:16);
+  document.getElementById('rv-hjr-r').textContent=(t&&t.hjrReal!=null?t.hjrReal:(t?t.hjr:16))+'h';
+  toggleComp();previewBar();
+  document.getElementById('overlay').classList.add('open');
+}
+
+function toggleComp(){
+  const on=document.getElementById('f-done').value==='1';
+  document.getElementById('comp-box').className='comp-box'+(on?'':' off');
+  ['fw-date','fw-hsr','fw-hjr'].forEach(id=>{
+    const el=document.getElementById(id);el.style.opacity=on?'1':'.35';el.style.pointerEvents=on?'all':'none';
+  });
+  document.getElementById('delta-preview').style.display=on?'flex':'none';
+  if(on)updDelta();
+}
+
+function updDelta(){
+  const on=document.getElementById('f-done').value==='1';if(!on)return;
+  const t=editId&&editId!=='__new__'?S.tasks.find(t=>t.id===editId):null;
+  const orig=t?ORIG.find(o=>o.id===t.id):null;if(!orig)return;
+  const cd=document.getElementById('f-closedate').value;
+  const ae=cd?dateToWk(cd):parseFloat(document.getElementById('f-e').value);
+  const delta=(orig.e-ae)*5;
+  const dp=document.getElementById('dp-val'),dl=document.getElementById('dp-lbl');
+  if(Math.abs(delta)<0.1){dp.textContent='En tiempo ✓';dp.className='dp-val dp-zero';dl.textContent='Sin delta detectado';}
+  else if(delta>0){dp.textContent=`+${delta.toFixed(1)}d adelantado`;dp.className='dp-val dp-pos';dl.textContent='Tareas pendientes se recorrerán';}
+  else{dp.textContent=`${delta.toFixed(1)}d de retraso`;dp.className='dp-val dp-neg';dl.textContent='Tareas pendientes se retrasarán';}
+}
+
+function previewBar(){
+  const s=parseFloat(document.getElementById('f-s').value)||0;
+  const e=parseFloat(document.getElementById('f-e').value)||1;
+  const tw=totalWeeks()||10;
+  document.getElementById('rv-s').textContent=s;
+  document.getElementById('rv-e').textContent=e;
+  const who=document.getElementById('f-who').value;
+  const color=who==='sr'?'var(--blue)':who==='jr'?'var(--green)':'var(--gold)';
+  const fill=document.getElementById('tl-fill');
+  fill.style.left=(s/tw*100)+'%';fill.style.width=Math.max(2,(e-s)/tw*100)+'%';fill.style.background=color;
+  const t=editId&&editId!=='__new__'?S.tasks.find(t=>t.id===editId):null;
+  const orig=t?ORIG.find(o=>o.id===t.id):null;
+  const ghost=document.getElementById('tl-ghost');
+  if(orig){ghost.style.left=(orig.s/tw*100)+'%';ghost.style.width=Math.max(2,(orig.e-orig.s)/tw*100)+'%';ghost.style.background=color;}
+  else ghost.style.width='0';
+  document.getElementById('tl-s').textContent='S'+Math.max(1,Math.ceil(s+0.01));
+  document.getElementById('tl-e').textContent='S'+Math.ceil(e);
+  updDelta();
+}
+
+function saveTask(){
+  const name=document.getElementById('f-name').value.trim();
+  if(!name){toast('⚠ El nombre es obligatorio');return;}
+  const s=parseFloat(document.getElementById('f-s').value);
+  const e=parseFloat(document.getElementById('f-e').value);
+  if(e<=s){toast('⚠ Fin debe ser mayor que inicio');return;}
+  const isDone=document.getElementById('f-done').value==='1';
+  const cd=document.getElementById('f-closedate').value||null;
+  const hsrR=isDone?parseInt(document.getElementById('f-hsr-r').value):null;
+  const hjrR=isDone?parseInt(document.getElementById('f-hjr-r').value):null;
+  const payload={name,who:document.getElementById('f-who').value,phase:parseInt(document.getElementById('f-phase').value),s,e,hsr:parseInt(document.getElementById('f-hsr').value),hjr:parseInt(document.getElementById('f-hjr').value),done:isDone,closedDate:cd,hsrReal:hsrR,hjrReal:hjrR,tip:document.getElementById('f-tip').value};
+  if(editId==='__new__'){
+    const nt={id:uid(),done:false,...payload};S.tasks.push(nt);ORIG.push(deepCopy(nt));toast('✓ Tarea creada');
+  } else {
+    const idx=S.tasks.findIndex(t=>t.id===editId);
+    if(idx>=0){
+      const wasNotDone=!S.tasks[idx].done;S.tasks[idx]={...S.tasks[idx],...payload};
+      if(isDone&&cd)S.tasks[idx].e=parseFloat(dateToWk(cd).toFixed(2));
+      rebuildSchedule();toast(isDone&&wasNotDone?`✅ "${name}" cerrada · Auto-schedule aplicado`:`✓ Cambios guardados`);
+    }
+  }
+  persist();closeModal();rebuildAll();
+}
+
+function deleteTask(){
+  if(!confirm('¿Eliminar esta tarea?'))return;
+  S.tasks=S.tasks.filter(t=>t.id!==editId);ORIG=ORIG.filter(t=>t.id!==editId);
+  rebuildSchedule();persist();closeModal();toast('🗑 Tarea eliminada');rebuildAll();
+}
+
+function addTask(){
+  editId='__new__';
+  const tw=totalWeeks()||10;
+  document.getElementById('modal-title').textContent='Nueva tarea';
+  document.getElementById('btn-del').style.display='none';
+  document.getElementById('f-phase').innerHTML=S.phases.map((ph,i)=>`<option value="${i}">${ph}</option>`).join('');
+  document.getElementById('f-name').value='';document.getElementById('f-who').value='jr';
+  document.getElementById('f-s').max=(tw-0.25).toString();document.getElementById('f-e').max=(tw+0.5).toString();
+  document.getElementById('f-s').value=0;document.getElementById('f-e').value=1;
+  document.getElementById('rv-s').textContent=0;document.getElementById('rv-e').textContent=1;
+  document.getElementById('f-hsr').value=8;document.getElementById('rv-hsr').textContent='8h';
+  document.getElementById('f-hjr').value=16;document.getElementById('rv-hjr').textContent='16h';
+  document.getElementById('f-done').value='0';document.getElementById('f-closedate').value=iso(new Date());
+  document.getElementById('f-hsr-r').value=8;document.getElementById('rv-hsr-r').textContent='8h';
+  document.getElementById('f-hjr-r').value=16;document.getElementById('rv-hjr-r').textContent='16h';
+  document.getElementById('f-tip').value='';
+  toggleComp();previewBar();document.getElementById('overlay').classList.add('open');
+}
+
+function overlayClick(e){if(e.target===document.getElementById('overlay'))closeModal();}
+function closeModal(){document.getElementById('overlay').classList.remove('open');editId=null;}
+
+function applyStart(){
+  S.start=document.getElementById('start-input').value;
+  const d=ps();calMonth={y:d.getFullYear(),m:d.getMonth()};
+  persist();rebuildAll();toast('📅 Fecha de inicio actualizada');
+}
+function switchTab(id,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');document.getElementById('p-'+id).classList.add('active');
+}
+const ttEl=document.getElementById('tooltip');
+function showTip(e,text){ttEl.innerHTML=text.replace(/\n/g,'<br>');ttEl.style.opacity=1;ttEl.style.left=(e.clientX+14)+'px';ttEl.style.top=(e.clientY-12)+'px';}
+function hideTip(){ttEl.style.opacity=0;}
+let _tt;
+function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('show'),3000);}
+function tick(){document.getElementById('clock').textContent=new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});}
+setInterval(tick,1000);tick();
+function resetState(){if(!confirm('¿Reiniciar todo?'))return;S=deepCopy(DEFAULT);ORIG=deepCopy(DEFAULT.tasks);RELS=loadReleases();persist();rebuildAll();toast('↺ Datos reiniciados');}
+function exportHTML(){const b=new Blob([document.documentElement.outerHTML],{type:'text/html'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='Servicia_Tracker_'+iso(new Date())+'.html';a.click();toast('⬇ Exportado');}
+function rebuildAll(){buildReleaseStrip();buildGantt();buildCalendar();buildTracker();buildHours();updateKPI();buildMeetings();}
+
+// ══ MEETINGS ══
+const MEETINGS_KEY='srv3_mtgs';
+const MTG_DEF=[
+  { id:'m0', area:'Dirección', tag:'tag-dir', icon:'🏛',
+    title:'Kick-off general del proyecto',
+    desc:'Presentar la plataforma, el alcance del piloto Batia y los roles de cada área. Confirmar fechas de releases.',
+    before:'Semana 1 · Antes de arrancar desarrollo',
+    insumos:['Alcance del piloto Batia confirmado','Usuarios del piloto y sus roles','Criterios de aceptación del Go/No-Go'] },
+  { id:'m1', area:'Contabilidad', tag:'tag-cont', icon:'📊',
+    title:'Levantamiento de reglas contables',
+    desc:'Definir catálogo de entregables por tipo de proveedor, reglas de validación CFDI, umbrales del semáforo y lógica de conciliación.',
+    before:'Semana 2 · Antes de F3 (checklists)',
+    insumos:['Catálogo definitivo de entregables por tipo','Reglas de validación de CFDI (campos obligatorios)','Umbrales del semáforo de riesgo','Lógica de conciliación: definición de "match"'] },
+  { id:'m2', area:'Contabilidad', tag:'tag-cont', icon:'📊',
+    title:'Revisión formato Excel presupuestos SINGA',
+    desc:'Contabilidad entrega ejemplo real del Excel de presupuestos para que UI implemente el parser.',
+    before:'Semana 2 · Antes de F2 (trazabilidad)',
+    insumos:['Archivo Excel de ejemplo con columnas reales','Confirmación del formato de moneda y fechas'] },
+  { id:'m3', area:'Tesorería', tag:'tag-tes', icon:'🏦',
+    title:'Levantamiento de flujos bancarios',
+    desc:'Definir flujo de autorización de cuentas, catálogo de bancos prioritarios para el piloto y reglas de alerta de monto.',
+    before:'Semana 2 · Antes de F2 (trazabilidad)',
+    insumos:['Flujo de autorización de cuentas bancarias','Bancos prioritarios: Banorte y BBVA confirmados','Tolerancia de monto depósito vs. presupuesto SINGA'] },
+  { id:'m4', area:'Tesorería', tag:'tag-tes', icon:'🏦',
+    title:'Entrega de estados de cuenta PDF (anonimizados)',
+    desc:'Tesorería entrega al menos 2 meses de estados de cuenta de Banorte y BBVA para desarrollo y calibración del módulo IA.',
+    before:'Semana 4 · Antes de F4 (Auditoría IA)',
+    insumos:['PDF Banorte · mínimo 2 meses','PDF BBVA · mínimo 2 meses','Confirmación de que los datos están anonimizados'] },
+  { id:'m5', area:'Sistemas', tag:'tag-sist', icon:'⚙️',
+    title:'Solicitud de accesos a BD y APIs existentes',
+    desc:'UI define qué tablas necesita leer/escribir y qué APIs ya existen en el stack. Sistemas otorga permisos. Todo lo técnico (arquitectura, lógica, integraciones) lo resuelve UI internamente.',
+    before:'Semana 1 · Antes de F1 (setup)',
+    insumos:['Permisos de lectura/escritura en tablas requeridas','Credenciales de acceso a APIs existentes','Ambiente de staging disponible (acceso, no arquitectura)'] },
+  { id:'m6', area:'Dirección', tag:'tag-dir', icon:'🏛',
+    title:'Definición de KPIs y metas por persona',
+    desc:'Dirección establece los valores numéricos de las metas de KPI por área y por persona para que UI pueda implementar el módulo de evaluación.',
+    before:'Semana 6 · Antes de F5 (KPIs)',
+    insumos:['Metas numéricas por KPI (ej. "score 85")','Pesos de cada KPI por área','Personas evaluadas confirmadas con sus roles'] },
+  { id:'m7', area:'Dirección', tag:'tag-dir', icon:'🏛',
+    title:'Diseño del reporte mensual ejecutivo',
+    desc:'Dirección indica qué quiere ver en su vista de reporte mensual: qué datos, en qué orden y qué alertas son prioritarias.',
+    before:'Semana 8 · Antes de F6 (Reporte)',
+    insumos:['Lista de secciones del reporte ejecutivo','Indicadores prioritarios para Dirección','Formato de exportación preferido (PDF / pantalla)'] },
+  { id:'m8', area:'Todas las áreas', tag:'tag-ext', icon:'🔬',
+    title:'Sesión de validación v0.1 · Batia',
+    desc:'Equipo completo de Batia prueba la plataforma en staging. Documentar errores, confusiones de UX y faltantes por área.',
+    before:'Semana 6 · Al tener staging de v0.1 listo',
+    insumos:['Feedback escrito por área (UI / Contabilidad / Tesorería)','Lista priorizada de ajustes antes del v0.2'] },
+  { id:'m9', area:'Todas las áreas', tag:'tag-ext', icon:'🚀',
+    title:'Go/No-Go · Revisión final antes de producción',
+    desc:'Dirección y equipo revisan checklist de criterios de aceptación. Aprobación formal antes del deploy a producción.',
+    before:'Semana 10 · Antes del MVP',
+    insumos:['Checklist de criterios completado','Aprobación escrita de Dirección','Plan de contingencia en caso de No-Go'] },
+];
+
+function loadMeetings(){
+  const sv=JSON.parse(localStorage.getItem(MEETINGS_KEY)||'{}');
+  return MTG_DEF.map(m=>({...m, done: sv[m.id]||false }));
+}
+function saveMeetings(mtgs){
+  localStorage.setItem(MEETINGS_KEY, JSON.stringify(Object.fromEntries(mtgs.map(m=>[m.id,m.done]))));
+}
+let MTGS=loadMeetings();
+
+function toggleMeeting(id){
+  const m=MTGS.find(m=>m.id===id);
+  if(!m)return;
+  m.done=!m.done;
+  saveMeetings(MTGS);
+  buildMeetings();
+}
+
+function buildMeetings(){
+  const grid=document.getElementById('mtg-grid');
+  const counter=document.getElementById('mtg-counter');
+  if(!grid)return;
+  const done=MTGS.filter(m=>m.done).length;
+  counter.textContent=`${done} / ${MTGS.length} completadas`;
+  counter.style.background=done===MTGS.length?'var(--green-l)':'var(--gold-l)';
+  counter.style.color=done===MTGS.length?'var(--green)':'var(--gold)';
+
+  grid.innerHTML=MTGS.map(m=>`
+    <div style="background:var(--bg2);border:1px solid ${m.done?'rgba(59,109,17,.3)':'var(--border)'};border-radius:var(--r2);overflow:hidden;opacity:${m.done?.7:1};transition:all .2s">
+      <div style="padding:10px 14px;border-bottom:1px solid var(--border);background:${m.done?'var(--green-l)':'var(--bg3)'};display:flex;align-items:center;gap:8px">
+        <span style="font-size:15px">${m.icon}</span>
+        <div style="flex:1">
+          <div style="font-size:12px;font-weight:700;color:var(--navy);${m.done?'text-decoration:line-through;color:var(--muted)':''}">${m.title}</div>
+          <div style="font-size:9px;color:var(--muted);margin-top:1px;font-family:monospace">${m.before}</div>
+        </div>
+        <span class="ui-tag ${m.tag}">${m.area}</span>
+        <span class="ui-tag" style="background:var(--blue-l);color:var(--blue)">Sr UI</span>
+      </div>
+      <div style="padding:10px 14px">
+        <div style="font-size:11px;color:var(--dim);margin-bottom:8px;line-height:1.5">${m.desc}</div>
+        <div style="font-size:9px;font-weight:700;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;margin-bottom:5px;font-family:monospace">Insumos a obtener en esta reunión</div>
+        <div style="display:flex;flex-direction:column;gap:3px;margin-bottom:10px">
+          ${m.insumos.map(i=>`<div style="display:flex;align-items:flex-start;gap:6px;font-size:10px;color:var(--dim)"><span style="color:var(--teal);flex-shrink:0;margin-top:1px">→</span>${i}</div>`).join('')}
+        </div>
+        <button onclick="toggleMeeting('${m.id}')"
+          style="width:100%;padding:6px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid;transition:.15s;
+            background:${m.done?'var(--green-l)':'var(--navy)'};
+            color:${m.done?'var(--green)':'#fff'};
+            border-color:${m.done?'rgba(59,109,17,.3)':'var(--navy)'}">
+          ${m.done?'✓ Reunión completada — clic para reabrir':'Marcar como completada'}
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+const _ps=ps();
+calMonth={y:_ps.getFullYear(),m:_ps.getMonth()};
+document.getElementById('start-input').value=S.start;
+rebuildAll();
+</script>
+</body>
+</html>

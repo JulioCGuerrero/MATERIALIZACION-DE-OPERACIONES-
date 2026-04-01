@@ -2,7 +2,7 @@ from flask import render_template, session
 
 from app.auth.routes import login_required
 from app.main import main_bp
-from app.models import AuditLog, Folio
+from app.models import AuditLog, Folio, MonthlyDirectionReport, ReconciliationAlert
 
 
 @main_bp.route("/")
@@ -21,6 +21,8 @@ def dashboard():
     critical_count = Folio.query.filter(Folio.status.in_(["alerta", "critico"]))\
         .count()
     audit_count = AuditLog.query.count()
+    open_alerts = ReconciliationAlert.query.filter_by(status="abierta").count()
+    report_count = MonthlyDirectionReport.query.count()
 
     return render_template(
         "dashboard.html",
@@ -28,4 +30,6 @@ def dashboard():
         closed_count=closed_count,
         critical_count=critical_count,
         audit_count=audit_count,
+        open_alerts=open_alerts,
+        report_count=report_count,
     )
