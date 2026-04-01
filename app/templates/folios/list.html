@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Folios | Servicia{% endblock %}
+{% block content %}
+<section class="table-section">
+  <div class="section-head">
+    <h1>Folios SINGA</h1>
+    {% if session.get('role') in ['ui', 'direccion'] %}
+    <a class="btn" href="{{ url_for('folios.create_folio') }}">Crear folio</a>
+    {% endif %}
+  </div>
+
+  <div class="table-wrap" role="region" aria-label="Listado de folios" tabindex="0">
+    <table>
+      <thead>
+        <tr>
+          <th>Folio</th>
+          <th>Proveedor</th>
+          <th>Tipo</th>
+          <th>Presupuesto</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for folio in folios %}
+        <tr>
+          <td>{{ folio.singa_number }}</td>
+          <td>{{ folio.provider.name }}</td>
+          <td>{{ folio.provider_type }}</td>
+          <td>${{ "{:,.2f}".format(folio.budget_amount) }}</td>
+          <td><span class="status status-{{ folio.status }}">{{ folio.status }}</span></td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="5">No hay folios registrados.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

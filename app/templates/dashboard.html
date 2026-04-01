@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Dashboard | Servicia{% endblock %}
+{% block content %}
+<section class="dashboard-header">
+  <h1>Dashboard Ejecutivo</h1>
+  <p>Vista consolidada del piloto Batia con semáforo inicial de riesgo.</p>
+</section>
+
+<section class="kpi-grid" aria-label="Indicadores clave">
+  <article class="kpi-card">
+    <h2>Folios activos</h2>
+    <p>{{ active_count or 0 }}</p>
+  </article>
+  <article class="kpi-card">
+    <h2>Folios cerrados</h2>
+    <p>{{ closed_count or 0 }}</p>
+  </article>
+  <article class="kpi-card warning">
+    <h2>Folios críticos</h2>
+    <p>{{ critical_count or 0 }}</p>
+  </article>
+  <article class="kpi-card">
+    <h2>Eventos de auditoría</h2>
+    <p>{{ audit_count or 0 }}</p>
+  </article>
+</section>
+{% endblock %}

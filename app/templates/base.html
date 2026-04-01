@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="es-MX">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Servicia{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Saltar al contenido principal</a>
+
+    <header class="topbar" role="banner">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">S</span>
+        <div>
+          <strong>Servicia</strong>
+          <p>Aseguramiento Contable · {{ company_name }}</p>
+        </div>
+      </div>
+      {% if session.get('user_id') %}
+      <div class="session-box" aria-label="Sesión de usuario">
+        <span>{{ session.get('user_name') }} · {{ session.get('role') }}</span>
+        <form action="{{ url_for('auth.logout') }}" method="post">
+          <button class="btn btn-ghost" type="submit">Salir</button>
+        </form>
+      </div>
+      {% endif %}
+    </header>
+
+    {% if session.get('user_id') %}
+    <nav class="nav" aria-label="Navegación principal">
+      <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
+      <a href="{{ url_for('folios.list_folios') }}">Folios SINGA</a>
+      {% if session.get('role') in ['ui', 'direccion'] %}
+      <a href="{{ url_for('folios.create_folio') }}">Nuevo folio</a>
+      {% endif %}
+    </nav>
+    {% endif %}
+
+    <main id="main-content" class="page" tabindex="-1">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <section class="alerts" aria-live="polite" aria-label="Mensajes del sistema">
+            {% for category, message in messages %}
+              <article class="alert alert-{{ category }}">{{ message }}</article>
+            {% endfor %}
+          </section>
+        {% endif %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+    </main>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  </body>
+</html>

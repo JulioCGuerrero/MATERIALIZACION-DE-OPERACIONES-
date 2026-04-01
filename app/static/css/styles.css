@@ -1,0 +1,170 @@
+:root {
+  --bg: #f5f7fb;
+  --surface: #ffffff;
+  --text: #1b2430;
+  --muted: #5a6678;
+  --brand: #0c5c7e;
+  --brand-strong: #094660;
+  --ok: #1f8a50;
+  --warn: #b66a00;
+  --danger: #a8162c;
+  --border: #d8e0ea;
+  --radius: 14px;
+  --shadow: 0 10px 24px rgba(12, 92, 126, 0.1);
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background: radial-gradient(circle at top left, #e8f3ff 0%, var(--bg) 40%);
+  color: var(--text);
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: #fff;
+  color: #000;
+  padding: 0.7rem 1rem;
+}
+.skip-link:focus { left: 1rem; z-index: 1000; }
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem 1.4rem;
+  background: linear-gradient(120deg, var(--brand-strong), var(--brand));
+  color: #fff;
+}
+.brand { display: flex; align-items: center; gap: 0.9rem; }
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  font-weight: 700;
+}
+.brand p { margin: 0; opacity: 0.9; font-size: 0.9rem; }
+
+.session-box {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+}
+
+.nav {
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  padding: 0.8rem 1.2rem;
+  display: flex;
+  gap: 1rem;
+}
+.nav a {
+  text-decoration: none;
+  color: var(--brand-strong);
+  padding: 0.35rem 0.5rem;
+  border-radius: 8px;
+}
+.nav a:focus,
+.nav a:hover { background: #e6f2f8; outline: none; }
+
+.page {
+  max-width: 1060px;
+  margin: 1.2rem auto;
+  padding: 0 1rem 2rem;
+}
+
+.hero, .card, .table-section, .dashboard-header {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.2rem;
+}
+.hero h1 { margin-top: 0; }
+
+.btn {
+  border: none;
+  background: var(--brand);
+  color: #fff;
+  padding: 0.65rem 1rem;
+  border-radius: 10px;
+  text-decoration: none;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn:hover, .btn:focus { background: var(--brand-strong); outline: 2px solid #c6e7f5; }
+.btn-ghost { background: transparent; border: 1px solid #fff; }
+
+.auth-card { max-width: 460px; margin: 0 auto; }
+.form-grid { display: grid; gap: 0.7rem; }
+label { font-weight: 600; }
+input, select {
+  border: 1px solid #aab6c4;
+  border-radius: 10px;
+  padding: 0.65rem;
+  font-size: 1rem;
+}
+input:focus, select:focus {
+  outline: 3px solid #b7e0f1;
+  border-color: var(--brand);
+}
+
+.kpi-grid {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0.8rem;
+}
+.kpi-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem;
+}
+.kpi-card h2 { margin: 0 0 0.3rem; font-size: 1rem; color: var(--muted); }
+.kpi-card p { margin: 0; font-size: 1.8rem; font-weight: 700; }
+.kpi-card.warning p { color: var(--danger); }
+
+.section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+.table-wrap { overflow: auto; margin-top: 1rem; }
+table { width: 100%; border-collapse: collapse; background: #fff; }
+th, td { padding: 0.7rem; border-bottom: 1px solid var(--border); text-align: left; }
+
+.status {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+.status-cerrado { color: var(--ok); background: #dff4e7; }
+.status-alerta, .status-critico { color: var(--danger); background: #fbdce1; }
+.status-en_proceso, .status-pendiente { color: var(--warn); background: #fdecd5; }
+
+.alerts { margin-bottom: 1rem; }
+.alert {
+  border-radius: 10px;
+  padding: 0.75rem;
+  border: 1px solid;
+  margin-bottom: 0.5rem;
+}
+.alert-error { background: #ffe7eb; border-color: #ffc4cd; color: #7e1527; }
+.alert-success { background: #e6f8ec; border-color: #c6edd3; color: #116235; }
+
+@media (max-width: 760px) {
+  .topbar { flex-direction: column; align-items: flex-start; }
+  .session-box { width: 100%; justify-content: space-between; }
+}

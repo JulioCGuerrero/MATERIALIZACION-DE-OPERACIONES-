@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Bienvenido | Servicia{% endblock %}
+{% block content %}
+<section class="hero">
+  <h1>Control contable trazable para auditorías en minutos</h1>
+  <p>
+    Plataforma piloto para Batia: integra UI, Contabilidad, Tesorería y Dirección en un solo flujo confiable.
+  </p>
+  <a class="btn" href="{{ url_for('auth.login') }}">Iniciar sesión</a>
+</section>
+{% endblock %}
