@@ -1,13 +1,17 @@
 ﻿{% extends "base.html" %}
 {% block title %}Traspasos | Servicia{% endblock %}
 {% block content %}
+{# Guia didactica: esta vista esta separada por bloques para facilitar su lectura y mantenimiento. #}
+{# Encabezado funcional de la vista: explica el objetivo y reglas de negocio activas. #}
 <section class="panel">
   <div class="panel-head"><h2>Registro de traspasos SPEI</h2></div>
   <p class="panel-note">Bloqueos activos: SAT vigente, sin EFOS, RFC valido y cuenta autorizada por Direccion.</p>
 </section>
 
+{# Encabezado funcional de la vista: explica el objetivo y reglas de negocio activas. #}
 <section class="panel">
-  <form method="post" class="form-grid">
+  {# Formulario principal: captura datos y los envia por POST al backend para validar y persistir. #}
+<form method="post" class="form-grid">
     <label>Folio SINGA</label>
     <select name="folio_id" required>
       <option value="">Selecciona folio</option>
@@ -44,7 +48,8 @@
 <section class="panel table-panel">
   <div class="panel-head"><h3>Traspasos recientes</h3></div>
   <div class="table-wrap">
-    <table>
+    {# Tabla de salida: muestra informacion ya procesada para consulta operativa. #}
+<table>
       <thead><tr><th>Fecha</th><th>Folio</th><th>SPEI</th><th>Monto</th><th>Direccion</th></tr></thead>
       <tbody>
       {% for item in recent %}
@@ -63,3 +68,4 @@
   </div>
 </section>
 {% endblock %}
+

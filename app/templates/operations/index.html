@@ -1,94 +1,65 @@
 ﻿{% extends "base.html" %}
 {% block title %}Operacion Inteligente | Servicia{% endblock %}
-{% block content %}`r`n{# Home de operacion: accesos directos y seguimiento de modulos #}
+{% block content %}
+{# Home de operacion: accesos directos + monitoreo de modulos #}
 <section class="release-strip">
   <article class="rel-card rel-gold">
     <div class="rel-accent"></div>
-    <div class="rel-top">
-      <h3 class="rel-name">Auditoria Inteligente</h3>
-      <span class="rel-days">{{ open_alerts }} abiertas</span>
-    </div>
+    <div class="rel-top"><h3 class="rel-name">Auditoria inteligente</h3><span class="rel-days">{{ open_alerts }} abiertas</span></div>
     <p class="rel-desc">Cruces banco-CFDI-contabilidad y gestion de alertas en ventana de 5 dias habiles.</p>
-    <div class="rel-progress">
-      <div class="rel-progress-bg"></div>
-      <div class="rel-progress-fill" style="width: {{ 100 - ((high_alerts * 100 // (open_alerts if open_alerts else 1)) if open_alerts else 100) }}%"></div>
-    </div>
-    <div class="rel-footer">
-      <span class="rel-pct">{{ high_alerts }} altas</span>
-      <a class="btn btn-secondary btn-xs" href="{{ url_for('operations.reconciliation') }}">Abrir</a>
-    </div>
+    <div class="rel-progress"><div class="rel-progress-bg"></div><div class="rel-progress-fill" style="width: {{ 100 - ((high_alerts * 100 // (open_alerts if open_alerts else 1)) if open_alerts else 100) }}%"></div></div>
+    <div class="rel-footer"><span class="rel-pct">{{ high_alerts }} altas</span><a class="btn btn-secondary btn-xs" href="{{ url_for('operations.alerts_center') }}">Centro alertas</a></div>
   </article>
 
   <article class="rel-card rel-blue">
     <div class="rel-accent"></div>
-    <div class="rel-top">
-      <h3 class="rel-name">Gobierno Fiscal</h3>
-      <span class="rel-days">SAT/EFOS</span>
-    </div>
-    <p class="rel-desc">Verificacion previa al pago: opinion vigente, EFOS, actividad y RFC de cuenta.</p>
-    <div class="rel-progress">
-      <div class="rel-progress-bg"></div>
-      <div class="rel-progress-fill" style="width: 76%"></div>
-    </div>
-    <div class="rel-footer">
-      <span class="rel-pct">Validacion continua</span>
-      <a class="btn btn-secondary btn-xs" href="{{ url_for('operations.compliance') }}">Abrir</a>
-    </div>
+    <div class="rel-top"><h3 class="rel-name">Gobierno fiscal</h3><span class="rel-days">SAT/EFOS</span></div>
+    <p class="rel-desc">Validacion previa al pago: opinion vigente, EFOS, actividad y RFC de cuenta.</p>
+    <div class="rel-progress"><div class="rel-progress-bg"></div><div class="rel-progress-fill" style="width: 76%"></div></div>
+    <div class="rel-footer"><span class="rel-pct">Validacion continua</span><a class="btn btn-secondary btn-xs" href="{{ url_for('operations.compliance') }}">Abrir</a></div>
   </article>
 
   <article class="rel-card rel-green">
     <div class="rel-accent"></div>
-    <div class="rel-top">
-      <h3 class="rel-name">Direccion Ejecutiva</h3>
-      <span class="rel-days">{{ reports|length }} reportes</span>
-    </div>
+    <div class="rel-top"><h3 class="rel-name">Direccion ejecutiva</h3><span class="rel-days">{{ reports|length }} reportes</span></div>
     <p class="rel-desc">Resumen ejecutivo, semaforo de riesgo y recomendaciones accionables por periodo.</p>
-    <div class="rel-progress">
-      <div class="rel-progress-bg"></div>
-      <div class="rel-progress-fill" style="width: 88%"></div>
-    </div>
-    <div class="rel-footer">
-      <span class="rel-pct">Corte mensual</span>
-      <a class="btn btn-secondary btn-xs" href="{{ url_for('operations.reports') }}">Abrir</a>
-    </div>
+    <div class="rel-progress"><div class="rel-progress-bg"></div><div class="rel-progress-fill" style="width: 88%"></div></div>
+    <div class="rel-footer"><span class="rel-pct">Corte mensual</span><a class="btn btn-secondary btn-xs" href="{{ url_for('operations.reports') }}">Abrir</a></div>
   </article>
 </section>
 
 <section class="kpi-row">
-  <article class="kpi kpi-c">
-    <p class="kpi-lbl">Alertas abiertas</p>
-    <p class="kpi-val kv-gold">{{ open_alerts }}</p>
-  </article>
-  <article class="kpi kpi-d">
-    <p class="kpi-lbl">Alertas altas</p>
-    <p class="kpi-val kv-n">{{ high_alerts }}</p>
-  </article>
-  <article class="kpi kpi-a">
-    <p class="kpi-lbl">Folios activos</p>
-    <p class="kpi-val kv-b">{{ pending_cfdi }}</p>
-  </article>
+  <article class="kpi kpi-c"><p class="kpi-lbl">Alertas abiertas</p><p class="kpi-val kv-gold">{{ open_alerts }}</p></article>
+  <article class="kpi kpi-d"><p class="kpi-lbl">Alertas altas</p><p class="kpi-val kv-n">{{ high_alerts }}</p></article>
+  <article class="kpi kpi-a"><p class="kpi-lbl">Folios activos</p><p class="kpi-val kv-b">{{ pending_cfdi }}</p></article>
 </section>
 
 <section class="tracker-grid">
   <article class="tc">
-    <div class="tc-head">
-      <h3 class="tc-title">Modulo financiero</h3>
-      <span class="tc-prog">CFDI + Traspasos</span>
-    </div>
+    <div class="tc-head"><h3 class="tc-title">Modulo financiero</h3><span class="tc-prog">CFDI + Traspasos</span></div>
     <div class="task-item"><a class="t-nm" href="{{ url_for('operations.transfers') }}">Registrar traspaso SPEI</a></div>
     <div class="task-item"><a class="t-nm" href="{{ url_for('operations.cfdi') }}">Vincular CFDI (XML/PDF)</a></div>
     <div class="task-item"><a class="t-nm" href="{{ url_for('operations.budgets') }}">Cargar presupuesto SINGA</a></div>
   </article>
   <article class="tc">
-    <div class="tc-head">
-      <h3 class="tc-title">Modulo control</h3>
-      <span class="tc-prog">Cumplimiento + Cierre</span>
-    </div>
+    <div class="tc-head"><h3 class="tc-title">Modulo control</h3><span class="tc-prog">Cumplimiento + Cierre</span></div>
     <div class="task-item"><a class="t-nm" href="{{ url_for('operations.compliance') }}">Actualizar SAT/EFOS</a></div>
     <div class="task-item"><a class="t-nm" href="{{ url_for('operations.reconciliation') }}">Correr conciliacion IA</a></div>
     <div class="task-item"><a class="t-nm" href="{{ url_for('operations.reports') }}">Subir reporte mensual</a></div>
     <div class="task-item"><a class="t-nm" href="{{ url_for('operations.acknowledgements') }}">Acuse de conformidad</a></div>
   </article>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <h3>Accesos de control avanzado</h3>
+    <span class="badge badge-blue">Nuevas vistas</span>
+  </div>
+  <div class="quick-links-grid">
+    <a class="btn btn-primary" href="{{ url_for('operations.alerts_center') }}">Centro de alertas</a>
+    <a class="btn btn-secondary" href="{{ url_for('main.global_search') }}">Buscador global</a>
+    <a class="btn btn-secondary" href="{{ url_for('folios.list_folios') }}">Master-detail folios</a>
+  </div>
 </section>
 
 <section class="panel">
@@ -98,11 +69,7 @@
       <thead><tr><th>Periodo</th><th>Fecha</th><th>Responsable</th></tr></thead>
       <tbody>
       {% for report in reports %}
-      <tr>
-        <td>{{ report.period }}</td>
-        <td>{{ report.created_at.strftime('%Y-%m-%d') }}</td>
-        <td>{{ report.creator.full_name if report.creator else 'N/A' }}</td>
-      </tr>
+      <tr><td>{{ report.period }}</td><td>{{ report.created_at.strftime('%Y-%m-%d') }}</td><td>{{ report.creator.full_name if report.creator else 'N/A' }}</td></tr>
       {% else %}
       <tr><td colspan="3">Sin reportes aun.</td></tr>
       {% endfor %}
@@ -110,25 +77,4 @@
     </table>
   </div>
 </section>
-
-<section class="panel">
-  <div class="panel-head"><h3>Acuses firmados</h3></div>
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>Area</th><th>Firmante</th><th>Fecha</th></tr></thead>
-      <tbody>
-      {% for row in signatures %}
-      <tr>
-        <td>{{ row.area }}</td>
-        <td>{{ row.signer_name }}</td>
-        <td>{{ row.signed_at.strftime('%Y-%m-%d %H:%M') }}</td>
-      </tr>
-      {% else %}
-      <tr><td colspan="3">Sin acuses aun.</td></tr>
-      {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</section>
 {% endblock %}
-

@@ -1111,3 +1111,238 @@ td form select {
   }
 }
 
+/* Nuevos bloques visuales: buscador global, master-detail, alert center y expediente 360 */
+.top-search {
+  display: grid;
+  grid-template-columns: minmax(180px, 320px) auto;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.top-search input {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(255, 255, 255, 0.35);
+  color: #102449;
+}
+
+.filters-compact {
+  grid-template-columns: minmax(280px, 1fr) auto;
+}
+
+.search-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(280px, 1fr));
+}
+
+.master-detail-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: 1.3fr 1fr;
+}
+
+.row-selected td {
+  background: rgba(28, 120, 192, 0.18) !important;
+}
+
+.folio-identity-grid {
+  margin-top: 0.3rem;
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(2, minmax(120px, 1fr));
+}
+
+.mini-label {
+  display: block;
+  color: var(--text-dim);
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-family: var(--font-mono);
+}
+
+.workflow-meter {
+  margin-top: 0.65rem;
+}
+
+.workflow-meter-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--paper-300);
+  overflow: hidden;
+}
+
+.workflow-meter-bar span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--sky-500), var(--teal-500));
+}
+
+.workflow-meter p {
+  margin: 0.35rem 0 0;
+  font-size: 0.8rem;
+  color: var(--text-soft);
+}
+
+.workflow-steps {
+  margin-top: 0.62rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.workflow-step {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  padding: 0.42rem 0.55rem;
+}
+
+.workflow-step span {
+  width: 18px;
+  height: 18px;
+  border-radius: 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line-strong);
+  font-size: 0.72rem;
+  color: var(--text-dim);
+}
+
+.workflow-step p {
+  margin: 0;
+  font-size: 0.83rem;
+  color: var(--text-soft);
+}
+
+.workflow-step.done {
+  border-color: rgba(95, 157, 47, 0.4);
+  background: rgba(95, 157, 47, 0.12);
+}
+
+.workflow-step.done span {
+  border-color: rgba(95, 157, 47, 0.55);
+  color: #2a6f0b;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.detail-kpis {
+  margin-top: 0.6rem;
+  display: grid;
+  gap: 0.45rem;
+  grid-template-columns: repeat(2, minmax(120px, 1fr));
+}
+
+.mini-kpi {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.45rem 0.55rem;
+  background: #fff;
+}
+
+.mini-kpi span {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+}
+
+.mini-kpi strong {
+  color: var(--ink-900);
+  font-size: 1.1rem;
+}
+
+.quick-links-grid {
+  margin-top: 0.65rem;
+  display: grid;
+  gap: 0.45rem;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+.detail-mini-tables {
+  margin-top: 0.65rem;
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: 1fr 1fr;
+}
+
+.detail-mini-tables h4 {
+  margin: 0 0 0.3rem;
+  color: var(--ink-900);
+  font-size: 0.86rem;
+}
+
+.detail-mini-tables p {
+  margin: 0 0 0.24rem;
+  color: var(--text-soft);
+  font-size: 0.81rem;
+}
+
+.dashboard-grid-2 {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: 1fr 1fr;
+}
+
+.role-hero {
+  position: relative;
+  overflow: hidden;
+}
+
+.role-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, rgba(28, 120, 192, 0.08), transparent 45%, rgba(15, 141, 143, 0.08));
+  pointer-events: none;
+}
+
+.role-focus-grid {
+  margin-top: 0.65rem;
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.role-track-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: 1fr 1fr;
+}
+
+.role-ui { border-color: rgba(28, 120, 192, 0.3); }
+.role-contabilidad { border-color: rgba(201, 122, 26, 0.34); }
+.role-tesoreria { border-color: rgba(15, 141, 143, 0.34); }
+.role-direccion { border-color: rgba(20, 38, 80, 0.4); }
+
+.dossier-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.split-tables {
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: 1fr 1fr;
+}
+
+@media (max-width: 1020px) {
+  .search-grid,
+  .master-detail-grid,
+  .dashboard-grid-2,
+  .role-track-grid,
+  .split-tables,
+  .detail-mini-tables {
+    grid-template-columns: 1fr;
+  }
+
+  .top-search {
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+}
+

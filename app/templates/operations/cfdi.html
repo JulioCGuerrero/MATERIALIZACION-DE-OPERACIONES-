@@ -1,13 +1,17 @@
 ﻿{% extends "base.html" %}
 {% block title %}CFDI | Servicia{% endblock %}
 {% block content %}
+{# Guia didactica: esta vista esta separada por bloques para facilitar su lectura y mantenimiento. #}
+{# Encabezado funcional de la vista: explica el objetivo y reglas de negocio activas. #}
 <section class="panel">
   <div class="panel-head"><h2>Vinculacion CFDI por folio</h2></div>
   <p class="panel-note">Control mensual de XML/PDF por folio SINGA y validacion de montos.</p>
 </section>
 
+{# Encabezado funcional de la vista: explica el objetivo y reglas de negocio activas. #}
 <section class="panel">
-  <form method="post" class="form-grid" enctype="multipart/form-data">
+  {# Formulario principal: captura datos y los envia por POST al backend para validar y persistir. #}
+<form method="post" class="form-grid" enctype="multipart/form-data">
     <label>Folio</label>
     <select name="folio_id" required>
       <option value="">Selecciona folio</option>
@@ -49,7 +53,8 @@
 <section class="panel table-panel">
   <div class="panel-head"><h3>CFDI recientes</h3></div>
   <div class="table-wrap">
-    <table>
+    {# Tabla de salida: muestra informacion ya procesada para consulta operativa. #}
+<table>
       <thead><tr><th>Fecha</th><th>Folio</th><th>UUID</th><th>Monto</th><th>Estatus</th></tr></thead>
       <tbody>
       {% for row in records %}
@@ -68,3 +73,4 @@
   </div>
 </section>
 {% endblock %}
+

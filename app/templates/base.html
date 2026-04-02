@@ -1,12 +1,14 @@
 ﻿<!doctype html>
 <html lang="es-MX">
   <head>
+    {# Metadatos base reutilizados en toda la plataforma #}
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}Servicia{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
   </head>
   <body class="{% if request.endpoint == 'auth.login' %}auth-view{% endif %}">
+    {# Capa ambiental decorativa #}
     <div class="ambient-layer" aria-hidden="true">
       <span class="orb orb-a"></span>
       <span class="orb orb-b"></span>
@@ -14,6 +16,7 @@
     </div>
     <a class="skip-link" href="#main-content">Saltar al contenido principal</a>
 
+    {# Header principal con branding, sesion y buscador global #}
     <header class="topbar" role="banner">
       <div class="topbar-left">
         <div class="tb-kicker">CONTROL ROOM</div>
@@ -22,6 +25,10 @@
       </div>
       {% if session.get('user_id') %}
       <div class="topbar-right">
+        <form class="top-search" action="{{ url_for('main.global_search') }}" method="get">
+          <input name="q" type="text" placeholder="Buscar folio, UUID, SPEI, proveedor" value="{{ request.args.get('q','') if request.endpoint == 'main.global_search' else '' }}">
+          <button class="btn btn-top" type="submit">Buscar</button>
+        </form>
         <div class="session-box" aria-label="Sesion de usuario">
           <span>{{ session.get('user_name') }} - {{ session.get('role') }}</span>
         </div>
@@ -37,6 +44,7 @@
     </header>
 
     <div class="container">
+      {# Cintillo de identidad y descripcion del sistema #}
       <section class="brand-strip">
         <div>
           <h1>Servicia</h1>
@@ -51,9 +59,11 @@
       </section>
 
       {% if session.get('user_id') %}
+      {# Navegacion principal por modulos #}
       <nav class="tabs" aria-label="Navegacion principal">
         <a class="tab {% if request.endpoint == 'main.dashboard' %}active{% endif %}" href="{{ url_for('main.dashboard') }}">Dashboard</a>
         <a class="tab {% if request.endpoint == 'folios.list_folios' %}active{% endif %}" href="{{ url_for('folios.list_folios') }}">Folios</a>
+        <a class="tab {% if request.endpoint == 'main.global_search' %}active{% endif %}" href="{{ url_for('main.global_search') }}">Buscador</a>
         <a class="tab {% if request.endpoint and request.endpoint.startswith('operations.') %}active{% endif %}" href="{{ url_for('operations.index') }}">Operacion</a>
       </nav>
       {% endif %}

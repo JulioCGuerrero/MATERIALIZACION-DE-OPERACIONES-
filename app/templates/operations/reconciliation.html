@@ -1,13 +1,20 @@
 ﻿{% extends "base.html" %}
 {% block title %}Conciliacion | Servicia{% endblock %}
 {% block content %}
+{# Guia didactica: esta vista esta separada por bloques para facilitar su lectura y mantenimiento. #}
+{# Encabezado funcional de la vista: explica el objetivo y reglas de negocio activas. #}
 <section class="panel">
   <div class="panel-head"><h2>Conciliacion bancaria IA</h2></div>
   <p class="panel-note">Cruza banco vs folio vs CFDI y genera alertas de riesgo automaticas.</p>
+  <div class="quick-links-grid">
+    <a class="btn btn-secondary btn-xs" href="{{ url_for('operations.alerts_center') }}">Ir al centro de alertas</a>
+  </div>
 </section>
 
+{# Encabezado funcional de la vista: explica el objetivo y reglas de negocio activas. #}
 <section class="panel">
-  <form method="post" class="form-grid">
+  {# Formulario principal: captura datos y los envia por POST al backend para validar y persistir. #}
+<form method="post" class="form-grid">
     <label>Periodo (YYYY-MM)</label>
     <input name="period" placeholder="2026-04" required>
 
@@ -42,9 +49,11 @@
   </form>
 </section>
 
+{# Encabezado funcional de la vista: explica el objetivo y reglas de negocio activas. #}
 <section class="panel">
   <div class="panel-head"><h3>Carga automatica desde PDF bancario</h3></div>
-  <form method="post" class="form-grid" enctype="multipart/form-data">
+  {# Formulario principal: captura datos y los envia por POST al backend para validar y persistir. #}
+<form method="post" class="form-grid" enctype="multipart/form-data">
     <input type="hidden" name="action" value="upload_pdf">
     <label>Periodo (YYYY-MM)</label>
     <input name="period" placeholder="2026-04" required>
@@ -59,7 +68,8 @@
 <section class="panel table-panel">
   <div class="panel-head"><h3>Movimientos</h3></div>
   <div class="table-wrap">
-    <table>
+    {# Tabla de salida: muestra informacion ya procesada para consulta operativa. #}
+<table>
       <thead><tr><th>Periodo</th><th>Fecha</th><th>Tipo</th><th>Folio</th><th>Monto</th><th>Conciliado</th></tr></thead>
       <tbody>
       {% for row in movements %}
@@ -82,7 +92,8 @@
 <section class="panel table-panel">
   <div class="panel-head"><h3>Alertas IA</h3></div>
   <div class="table-wrap">
-    <table>
+    {# Tabla de salida: muestra informacion ya procesada para consulta operativa. #}
+<table>
       <thead><tr><th>Fecha</th><th>Tipo</th><th>Severidad</th><th>Estatus</th><th>Folio</th><th>Accion</th></tr></thead>
       <tbody>
       {% for alert in alerts %}
@@ -94,7 +105,8 @@
         <td>{{ alert.folio.singa_number if alert.folio else '-' }}</td>
         <td>
           {% if alert.status == 'abierta' %}
-          <form method="post" action="{{ url_for('operations.resolve_alert', alert_id=alert.id) }}">
+          {# Formulario principal: captura datos y los envia por POST al backend para validar y persistir. #}
+<form method="post" action="{{ url_for('operations.resolve_alert', alert_id=alert.id) }}">
             <input type="text" name="resolution" placeholder="Resolucion / accion tomada">
             <button class="btn btn-secondary" type="submit">Resolver</button>
           </form>
@@ -111,3 +123,4 @@
   </div>
 </section>
 {% endblock %}
+

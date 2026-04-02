@@ -1,6 +1,8 @@
 ﻿{% extends "base.html" %}
 {% block title %}Nuevo Folio | Servicia{% endblock %}
 {% block content %}
+{# Guia didactica: esta vista esta separada por bloques para facilitar su lectura y mantenimiento. #}
+{# Encabezado funcional de la vista: explica el objetivo y reglas de negocio activas. #}
 <section class="panel">
   <div class="panel-head">
     <h2>Nuevo folio SINGA</h2>
@@ -8,7 +10,8 @@
   </div>
   <p class="panel-note">Solo se permiten proveedores con cuenta autorizada por Direccion.</p>
 
-  <form method="post" class="form-grid" novalidate>
+  {# Formulario principal: captura datos y los envia por POST al backend para validar y persistir. #}
+<form method="post" class="form-grid" novalidate>
     <label for="singa_number">Numero de folio SINGA</label>
     <input id="singa_number" name="singa_number" type="text" required placeholder="#17199">
 
@@ -33,3 +36,4 @@
   </form>
 </section>
 {% endblock %}
+

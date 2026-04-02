@@ -1,0 +1,104 @@
+﻿{% extends "base.html" %}
+{% block title %}Buscador Global | Servicia{% endblock %}
+{% block content %}
+<section class="panel">
+  <div class="panel-head">
+    <h2>Buscador global operativo</h2>
+    <span class="badge badge-blue">Omnibuscador</span>
+  </div>
+  <p class="panel-note">Busca por folio SINGA, proveedor, UUID CFDI, SPEI o texto de alerta.</p>
+</section>
+
+<section class="panel">
+  <form class="filters filters-compact" method="get">
+    <div class="filter-item">
+      <label for="q">Busqueda</label>
+      <input id="q" name="q" value="{{ q }}" placeholder="Ejemplo: 17199, UUID, SPEI, proveedor" autofocus>
+    </div>
+    <div class="filter-actions">
+      <button class="btn btn-primary" type="submit">Buscar</button>
+      <a class="btn btn-secondary" href="{{ url_for('main.global_search') }}">Limpiar</a>
+    </div>
+  </form>
+</section>
+
+<section class="search-grid">
+  <article class="panel table-panel">
+    <div class="panel-head"><h3>Folios</h3><span class="badge badge-gold">{{ folios|length }}</span></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Folio</th><th>Proveedor</th><th>Estatus</th><th>Accion</th></tr></thead>
+        <tbody>
+        {% for row in folios %}
+          <tr>
+            <td>{{ row.singa_number }}</td>
+            <td>{{ row.provider.name }}</td>
+            <td>{{ row.status }}</td>
+            <td><a class="btn btn-secondary btn-xs" href="{{ url_for('operations.folio_dossier', folio_id=row.id) }}">Expediente</a></td>
+          </tr>
+        {% else %}
+          <tr><td colspan="4">Sin resultados.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+
+  <article class="panel table-panel">
+    <div class="panel-head"><h3>CFDI / SPEI</h3><span class="badge badge-blue">{{ cfdis|length + transfers|length }}</span></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Tipo</th><th>Referencia</th><th>Folio</th></tr></thead>
+        <tbody>
+        {% for row in cfdis %}
+          <tr><td>CFDI</td><td>{{ row.uuid }}</td><td>{{ row.folio.singa_number }}</td></tr>
+        {% endfor %}
+        {% for row in transfers %}
+          <tr><td>SPEI</td><td>{{ row.spei_reference }}</td><td>{{ row.folio.singa_number }}</td></tr>
+        {% endfor %}
+        {% if cfdis|length + transfers|length == 0 %}
+          <tr><td colspan="3">Sin resultados.</td></tr>
+        {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+
+  <article class="panel table-panel">
+    <div class="panel-head"><h3>Alertas</h3><span class="badge badge-red">{{ alerts|length }}</span></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Fecha</th><th>Tipo</th><th>Folio</th><th>Estatus</th></tr></thead>
+        <tbody>
+        {% for row in alerts %}
+          <tr>
+            <td>{{ row.created_at.strftime('%Y-%m-%d') }}</td>
+            <td>{{ row.alert_type }}</td>
+            <td>{{ row.folio.singa_number if row.folio else '-' }}</td>
+            <td>{{ row.status }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="4">Sin resultados.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+
+  <article class="panel table-panel">
+    <div class="panel-head"><h3>Proveedores</h3><span class="badge badge-gold">{{ providers|length }}</span></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Proveedor</th><th>Tipo</th><th>SAT</th></tr></thead>
+        <tbody>
+        {% for row in providers %}
+          <tr><td>{{ row.name }}</td><td>{{ row.provider_type }}</td><td>{{ row.sat_status }}</td></tr>
+        {% else %}
+          <tr><td colspan="3">Sin resultados.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+</section>
+{% endblock %}

@@ -1,13 +1,17 @@
 ﻿{% extends "base.html" %}
 {% block title %}Presupuestos | Servicia{% endblock %}
 {% block content %}
+{# Guia didactica: esta vista esta separada por bloques para facilitar su lectura y mantenimiento. #}
+{# Encabezado funcional de la vista: explica el objetivo y reglas de negocio activas. #}
 <section class="panel">
   <div class="panel-head"><h2>Carga de presupuestos SINGA</h2></div>
   <p class="panel-note">Carga mensual por folio (equivalente al Excel del proceso operativo).</p>
 </section>
 
+{# Encabezado funcional de la vista: explica el objetivo y reglas de negocio activas. #}
 <section class="panel">
-  <form method="post" class="form-grid">
+  {# Formulario principal: captura datos y los envia por POST al backend para validar y persistir. #}
+<form method="post" class="form-grid">
     <label>Periodo (YYYY-MM)</label>
     <input name="period" placeholder="2026-04" required>
 
@@ -26,9 +30,11 @@
   </form>
 </section>
 
+{# Encabezado funcional de la vista: explica el objetivo y reglas de negocio activas. #}
 <section class="panel">
   <div class="panel-head"><h3>Importacion masiva desde Excel</h3></div>
-  <form method="post" class="form-grid" enctype="multipart/form-data">
+  {# Formulario principal: captura datos y los envia por POST al backend para validar y persistir. #}
+<form method="post" class="form-grid" enctype="multipart/form-data">
     <input type="hidden" name="action" value="import_excel">
     <p class="panel-note">Formato requerido: columnas <code>Folio</code> | <code>Presupuesto autorizado</code> | <code>Periodo</code>.</p>
     <input type="file" name="budget_file" accept=".xlsx" required>
@@ -39,7 +45,8 @@
 <section class="panel table-panel">
   <div class="panel-head"><h3>Presupuestos cargados</h3></div>
   <div class="table-wrap">
-    <table>
+    {# Tabla de salida: muestra informacion ya procesada para consulta operativa. #}
+<table>
       <thead><tr><th>Periodo</th><th>Folio</th><th>Proveedor</th><th>Presupuesto</th></tr></thead>
       <tbody>
       {% for row in rows %}
@@ -57,3 +64,4 @@
   </div>
 </section>
 {% endblock %}
+

@@ -74,3 +74,22 @@
     toggleBtn.textContent = isHidden ? 'Ocultar' : 'Mostrar';
   });
 })();
+
+(() => {
+  // ------------------------------
+  // 4) Interacciones master-detail
+  // ------------------------------
+  const masterTable = document.querySelector('.master-detail-grid table');
+  if (!masterTable) return;
+
+  // Permite abrir detalle haciendo click en cualquier fila del maestro.
+  masterTable.querySelectorAll('tbody tr').forEach((row) => {
+    const link = row.querySelector('a.btn');
+    if (!link) return;
+    row.style.cursor = 'pointer';
+    row.addEventListener('click', (event) => {
+      if (event.target.closest('a, button, input, select, textarea, form')) return;
+      window.location.href = link.href;
+    });
+  });
+})();

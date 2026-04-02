@@ -24,6 +24,7 @@ from app.audit import log_action
 from app.auth.routes import login_required, roles_required
 from app.extensions import db
 from app.models import (
+    AuditLog,
     AuthorizedAccount,
     BankMovement,
     BudgetConfig,
@@ -31,6 +32,7 @@ from app.models import (
     EvidenceFile,
     Folio,
     FolioDeliverableItem,
+    FolioWorkflow,
     MonthlyDirectionReport,
     Provider,
     ProviderCompliance,
@@ -133,6 +135,95 @@ def index():
         pending_cfdi=pending_cfdi,
         reports=reports,
         signatures=signatures,
+    )
+
+
+@operations_bp.route("/alertas", methods=["GET"])
+@login_required
+@roles_required("contabilidad", "direccion", "ui", "tesoreria")
+def alerts_center():
+    """Centro unificado de alertas con filtros por severidad/estatus."""
+    severity = request.args.get("severity", "").strip()
+    status = request.args.get("status", "").strip()
+    q = request.args.get("q", "").strip()
+
+    query = ReconciliationAlert.query.join(Folio, Folio.id == ReconciliationAlert.folio_id, isouter=True)
+    if severity in {"media", "alta"}:
+        query = query.filter(ReconciliationAlert.severity == severity)
+    if status in {"abierta", "resuelta"}:
+        query = query.filter(ReconciliationAlert.status == status)
+    if q:
+        like_term = f"%{q}%"
+        query = query.filter(
+            (ReconciliationAlert.alert_type.ilike(like_term))
+            | (ReconciliationAlert.notes.ilike(like_term))
+            | (Folio.singa_number.ilike(like_term))
+        )
+
+    alerts = query.order_by(ReconciliationAlert.created_at.desc()).limit(120).all()
+    open_count = ReconciliationAlert.query.filter_by(status="abierta").count()
+    high_count = ReconciliationAlert.query.filter_by(status="abierta", severity="alta").count()
+    resolved_count = ReconciliationAlert.query.filter_by(status="resuelta").count()
+    return render_template(
+        "operations/alerts.html",
+        alerts=alerts,
+        filters={"severity": severity, "status": status, "q": q},
+        open_count=open_count,
+        high_count=high_count,
+        resolved_count=resolved_count,
+    )
+
+
+@operations_bp.route("/expediente/<int:folio_id>")
+@login_required
+@roles_required("ui", "contabilidad", "tesoreria", "direccion")
+def folio_dossier(folio_id):
+    """Expediente 360 de un folio: flujo, documentos, alertas y movimientos."""
+    folio = Folio.query.get_or_404(folio_id)
+    workflow = FolioWorkflow.query.filter_by(folio_id=folio.id).first()
+    deliverables = (
+        FolioDeliverableItem.query.filter_by(folio_id=folio.id)
+        .order_by(FolioDeliverableItem.owner_area.asc(), FolioDeliverableItem.code.asc())
+        .all()
+    )
+    transfers = Transfer.query.filter_by(folio_id=folio.id).order_by(Transfer.created_at.desc()).limit(15).all()
+    cfdis = CfdiRecord.query.filter_by(folio_id=folio.id).order_by(CfdiRecord.created_at.desc()).limit(15).all()
+    movements = BankMovement.query.filter_by(folio_id=folio.id).order_by(BankMovement.created_at.desc()).limit(15).all()
+    alerts = ReconciliationAlert.query.filter_by(folio_id=folio.id).order_by(ReconciliationAlert.created_at.desc()).limit(20).all()
+    evidences = EvidenceFile.query.filter_by(folio_id=folio.id).order_by(EvidenceFile.uploaded_at.desc()).limit(20).all()
+    events = (
+        AuditLog.query.filter_by(entity="folio", entity_id=str(folio.id))
+        .order_by(AuditLog.created_at.desc())
+        .limit(25)
+        .all()
+    )
+
+    step_flags = [
+        ("Alta de folio", bool(workflow and workflow.step_1_ui_folio)),
+        ("Validacion SAT/EFOS", bool(workflow and workflow.step_2_contab_sat)),
+        ("Entregables UI", bool(workflow and workflow.step_3_ui_deliverables)),
+        ("Traspaso tesoreria", bool(workflow and workflow.step_4_tesoreria_transfer)),
+        ("Vinculacion CFDI", bool(workflow and workflow.step_5_contab_cfdi)),
+        ("Conciliacion bancaria", bool(workflow and workflow.step_6_contab_reconciliation)),
+        ("Listo para cierre", bool(workflow and workflow.step_7_ui_ready_to_close)),
+        ("Cierre de expediente", bool(workflow and workflow.step_8_contab_closed)),
+    ]
+    completion_percent = int((sum(1 for _, done in step_flags if done) * 100) / len(step_flags))
+
+    return render_template(
+        "operations/dossier.html",
+        folio=folio,
+        workflow=workflow,
+        step_flags=step_flags,
+        completion_percent=completion_percent,
+        deliverables=deliverables,
+        transfers=transfers,
+        cfdis=cfdis,
+        movements=movements,
+        alerts=alerts,
+        evidences=evidences,
+        events=events,
+        kpi_status_for_item=kpi_status_for_item,
     )
 
 

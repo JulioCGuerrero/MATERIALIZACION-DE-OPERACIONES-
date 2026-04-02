@@ -1,13 +1,17 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% block title %}Acuse | Servicia{% endblock %}
 {% block content %}
+{# Guia didactica: esta vista esta separada por bloques para facilitar su lectura y mantenimiento. #}
+{# Encabezado funcional de la vista: explica el objetivo y reglas de negocio activas. #}
 <section class="panel">
   <div class="panel-head"><h2>Acuse de recibo y conformidad</h2></div>
   <p class="panel-note">Firma de responsables UI y Contabilidad (seccion E del documento operativo).</p>
 </section>
 
+{# Encabezado funcional de la vista: explica el objetivo y reglas de negocio activas. #}
 <section class="panel">
-  <form method="post" class="form-grid">
+  {# Formulario principal: captura datos y los envia por POST al backend para validar y persistir. #}
+<form method="post" class="form-grid">
     <label>Area</label>
     <select name="area" required>
       <option value="">Selecciona area</option>
@@ -25,7 +29,8 @@
 <section class="panel table-panel">
   <div class="panel-head"><h3>Firmas registradas</h3></div>
   <div class="table-wrap">
-    <table>
+    {# Tabla de salida: muestra informacion ya procesada para consulta operativa. #}
+<table>
       <thead><tr><th>Area</th><th>Responsable</th><th>Fecha</th><th>Notas</th></tr></thead>
       <tbody>
       {% for row in rows %}
@@ -43,3 +48,4 @@
   </div>
 </section>
 {% endblock %}
+

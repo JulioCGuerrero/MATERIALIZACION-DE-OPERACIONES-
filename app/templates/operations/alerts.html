@@ -1,0 +1,81 @@
+﻿{% extends "base.html" %}
+{% block title %}Centro de Alertas | Servicia{% endblock %}
+{% block content %}
+<section class="panel">
+  <div class="panel-head">
+    <h2>Centro unificado de alertas</h2>
+    <span class="badge badge-red">SLA 5 dias habiles</span>
+  </div>
+  <p class="panel-note">Concentra alertas de conciliacion, presupuesto y cuentas para accionar por prioridad.</p>
+</section>
+
+<section class="kpi-row">
+  <article class="kpi kpi-c"><p class="kpi-lbl">Abiertas</p><p class="kpi-val kv-gold">{{ open_count }}</p></article>
+  <article class="kpi kpi-d"><p class="kpi-lbl">Altas</p><p class="kpi-val kv-n">{{ high_count }}</p></article>
+  <article class="kpi kpi-b"><p class="kpi-lbl">Resueltas</p><p class="kpi-val kv-g">{{ resolved_count }}</p></article>
+</section>
+
+<section class="panel">
+  <form class="filters" method="get">
+    <div class="filter-item">
+      <label for="q">Buscar</label>
+      <input id="q" name="q" value="{{ filters.q }}" placeholder="Folio, tipo o texto">
+    </div>
+    <div class="filter-item">
+      <label for="severity">Severidad</label>
+      <select id="severity" name="severity">
+        <option value="">Todas</option>
+        <option value="media" {% if filters.severity == 'media' %}selected{% endif %}>Media</option>
+        <option value="alta" {% if filters.severity == 'alta' %}selected{% endif %}>Alta</option>
+      </select>
+    </div>
+    <div class="filter-item">
+      <label for="status">Estatus</label>
+      <select id="status" name="status">
+        <option value="">Todos</option>
+        <option value="abierta" {% if filters.status == 'abierta' %}selected{% endif %}>Abierta</option>
+        <option value="resuelta" {% if filters.status == 'resuelta' %}selected{% endif %}>Resuelta</option>
+      </select>
+    </div>
+    <div class="filter-actions">
+      <button class="btn btn-primary" type="submit">Filtrar</button>
+      <a class="btn btn-secondary" href="{{ url_for('operations.alerts_center') }}">Limpiar</a>
+    </div>
+  </form>
+</section>
+
+<section class="panel table-panel">
+  <div class="panel-head"><h3>Bandeja de alertas</h3><span class="badge badge-blue">{{ alerts|length }} registros</span></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Fecha</th><th>Folio</th><th>Tipo</th><th>Severidad</th><th>Estatus</th><th>Detalle</th><th>Accion</th></tr></thead>
+      <tbody>
+      {% for row in alerts %}
+        <tr>
+          <td>{{ row.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+          <td>{{ row.folio.singa_number if row.folio else '-' }}</td>
+          <td>{{ row.alert_type }}</td>
+          <td>{{ row.severity }}</td>
+          <td>{{ row.status }}</td>
+          <td>{{ row.notes or '-' }}</td>
+          <td>
+            {% if row.status == 'abierta' and session.get('role') in ['contabilidad', 'direccion'] %}
+            <form method="post" action="{{ url_for('operations.resolve_alert', alert_id=row.id) }}">
+              <input name="resolution" placeholder="Resolucion breve">
+              <button class="btn btn-secondary btn-xs" type="submit">Resolver</button>
+            </form>
+            {% elif row.status == 'abierta' %}
+            Pendiente
+            {% else %}
+            Cerrada
+            {% endif %}
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="7">Sin alertas con este filtro.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

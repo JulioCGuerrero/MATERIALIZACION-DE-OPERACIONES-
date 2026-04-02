@@ -1,12 +1,13 @@
 ﻿{% extends "base.html" %}
 {% block title %}Folios | Servicia{% endblock %}
-{% block content %}`r`n{# Centro unificado de folios: resumen, alta e historial #}
+{% block content %}
+{# Centro unificado de folios con enfoque master-detail y expediente vivo #}
 <section class="panel">
   <div class="panel-head">
     <h2>Centro de Control de Folios SINGA</h2>
-    <span class="badge badge-blue">Workspace integral</span>
+    <span class="badge badge-blue">Operacion unificada</span>
   </div>
-  <p class="panel-note">Alta, filtro y seguimiento de folios en una sola pantalla.</p>
+  <p class="panel-note">Gestiona alta, seguimiento y expediente 360 sin cambiar de pantalla.</p>
 </section>
 
 <section class="panel folio-subtabs">
@@ -17,7 +18,7 @@
   <a class="tab {% if tab == 'historial' %}active{% endif %}" href="{{ url_for('folios.list_folios', q=filters.q, status=filters.status, provider_type=filters.provider_type, tab='historial') }}">Historial</a>
 </section>
 
-{% if tab == 'resumen' %}
+{% if tab != 'historial' %}
 <section class="kpi-row">
   <article class="kpi kpi-a"><p class="kpi-lbl">Total</p><p class="kpi-val kv-b">{{ result_count }}</p></article>
   <article class="kpi kpi-b"><p class="kpi-lbl">Cerrados</p><p class="kpi-val kv-g">{{ status_counts.get('cerrado', 0) }}</p></article>
@@ -66,6 +67,7 @@
     <section class="panel">
       <form class="filters" method="get" action="{{ url_for('folios.list_folios') }}">
         <input type="hidden" name="tab" value="{{ tab }}">
+        {% if detail.selected_folio %}<input type="hidden" name="folio_id" value="{{ detail.selected_folio.id }}">{% endif %}
         <div class="filter-item">
           <label for="q">Buscar</label>
           <input id="q" name="q" type="text" value="{{ filters.q if filters else '' }}" placeholder="Folio, proveedor o responsable">
@@ -98,174 +100,150 @@
       </form>
     </section>
 
-    <section class="panel table-panel">
-      <div class="panel-head">
-        <h3>Resultados</h3>
-        <span class="badge badge-blue">{{ result_count if result_count is defined else folios|length }} folios</span>
-      </div>
+    <section class="master-detail-grid">
+      <article class="panel table-panel">
+        <div class="panel-head">
+          <h3>Listado maestro</h3>
+          <span class="badge badge-blue">{{ result_count }} folios</span>
+        </div>
+        <div class="table-wrap" role="region" aria-label="Listado de folios" tabindex="0">
+          <table>
+            <thead>
+              <tr>
+                <th>Folio</th><th>Proveedor</th><th>Estatus</th><th>Monto</th><th>Accion</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for folio in folios %}
+              <tr class="{% if detail.selected_folio and detail.selected_folio.id == folio.id %}row-selected{% endif %}">
+                <td>{{ folio.singa_number }}</td>
+                <td>{{ folio.provider.name }}</td>
+                <td><span class="status status-{{ folio.status }}">{{ folio.status }}</span></td>
+                <td>${{ "{:,.2f}".format(folio.budget_amount) }}</td>
+                <td>
+                  <a class="btn btn-secondary btn-xs" href="{{ url_for('folios.list_folios', tab=tab, q=filters.q, status=filters.status, provider_type=filters.provider_type, folio_id=folio.id) }}">Ver</a>
+                </td>
+              </tr>
+              {% else %}
+              <tr><td colspan="5">No hay folios registrados para este filtro.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </article>
 
-      <div class="table-wrap" role="region" aria-label="Listado de folios" tabindex="0">
-        <table>
-          <thead>
-            <tr>
-              <th>Folio</th>
-              <th>Proveedor</th>
-              <th>Tipo</th>
-              <th>Contrato</th>
-              <th>Presupuesto</th>
-              <th>Estatus</th>
-              <th>Checklist</th>
-              <th>Accion rapida</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for folio in folios %}
-            <tr>
-              <td>{{ folio.singa_number }}</td>
-              <td>{{ folio.provider.name }}</td>
-              <td>{{ folio.provider_type }}</td>
-              <td>${{ "{:,.2f}".format(folio.contract_amount) }}</td>
-              <td>${{ "{:,.2f}".format(folio.budget_amount) }}</td>
-              <td><span class="status status-{{ folio.status }}">{{ folio.status }}</span></td>
-              <td><a class="btn btn-secondary btn-xs" href="{{ url_for('operations.deliverables', folio_id=folio.id) }}">Abrir</a></td>
-              <td>
-                <form method="post" action="{{ url_for('folios.update_folio_status', folio_id=folio.id) }}">
-                  <input type="hidden" name="next" value="{{ request.full_path }}">
-                  <select name="status">
-                    <option value="pendiente" {% if folio.status == 'pendiente' %}selected{% endif %}>Pendiente</option>
-                    <option value="en_proceso" {% if folio.status == 'en_proceso' %}selected{% endif %}>En proceso</option>
-                    <option value="alerta" {% if folio.status == 'alerta' %}selected{% endif %}>Alerta</option>
-                    <option value="critico" {% if folio.status == 'critico' %}selected{% endif %}>Critico</option>
-                    <option value="listo_para_cierre" {% if folio.status == 'listo_para_cierre' %}selected{% endif %}>Listo para cierre</option>
-                    <option value="cerrado" {% if folio.status == 'cerrado' %}selected{% endif %}>Cerrado</option>
-                  </select>
-                  <button class="btn btn-secondary btn-xs" type="submit">Guardar</button>
-                </form>
-              </td>
-            </tr>
+      <article class="panel">
+        <div class="panel-head">
+          <h3>Detalle vivo</h3>
+          {% if detail.selected_folio %}
+          <span class="badge badge-gold">{{ detail.selected_folio.singa_number }}</span>
+          {% endif %}
+        </div>
+
+        {% if detail.selected_folio %}
+        <div class="folio-identity-grid">
+          <div><span class="mini-label">Proveedor</span><strong>{{ detail.selected_folio.provider.name }}</strong></div>
+          <div><span class="mini-label">Tipo</span><strong>{{ detail.selected_folio.provider_type }}</strong></div>
+          <div><span class="mini-label">Responsable</span><strong>{{ detail.selected_folio.communication_responsible }}</strong></div>
+          <div><span class="mini-label">Presupuesto</span><strong>${{ "{:,.2f}".format(detail.selected_folio.budget_amount) }}</strong></div>
+        </div>
+
+        <div class="workflow-meter">
+          <div class="workflow-meter-bar"><span style="width: {{ detail.completion_percent }}%"></span></div>
+          <p>{{ detail.completion_percent }}% completado</p>
+        </div>
+
+        <div class="workflow-steps">
+          {% for step_name, step_done in detail.workflow_steps %}
+          <div class="workflow-step {% if step_done %}done{% endif %}">
+            <span>{{ '✓' if step_done else '•' }}</span>
+            <p>{{ step_name }}</p>
+          </div>
+          {% endfor %}
+        </div>
+
+        <div class="detail-kpis">
+          <div class="mini-kpi"><span>Entregables</span><strong>{{ detail.deliverables|length }}</strong></div>
+          <div class="mini-kpi"><span>CFDI</span><strong>{{ detail.cfdis|length }}</strong></div>
+          <div class="mini-kpi"><span>Movimientos</span><strong>{{ detail.movements|length }}</strong></div>
+          <div class="mini-kpi"><span>Alertas</span><strong>{{ detail.alerts|length }}</strong></div>
+        </div>
+
+        <div class="quick-links-grid">
+          <a class="btn btn-secondary btn-xs" href="{{ url_for('operations.deliverables', folio_id=detail.selected_folio.id) }}">Checklist</a>
+          <a class="btn btn-secondary btn-xs" href="{{ url_for('operations.folio_dossier', folio_id=detail.selected_folio.id) }}">Expediente 360</a>
+          <a class="btn btn-secondary btn-xs" href="{{ url_for('operations.alerts_center', q=detail.selected_folio.singa_number) }}">Alertas</a>
+        </div>
+
+        <div class="detail-mini-tables">
+          <div>
+            <h4>Ultimas alertas</h4>
+            {% for alert in detail.alerts[:4] %}
+            <p>{{ alert.created_at.strftime('%Y-%m-%d') }} · {{ alert.alert_type }} · {{ alert.status }}</p>
             {% else %}
-            <tr>
-              <td colspan="8">No hay folios registrados para este filtro.</td>
-            </tr>
+            <p>Sin alertas.</p>
             {% endfor %}
-            {% if folios|length < 8 %}
-            {% for _ in range(8 - (folios|length)) %}
-            <tr class="row-filler">
-              <td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>
-            </tr>
+          </div>
+          <div>
+            <h4>Ultimos documentos</h4>
+            {% for file in detail.evidences[:4] %}
+            <p>
+              <a href="{{ url_for('operations.download_evidence', evidence_id=file.id) }}">{{ file.original_name }}</a>
+            </p>
+            {% else %}
+            <p>Sin documentos.</p>
             {% endfor %}
-            {% endif %}
-          </tbody>
-        </table>
-      </div>
+          </div>
+        </div>
+        {% else %}
+        <p class="panel-note">No hay folios para mostrar detalle.</p>
+        {% endif %}
+      </article>
     </section>
 
-    <section class="folio-insights-grid">
-      <article class="panel">
-        <div class="panel-head">
-          <h3>Distribucion por estatus</h3>
-          <span class="badge badge-gold">Semaforo operativo</span>
-        </div>
-        <div class="status-stack">
-          <div class="status-row"><span>Pendiente</span><strong>{{ status_counts.get('pendiente', 0) }}</strong></div>
-          <div class="status-row"><span>En proceso</span><strong>{{ status_counts.get('en_proceso', 0) }}</strong></div>
-          <div class="status-row"><span>Listo para cierre</span><strong>{{ status_counts.get('listo_para_cierre', 0) }}</strong></div>
-          <div class="status-row"><span>Cerrado</span><strong>{{ status_counts.get('cerrado', 0) }}</strong></div>
-          <div class="status-row"><span>Alerta</span><strong>{{ status_counts.get('alerta', 0) }}</strong></div>
-          <div class="status-row"><span>Critico</span><strong>{{ status_counts.get('critico', 0) }}</strong></div>
-        </div>
-      </article>
-      <article class="panel">
-        <div class="panel-head">
-          <h3>Foco del dia</h3>
-          <span class="badge badge-blue">Prioridades</span>
-        </div>
-        <div class="focus-list">
-          <p><strong>1.</strong> Resolver folios en <code>critico</code> y <code>alerta</code>.</p>
-          <p><strong>2.</strong> Empujar folios a <code>listo_para_cierre</code> antes del dia 27.</p>
-          <p><strong>3.</strong> Validar expediente completo antes de mover a <code>cerrado</code>.</p>
-          <p><strong>4.</strong> Revisar timeline en tab <code>Historial</code> para auditoria.</p>
-        </div>
-      </article>
-    </section>
     {% else %}
     {% set ns = namespace(created=0, status_updated=0, blocked=0, other=0) %}
     {% for ev in recent_audits %}
-      {% if ev.action == 'folio_created' %}
-        {% set ns.created = ns.created + 1 %}
-      {% elif ev.action == 'folio_status_updated' %}
-        {% set ns.status_updated = ns.status_updated + 1 %}
-      {% elif ev.action == 'folio_creation_blocked' %}
-        {% set ns.blocked = ns.blocked + 1 %}
-      {% else %}
-        {% set ns.other = ns.other + 1 %}
-      {% endif %}
+      {% if ev.action == 'folio_created' %}{% set ns.created = ns.created + 1 %}
+      {% elif ev.action == 'folio_status_updated' %}{% set ns.status_updated = ns.status_updated + 1 %}
+      {% elif ev.action == 'folio_creation_blocked' %}{% set ns.blocked = ns.blocked + 1 %}
+      {% else %}{% set ns.other = ns.other + 1 %}{% endif %}
     {% endfor %}
     <section class="history-layout">
-    <article class="panel table-panel">
-      <div class="panel-head">
-        <h3>Historial de movimientos</h3>
-        <span class="badge badge-gold">Ultimos 20 eventos</span>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Fecha</th>
-              <th>Accion</th>
-              <th>Folio ID</th>
-              <th>Detalle</th>
-              <th>Usuario</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for ev in recent_audits %}
-            <tr>
-              <td>{{ ev.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-              <td>{{ ev.action }}</td>
-              <td>{{ ev.entity_id or '-' }}</td>
-              <td>{{ ev.details or '-' }}</td>
-              <td>{{ ev.user.full_name if ev.user else 'Sistema' }}</td>
-            </tr>
-            {% else %}
-            <tr><td colspan="5">Sin historial por mostrar.</td></tr>
-            {% endfor %}
-            {% if recent_audits|length < 12 %}
-            {% for _ in range(12 - (recent_audits|length)) %}
-            <tr class="row-filler"><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
-            {% endfor %}
-            {% endif %}
-          </tbody>
-        </table>
-      </div>
-    </article>
-    <aside class="history-side">
-      <article class="panel">
-        <div class="panel-head"><h3>Resumen de eventos</h3></div>
-        <div class="status-stack">
-          <div class="status-row"><span>Folios creados</span><strong>{{ ns.created }}</strong></div>
-          <div class="status-row"><span>Cambios de estatus</span><strong>{{ ns.status_updated }}</strong></div>
-          <div class="status-row"><span>Bloqueos por reglas</span><strong>{{ ns.blocked }}</strong></div>
-          <div class="status-row"><span>Otros eventos</span><strong>{{ ns.other }}</strong></div>
+      <article class="panel table-panel">
+        <div class="panel-head"><h3>Historial de movimientos</h3><span class="badge badge-gold">Ultimos 20 eventos</span></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Fecha</th><th>Accion</th><th>Folio ID</th><th>Detalle</th><th>Usuario</th></tr></thead>
+            <tbody>
+              {% for ev in recent_audits %}
+              <tr>
+                <td>{{ ev.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>{{ ev.action }}</td>
+                <td>{{ ev.entity_id or '-' }}</td>
+                <td>{{ ev.details or '-' }}</td>
+                <td>{{ ev.user.full_name if ev.user else 'Sistema' }}</td>
+              </tr>
+              {% else %}
+              <tr><td colspan="5">Sin historial por mostrar.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
         </div>
       </article>
-      <article class="panel">
-        <div class="panel-head"><h3>Linea de tiempo</h3></div>
-        <div class="timeline-list">
-          {% for ev in recent_audits[:8] %}
-          <div class="timeline-item">
-            <p class="timeline-title">{{ ev.action }}</p>
-            <p class="timeline-meta">{{ ev.created_at.strftime('%Y-%m-%d %H:%M') }} · {{ ev.user.full_name if ev.user else 'Sistema' }}</p>
+      <aside class="history-side">
+        <article class="panel">
+          <div class="panel-head"><h3>Resumen de eventos</h3></div>
+          <div class="status-stack">
+            <div class="status-row"><span>Folios creados</span><strong>{{ ns.created }}</strong></div>
+            <div class="status-row"><span>Cambios de estatus</span><strong>{{ ns.status_updated }}</strong></div>
+            <div class="status-row"><span>Bloqueos por reglas</span><strong>{{ ns.blocked }}</strong></div>
+            <div class="status-row"><span>Otros eventos</span><strong>{{ ns.other }}</strong></div>
           </div>
-          {% else %}
-          <p class="panel-note">Sin eventos recientes.</p>
-          {% endfor %}
-        </div>
-      </article>
-    </aside>
+        </article>
+      </aside>
     </section>
     {% endif %}
   </div>
 </section>
 {% endblock %}
-

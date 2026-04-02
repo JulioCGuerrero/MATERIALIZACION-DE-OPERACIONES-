@@ -1,0 +1,149 @@
+﻿{% extends "base.html" %}
+{% block title %}Expediente 360 | Servicia{% endblock %}
+{% block content %}
+<section class="panel">
+  <div class="panel-head">
+    <h2>Expediente 360 · {{ folio.singa_number }}</h2>
+    <span class="badge badge-blue">{{ folio.provider.name }}</span>
+  </div>
+  <p class="panel-note">Vista integral del folio: flujo, evidencias, traspasos, CFDI, conciliacion y auditoria.</p>
+</section>
+
+<section class="dossier-grid">
+  <article class="panel">
+    <div class="panel-head">
+      <h3>Workflow operativo</h3>
+      <span class="badge badge-gold">{{ completion_percent }}% completado</span>
+    </div>
+    <div class="workflow-meter"><div class="workflow-meter-bar"><span style="width: {{ completion_percent }}%"></span></div></div>
+    <div class="workflow-steps">
+      {% for name, done in step_flags %}
+      <div class="workflow-step {% if done %}done{% endif %}"><span>{{ '✓' if done else '•' }}</span><p>{{ name }}</p></div>
+      {% endfor %}
+    </div>
+    <div class="quick-links-grid">
+      <a class="btn btn-secondary btn-xs" href="{{ url_for('operations.deliverables', folio_id=folio.id) }}">Checklist</a>
+      <a class="btn btn-secondary btn-xs" href="{{ url_for('operations.transfers') }}">Traspasos</a>
+      <a class="btn btn-secondary btn-xs" href="{{ url_for('operations.cfdi') }}">CFDI</a>
+      <a class="btn btn-secondary btn-xs" href="{{ url_for('operations.reconciliation') }}">Conciliacion</a>
+    </div>
+  </article>
+
+  <article class="panel table-panel">
+    <div class="panel-head"><h3>Entregables</h3><span class="badge badge-blue">{{ deliverables|length }}</span></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Area</th><th>Entregable</th><th>Limite</th><th>KPI</th><th>Estatus</th></tr></thead>
+        <tbody>
+          {% for item in deliverables %}
+          <tr>
+            <td>{{ item.owner_area }}</td>
+            <td>{{ item.name }}</td>
+            <td>{{ item.due_date.strftime('%Y-%m-%d') if item.due_date else '-' }}</td>
+            <td>{{ kpi_status_for_item(item) }}</td>
+            <td>{{ 'Subido' if item.uploaded else 'Pendiente' }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5">Sin entregables.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+
+  <article class="panel table-panel">
+    <div class="panel-head"><h3>CFDI y traspasos</h3><span class="badge badge-gold">Finanzas</span></div>
+    <div class="split-tables">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>CFDI</th><th>Monto</th><th>Fecha</th></tr></thead>
+          <tbody>
+            {% for row in cfdis %}
+            <tr><td>{{ row.uuid }}</td><td>${{ "{:,.2f}".format(row.amount) }}</td><td>{{ row.issued_at.strftime('%Y-%m-%d') }}</td></tr>
+            {% else %}
+            <tr><td colspan="3">Sin CFDI.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>SPEI</th><th>Monto</th><th>Fecha</th></tr></thead>
+          <tbody>
+            {% for row in transfers %}
+            <tr><td>{{ row.spei_reference }}</td><td>${{ "{:,.2f}".format(row.amount) }}</td><td>{{ row.transfer_date.strftime('%Y-%m-%d') }}</td></tr>
+            {% else %}
+            <tr><td colspan="3">Sin traspasos.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </article>
+
+  <article class="panel table-panel">
+    <div class="panel-head"><h3>Movimientos y alertas</h3><span class="badge badge-red">Riesgo</span></div>
+    <div class="split-tables">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Movimiento</th><th>Tipo</th><th>Monto</th></tr></thead>
+          <tbody>
+            {% for row in movements %}
+            <tr><td>{{ row.reference }}</td><td>{{ row.movement_type }}</td><td>${{ "{:,.2f}".format(row.amount) }}</td></tr>
+            {% else %}
+            <tr><td colspan="3">Sin movimientos.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Alerta</th><th>Severidad</th><th>Estatus</th></tr></thead>
+          <tbody>
+            {% for row in alerts %}
+            <tr><td>{{ row.alert_type }}</td><td>{{ row.severity }}</td><td>{{ row.status }}</td></tr>
+            {% else %}
+            <tr><td colspan="3">Sin alertas.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </article>
+
+  <article class="panel table-panel">
+    <div class="panel-head"><h3>Documentos y bitacora</h3><span class="badge badge-blue">Trazabilidad</span></div>
+    <div class="split-tables">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Archivo</th><th>Categoria</th><th>Fecha</th><th>Descarga</th></tr></thead>
+          <tbody>
+            {% for file in evidences %}
+            <tr>
+              <td>{{ file.original_name }}</td>
+              <td>{{ file.category }}</td>
+              <td>{{ file.uploaded_at.strftime('%Y-%m-%d') }}</td>
+              <td><a class="btn btn-secondary btn-xs" href="{{ url_for('operations.download_evidence', evidence_id=file.id) }}">Abrir</a></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4">Sin documentos.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Fecha</th><th>Evento</th><th>Detalle</th></tr></thead>
+          <tbody>
+            {% for ev in events %}
+            <tr><td>{{ ev.created_at.strftime('%Y-%m-%d %H:%M') }}</td><td>{{ ev.action }}</td><td>{{ ev.details or '-' }}</td></tr>
+            {% else %}
+            <tr><td colspan="3">Sin eventos.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </article>
+</section>
+{% endblock %}

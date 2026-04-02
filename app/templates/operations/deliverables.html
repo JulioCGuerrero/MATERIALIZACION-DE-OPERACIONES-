@@ -1,6 +1,8 @@
 ﻿{% extends "base.html" %}
 {% block title %}Entregables | Servicia{% endblock %}
 {% block content %}
+{# Guia didactica: esta vista esta separada por bloques para facilitar su lectura y mantenimiento. #}
+{# Encabezado funcional de la vista: explica el objetivo y reglas de negocio activas. #}
 <section class="panel">
   <div class="panel-head">
     <h2>Entregables del folio {{ folio.singa_number }}</h2>
@@ -9,10 +11,12 @@
   <p class="panel-note">Flujo compartido: UI y Contabilidad deben completar checklist para habilitar cierre. Vencidos: {{ overdue_count }}</p>
 </section>
 
+{# Encabezado funcional de la vista: explica el objetivo y reglas de negocio activas. #}
 <section class="panel">
   <div class="panel-head"><h3>Estado de flujo</h3></div>
   <div class="table-wrap">
-    <table>
+    {# Tabla de salida: muestra informacion ya procesada para consulta operativa. #}
+<table>
       <thead><tr><th>Paso</th><th>Estado</th></tr></thead>
       <tbody>
         <tr><td>1. UI registra folio</td><td>{{ 'OK' if workflow.step_1_ui_folio else 'Pendiente' }}</td></tr>
@@ -31,7 +35,8 @@
 <section class="panel table-panel">
   <div class="panel-head"><h3>Checklist</h3></div>
   <div class="table-wrap">
-    <table>
+    {# Tabla de salida: muestra informacion ya procesada para consulta operativa. #}
+<table>
       <thead><tr><th>Area</th><th>Entregable</th><th>Limite</th><th>KPI</th><th>Estado</th><th>Accion</th></tr></thead>
       <tbody>
       {% for item in items %}
@@ -42,7 +47,8 @@
         <td>{{ kpi_status_for_item(item) }}</td>
         <td>{{ 'Subido' if item.uploaded else 'Pendiente' }}</td>
         <td>
-          <form method="post" enctype="multipart/form-data">
+          {# Formulario principal: captura datos y los envia por POST al backend para validar y persistir. #}
+<form method="post" enctype="multipart/form-data">
             <input type="hidden" name="deliverable_id" value="{{ item.id }}">
             <label><input type="checkbox" name="uploaded" {% if item.uploaded %}checked{% endif %}> Completo</label>
             <input type="file" name="evidence_file" accept=".pdf,.jpg,.jpeg,.png,.xml,.xlsx,.doc,.docx">
@@ -59,3 +65,4 @@
   </div>
 </section>
 {% endblock %}
+

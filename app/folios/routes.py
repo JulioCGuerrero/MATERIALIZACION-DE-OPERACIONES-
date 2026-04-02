@@ -16,7 +16,19 @@ from app.audit import log_action
 from app.auth.routes import login_required, roles_required
 from app.extensions import db
 from app.folios import folios_bp
-from app.models import AuditLog, AuthorizedAccount, Folio, Provider
+from app.models import (
+    AuditLog,
+    AuthorizedAccount,
+    BankMovement,
+    CfdiRecord,
+    EvidenceFile,
+    Folio,
+    FolioDeliverableItem,
+    FolioWorkflow,
+    ReconciliationAlert,
+    Transfer,
+    Provider,
+)
 from app.operations.services import ensure_deliverables, ensure_workflow
 
 # Roles permitidos para crear folios desde la UI.
@@ -55,6 +67,80 @@ def _build_folio_query():
     return query, {"q": q, "status": status, "provider_type": provider_type}
 
 
+def _build_master_detail_context(items):
+    """Construye el contexto del panel detalle (expediente 360)."""
+    selected_id = request.args.get("folio_id", "").strip()
+    selected_folio = None
+    if selected_id.isdigit():
+        selected_folio = next((f for f in items if f.id == int(selected_id)), None)
+    if not selected_folio and items:
+        selected_folio = items[0]
+
+    detail = {
+        "selected_folio": selected_folio,
+        "workflow": None,
+        "deliverables": [],
+        "transfers": [],
+        "cfdis": [],
+        "movements": [],
+        "alerts": [],
+        "evidences": [],
+        "folio_events": [],
+        "workflow_steps": [],
+        "completion_percent": 0,
+    }
+
+    if not selected_folio:
+        return detail
+
+    workflow = FolioWorkflow.query.filter_by(folio_id=selected_folio.id).first()
+    deliverables = (
+        FolioDeliverableItem.query.filter_by(folio_id=selected_folio.id)
+        .order_by(FolioDeliverableItem.owner_area.asc(), FolioDeliverableItem.code.asc())
+        .all()
+    )
+    transfers = Transfer.query.filter_by(folio_id=selected_folio.id).order_by(Transfer.created_at.desc()).limit(8).all()
+    cfdis = CfdiRecord.query.filter_by(folio_id=selected_folio.id).order_by(CfdiRecord.created_at.desc()).limit(8).all()
+    movements = BankMovement.query.filter_by(folio_id=selected_folio.id).order_by(BankMovement.created_at.desc()).limit(8).all()
+    alerts = ReconciliationAlert.query.filter_by(folio_id=selected_folio.id).order_by(ReconciliationAlert.created_at.desc()).limit(8).all()
+    evidences = EvidenceFile.query.filter_by(folio_id=selected_folio.id).order_by(EvidenceFile.uploaded_at.desc()).limit(14).all()
+    folio_events = (
+        AuditLog.query.filter_by(entity="folio", entity_id=str(selected_folio.id))
+        .order_by(AuditLog.created_at.desc())
+        .limit(16)
+        .all()
+    )
+
+    workflow_steps = [
+        ("1. Alta UI", bool(workflow and workflow.step_1_ui_folio)),
+        ("2. SAT/EFOS", bool(workflow and workflow.step_2_contab_sat)),
+        ("3. Entregables", bool(workflow and workflow.step_3_ui_deliverables)),
+        ("4. Traspaso", bool(workflow and workflow.step_4_tesoreria_transfer)),
+        ("5. CFDI", bool(workflow and workflow.step_5_contab_cfdi)),
+        ("6. Conciliacion", bool(workflow and workflow.step_6_contab_reconciliation)),
+        ("7. Listo cierre", bool(workflow and workflow.step_7_ui_ready_to_close)),
+        ("8. Cerrado", bool(workflow and workflow.step_8_contab_closed)),
+    ]
+    done_steps = sum(1 for _, is_done in workflow_steps if is_done)
+    completion_percent = int(done_steps * 100 / len(workflow_steps))
+
+    detail.update(
+        {
+            "workflow": workflow,
+            "deliverables": deliverables,
+            "transfers": transfers,
+            "cfdis": cfdis,
+            "movements": movements,
+            "alerts": alerts,
+            "evidences": evidences,
+            "folio_events": folio_events,
+            "workflow_steps": workflow_steps,
+            "completion_percent": completion_percent,
+        }
+    )
+    return detail
+
+
 def _render_folios_page(*, status_code=200, form_data=None):
     """Renderiza la pagina de folios completa.
 
@@ -80,6 +166,7 @@ def _render_folios_page(*, status_code=200, form_data=None):
         .limit(20)
         .all()
     )
+    detail = _build_master_detail_context(items)
 
     return render_template(
         "folios/list.html",
@@ -93,6 +180,7 @@ def _render_folios_page(*, status_code=200, form_data=None):
         current_query=request.query_string.decode("utf-8"),
         status_counts=status_counts,
         recent_audits=recent_audits,
+        detail=detail,
     ), status_code
 
 
