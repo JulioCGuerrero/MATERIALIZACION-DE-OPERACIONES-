@@ -19,7 +19,8 @@ class Config:
 
     # Claves de seguridad para cookies/sesion y JWT.
     SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret")
-    JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "dev-jwt-secret")
+    # Si no se define JWT_SECRET_KEY, reutiliza SECRET_KEY para no romper despliegues simples.
+    JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", SECRET_KEY)
 
     # Conexion a BD (SQLite por defecto).
     SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "sqlite:///servicia.db")

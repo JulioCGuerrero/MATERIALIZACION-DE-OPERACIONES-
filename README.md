@@ -79,3 +79,41 @@ Contrasena para todos: `servicia2026`
 
 ## Nota
 La conciliacion por PDF usa extraccion base de texto. Si quieres precision de nivel productivo en bancos reales, se recomienda parser por formato bancario y validadores adicionales.
+
+## Deploy en Cloud Run (mismo proyecto que million-logo-hunt)
+Proyecto detectado en tu entorno: `trusty-agility-439318-a8`.
+
+### 1) Preparar variables
+1. Copiar archivo:
+```powershell
+Copy-Item .\env.yaml.example .\env.yaml
+```
+2. Ajustar secretos/SA en `env.yaml` con valores reales del proyecto.
+Si quieres reutilizar el mismo stack de `million-logo-hunt`, usa:
+- `CLOUDSQL_CONNECTION_NAME: trusty-agility-439318-a8:us-central1:mlh-db`
+- `DATABASE_URL_SECRET_NAME: mlh-database-url`
+- `SECRET_KEY_SECRET_NAME: mlh-secret-key`
+
+### 2) Login de gcloud (si hace falta)
+```powershell
+& "$env:LOCALAPPDATA\Google\Cloud SDK\google-cloud-sdk\bin\gcloud.cmd" auth login
+& "$env:LOCALAPPDATA\Google\Cloud SDK\google-cloud-sdk\bin\gcloud.cmd" config set project trusty-agility-439318-a8
+```
+
+### 3) Desplegar
+```powershell
+.\deploy.ps1 -Service "servicia-contabilidad" -Region "us-central1"
+```
+
+### 4) Hacerlo publico (si aparece 403)
+```powershell
+& "$env:LOCALAPPDATA\Google\Cloud SDK\google-cloud-sdk\bin\gcloud.cmd" run services add-iam-policy-binding servicia-contabilidad `
+  --region us-central1 `
+  --member="allUsers" `
+  --role="roles/run.invoker"
+```
+
+### Servicios sugeridos en el mismo proyecto
+- `million-logo-hunt` (ya existente)
+- `million-logo-hunt-web` (ya existente)
+- `servicia-contabilidad` (este repo)

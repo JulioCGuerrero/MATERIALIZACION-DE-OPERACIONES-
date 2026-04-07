@@ -3,3 +3,22 @@ __pycache__/
 *.pyc
 instance/*.db
 .env
+
+# Claude Code
+.claude/
+
+# GCP local y deploy
+.gcloud-local/
+env.yaml
+.gcloudignore
+Dockerfile
+cloudbuild.yaml
+deploy.ps1
+env.yaml.example
+wsgi.py
+
+# LaTeX temporales
+ref/*.aux
+ref/*.log
+ref/*.toc
+ref/*.out

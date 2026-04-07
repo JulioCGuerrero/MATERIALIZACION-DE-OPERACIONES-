@@ -1,0 +1,1205 @@
+\documentclass[12pt,a4paper]{article}
+
+% ─── Paquetes ────────────────────────────────────────────────────────────────
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,mexico]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{listings}
+\usepackage{tcolorbox}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{amsmath}
+\usepackage{lmodern}
+\usepackage{microtype}
+\setlength{\parskip}{6pt}
+\setlength{\parindent}{0pt}
+
+% ─── Colores corporativos (tomados de styles.css) ────────────────────────────
+\definecolor{ink900}{HTML}{0b1736}
+\definecolor{sky500}{HTML}{1c78c0}
+\definecolor{teal500}{HTML}{0f8d8f}
+\definecolor{lime500}{HTML}{5f9d2f}
+\definecolor{amber500}{HTML}{c97a1a}
+\definecolor{rose500}{HTML}{c94a56}
+\definecolor{paper100}{HTML}{f8fafc}
+\definecolor{graylight}{HTML}{e2e8f0}
+
+% ─── Configuración de hipervínculos ─────────────────────────────────────────
+\hypersetup{
+  colorlinks=true,
+  linkcolor=ink900,
+  urlcolor=sky500,
+  citecolor=teal500,
+  pdftitle={Servicia -- Documentacion Tecnica y Funcional},
+  pdfauthor={Direccion General -- Batia},
+  pdfsubject={Plataforma de Aseguramiento Contable}
+}
+
+% ─── Encabezado y pie de página ─────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{ink900}\textbf{Servicia} $\cdot$ Aseguramiento Contable}
+\fancyhead[R]{\small\color{sky500}Batia $\cdot$ Piloto}
+\fancyfoot[C]{\small\thepage}
+\fancyfoot[R]{\small\color{gray}Confidencial}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.2pt}
+
+% ─── Formato de títulos ──────────────────────────────────────────────────────
+\titleformat{\section}
+  {\large\bfseries\color{ink900}}
+  {\thesection.}{0.6em}{}[\color{sky500}\titlerule]
+
+\titleformat{\subsection}
+  {\normalsize\bfseries\color{sky500}}
+  {\thesubsection.}{0.5em}{}
+
+\titleformat{\subsubsection}
+  {\small\bfseries\color{teal500}}
+  {\thesubsubsection.}{0.4em}{}
+
+% ─── Cajas de información ────────────────────────────────────────────────────
+\tcbuselibrary{skins, breakable}
+
+\newtcolorbox{infobox}[1][]{
+  enhanced, breakable,
+  colback=paper100, colframe=sky500,
+  fonttitle=\bfseries\color{white},
+  colbacktitle=sky500,
+  title=#1, left=4pt, right=4pt
+}
+
+\newtcolorbox{alertbox}[1][]{
+  enhanced, breakable,
+  colback=amber500!10, colframe=amber500,
+  fonttitle=\bfseries\color{white},
+  colbacktitle=amber500,
+  title=#1, left=4pt, right=4pt
+}
+
+\newtcolorbox{rulebox}[1][]{
+  enhanced, breakable,
+  colback=rose500!8, colframe=rose500,
+  fonttitle=\bfseries\color{white},
+  colbacktitle=rose500,
+  title=#1, left=4pt, right=4pt
+}
+
+% ─── Configuración de listings ───────────────────────────────────────────────
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{sky500}\bfseries,
+  commentstyle=\color{teal500}\itshape,
+  stringstyle=\color{lime500},
+  numberstyle=\tiny\color{gray},
+  numbers=left, numbersep=6pt,
+  frame=single, framesep=4pt,
+  rulecolor=\color{ink900!20},
+  backgroundcolor=\color{paper100},
+  breaklines=true, breakatwhitespace=true,
+  showspaces=false, showstringspaces=false,
+  tabsize=4, captionpos=b,
+  xleftmargin=10pt
+}
+
+\lstdefinelanguage{Python}{
+  keywords={def,class,return,import,from,if,else,elif,for,while,with,as,
+            try,except,finally,pass,True,False,None,and,or,not,in,is,
+            lambda,yield,global,nonlocal,del,raise,assert,bool},
+  sensitive=true,
+  comment=[l]{\#},
+  morestring=[b]",
+  morestring=[b]'
+}
+
+\lstdefinestyle{plain}{
+  language={},
+  numbers=none,
+  frame=single,
+  backgroundcolor=\color{ink900!5},
+  basicstyle=\ttfamily\footnotesize
+}
+
+% ─── Documento ───────────────────────────────────────────────────────────────
+\begin{document}
+
+% ═══════════════════════════════════════════════════════════════════════════════
+%  PORTADA
+% ═══════════════════════════════════════════════════════════════════════════════
+\begin{titlepage}
+  \pagecolor{ink900}
+  \color{white}
+  \centering
+  \vspace*{3cm}
+
+  {\fontsize{48}{52}\selectfont\bfseries SERVICIA}\\[0.4cm]
+  {\large\color{sky500!80!white} Plataforma de Aseguramiento Contable}\\[0.2cm]
+  {\normalsize\color{graylight} Piloto Batia}
+
+  \vspace{2cm}
+  \noindent\color{sky500}\rule{\linewidth}{1pt}
+  \vspace{0.5cm}
+
+  {\large Documentaci\'on T\'ecnica y Funcional}\\[0.3cm]
+  {\normalsize An\'alisis de arquitectura, flujos operativos, modelos de datos\\
+  e instrucciones para Unidad de Inteligencia y Contabilidad}
+
+  \vfill
+
+  \begin{tabular}{ll}
+    \textbf{Emitido por:}    & Direcci\'on General \\[4pt]
+    \textbf{Clasificaci\'on:}  & Confidencial $\cdot$ Uso interno \\[4pt]
+    \textbf{Versi\'on:}        & 2.0 \\[4pt]
+    \textbf{Fecha:}          & Abril 2026 \\[4pt]
+    \textbf{Stack:}          & Flask 3.0 $\cdot$ SQLAlchemy $\cdot$ PostgreSQL $\cdot$ Cloud Run \\
+  \end{tabular}
+
+  \vspace{1cm}
+  \noindent\color{sky500!50!white}\rule{\linewidth}{0.4pt}
+  \vspace{0.3cm}
+
+  {\small\color{graylight}
+    Destinatarios: Unidad de Inteligencia (UI) $\cdot$ \'Area de Contabilidad $\cdot$ Tesorer\'ia $\cdot$ Direcci\'on}
+\end{titlepage}
+
+\pagecolor{white}
+\color{black}
+
+% ═══════════════════════════════════════════════════════════════════════════════
+%  TABLA DE CONTENIDOS
+% ═══════════════════════════════════════════════════════════════════════════════
+\tableofcontents
+\newpage
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{Resumen Ejecutivo}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+\begin{infobox}[Descripci\'on General]
+\textbf{Servicia} es una plataforma web de aseguramiento contable desarrollada en Flask
+(Python) para \textbf{Batia}, empresa de gesti\'on de servicios integrales. El sistema
+digitaliza y controla el ciclo completo de vida de cada contrataci\'on registrada en SINGA:
+desde la apertura del expediente hasta el cierre fiscal verificado por Contabilidad,
+pasando por validaciones SAT/EFOS, traspasos SPEI, vinculaci\'on de CFDI y conciliaci\'on
+bancaria.
+\end{infobox}
+
+\bigskip
+
+El proyecto responde a una necesidad cr\'itica: garantizar que \textbf{toda operaci\'on de
+pago est\'e completamente materializada}, documentada y conciliada, reduciendo el riesgo
+fiscal ante el SAT y permitiendo que cualquier auditor\'ia interna o externa pueda verificar
+en minutos la legalidad y trazabilidad de cada transacci\'on.
+
+\subsection*{Caracter\'isticas principales}
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{Flujo operativo de 8 pasos} con bloqueos secuenciales: ning\'un paso puede
+    ejecutarse sin que el anterior est\'e completado.
+  \item \textbf{Gesti\'on de folios SINGA} con checklist de entregables diferenciado seg\'un
+    tipo de proveedor (outsourcing, materiales, servicios).
+  \item \textbf{Control SAT/EFOS}: bloquea pagos a proveedores sin Opini\'on de
+    Cumplimiento vigente.
+  \item \textbf{M\'odulo de conciliaci\'on bancaria} con carga de PDF y extracci\'on
+    autom\'atica de movimientos.
+  \item \textbf{Sistema de alertas autom\'aticas} (dep\'osito sin folio, monto excedido,
+    cuenta no autorizada, diferencia CFDI-banco).
+  \item \textbf{Tablero ejecutivo} personalizado por rol con KPIs en tiempo real.
+  \item \textbf{Despliegue en Google Cloud Run} con base de datos PostgreSQL gestionada.
+\end{itemize}
+
+\newpage
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{Arquitectura del Sistema}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+\subsection{Stack Tecnol\'ogico}
+
+\begin{table}[h!]
+\centering
+\begin{tabularx}{\textwidth}{>{\bfseries}lX}
+\toprule
+Capa & Tecnolog\'ia \\
+\midrule
+Lenguaje & Python 3.11 \\
+Framework Web & Flask 3.0.3 \\
+ORM & Flask-SQLAlchemy 3.1.1 \\
+Migraciones & Flask-Migrate 4.0.7 (Alembic) \\
+Autenticaci\'on & Flask-JWT-Extended 4.6.0 + sesiones de servidor \\
+Templates & Jinja2 (server-side rendering) \\
+BD Desarrollo & SQLite (\texttt{instance/servicia.db}) \\
+BD Producci\'on & PostgreSQL (Cloud SQL, GCP) \\
+Servidor WSGI & Gunicorn 23.0.0 (1 worker, 8 threads, timeout 120\,s) \\
+Contenedor & Docker (Python 3.11-slim) \\
+Plataforma Cloud & Google Cloud Run + Cloud Build \\
+Excel & openpyxl 3.1.5 \\
+PDF parsing & pypdf 5.4.0 \\
+\bottomrule
+\end{tabularx}
+\caption{Stack tecnol\'ogico de Servicia}
+\end{table}
+
+\subsection{Estructura del Proyecto}
+
+El proyecto sigue el patr\'on \textit{Application Factory} de Flask con
+\textit{blueprints} modulares. Cada \'area funcional tiene su propio blueprint
+con sus rutas y plantillas.
+
+\begin{lstlisting}[style=plain, caption={\'Arbol de directorios del proyecto}]
+contabilidad/
+  app/
+    __init__.py          <- Application factory
+    config.py            <- Variables de entorno
+    extensions.py        <- Registro de db, migrate, jwt
+    models.py            <- 18 modelos SQLAlchemy
+    audit.py             <- Log de auditoria
+    seed.py              <- Datos demo idempotentes
+    auth/routes.py       <- Login, logout, JWT
+    main/routes.py       <- Landing, dashboard, busqueda
+    folios/routes.py     <- CRUD de folios SINGA
+    operations/
+      routes.py          <- SAT, CFDI, traspasos, conciliacion
+      services.py        <- Logica de negocio y workflow
+    static/
+      css/styles.css     <- Hoja de estilos
+      js/main.js         <- Interacciones frontend
+    templates/           <- Plantillas Jinja2 por modulo
+  instance/servicia.db   <- BD SQLite (desarrollo)
+  ref/                   <- Manual de usuario y referencias
+  uploads/               <- Archivos subidos por usuarios
+  run.py                 <- Entrypoint desarrollo
+  wsgi.py                <- Entrypoint produccion
+  Dockerfile
+  cloudbuild.yaml        <- Pipeline CI/CD en GCP
+  requirements.txt
+\end{lstlisting}
+
+\subsection{Application Factory y Blueprints}
+
+La funci\'on \texttt{create\_app()} en \texttt{app/\_\_init\_\_.py} sigue el patr\'on
+\textit{factory} para permitir m\'ultiples instancias (testing, desarrollo, producci\'on):
+
+\begin{lstlisting}[language=Python, caption={Registro de blueprints en create\_app()}]
+def create_app(config_class=Config):
+    app = Flask(__name__)
+    app.config.from_object(config_class)
+
+    # Inicializacion de extensiones
+    db.init_app(app)
+    migrate.init_app(app, db)
+    jwt.init_app(app)
+
+    # Registro de blueprints
+    app.register_blueprint(auth_bp,       url_prefix='/auth')
+    app.register_blueprint(main_bp)
+    app.register_blueprint(folios_bp,     url_prefix='/folios')
+    app.register_blueprint(operations_bp, url_prefix='/operacion')
+
+    # Headers de seguridad en cada respuesta
+    @app.after_request
+    def security_headers(response):
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        response.headers['X-Frame-Options'] = 'DENY'
+        return response
+
+    return app
+\end{lstlisting}
+
+\subsection{Seguridad y Autenticaci\'on}
+
+El sistema implementa autenticaci\'on dual:
+
+\begin{itemize}
+  \item \textbf{Sesiones de servidor} (Flask session): para el acceso v\'ia navegador.
+    El decorador \texttt{@login\_required} verifica la presencia de \texttt{user\_id}
+    en sesi\'on.
+  \item \textbf{JWT (JSON Web Tokens)}: endpoint de API
+    \texttt{POST /auth/api/token}, que emite tokens con claims de rol y nombre.
+\end{itemize}
+
+\begin{lstlisting}[language=Python, caption={Decorador de control de acceso por rol}]
+def roles_required(*allowed_roles):
+    def decorator(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            role = session.get('role')
+            if role not in allowed_roles:
+                flash('No tienes permisos para esta accion.', 'error')
+                return redirect(url_for('main.dashboard'))
+            return f(*args, **kwargs)
+        return wrapper
+    return decorator
+\end{lstlisting}
+
+\newpage
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{Modelo de Datos}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+La base de datos contiene \textbf{18 modelos SQLAlchemy} que se mapean a las tablas
+de la BD. A continuaci\'on se describen los m\'as importantes.
+
+\subsection{Entidades Principales}
+
+\subsubsection{Role y User}
+
+\begin{lstlisting}[language=Python, caption={Modelo User con hash de contrase\~na}]
+class User(db.Model):
+    __tablename__ = 'users'
+    id            = db.Column(db.Integer, primary_key=True)
+    full_name     = db.Column(db.String(120), nullable=False)
+    email         = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(256), nullable=False)
+    role_id       = db.Column(db.Integer, db.ForeignKey('roles.id'))
+    is_active     = db.Column(db.Boolean, default=True)
+    role          = db.relationship('Role', lazy='joined')
+
+    def set_password(self, raw):
+        self.password_hash = generate_password_hash(raw)
+
+    def check_password(self, raw):
+        return check_password_hash(self.password_hash, raw)
+\end{lstlisting}
+
+Los roles disponibles son: \texttt{direccion}, \texttt{ui}, \texttt{contabilidad},
+\texttt{tesoreria} y \texttt{auditor}.
+
+\subsubsection{Provider y AuthorizedAccount}
+
+\begin{lstlisting}[language=Python, caption={Modelos Provider y AuthorizedAccount}]
+class Provider(db.Model):
+    __tablename__ = 'providers'
+    id            = db.Column(db.Integer, primary_key=True)
+    name          = db.Column(db.String(200), unique=True, nullable=False)
+    provider_type = db.Column(db.String(30))  # outsourcing, materiales, servicios
+    sat_status    = db.Column(db.String(30))
+    sat_valid_until = db.Column(db.Date)
+
+class AuthorizedAccount(db.Model):
+    __tablename__ = 'authorized_accounts'
+    clabe     = db.Column(db.String(18), unique=True, nullable=False)
+    rfc       = db.Column(db.String(13))
+    is_active = db.Column(db.Boolean, default=True)
+    __table_args__ = (
+        db.CheckConstraint("LENGTH(clabe) = 18"),)
+\end{lstlisting}
+
+\subsubsection{Folio --- El Expediente Central}
+
+El modelo \texttt{Folio} representa cada contrataci\'on registrada en SINGA. Es la
+entidad pivote: todos los dem\'as registros operativos apuntan a un folio.
+
+\begin{lstlisting}[language=Python, caption={Modelo Folio con estatus sem\'aforo}]
+class Folio(db.Model):
+    __tablename__ = 'folios'
+    id                        = db.Column(db.Integer, primary_key=True)
+    singa_number              = db.Column(db.String(50), unique=True, nullable=False)
+    provider_id               = db.Column(db.Integer, db.ForeignKey('providers.id'))
+    provider_type             = db.Column(db.String(30))
+    communication_responsible = db.Column(db.String(120))
+    contract_amount           = db.Column(db.Numeric(14, 2))
+    budget_amount             = db.Column(db.Numeric(14, 2))
+    status                    = db.Column(db.String(30), default='pendiente')
+    created_at                = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # status: pendiente | en_proceso | listo_para_cierre | cerrado | critico
+    __table_args__ = (
+        db.CheckConstraint("status IN ('pendiente','en_proceso',"
+            "'listo_para_cierre','cerrado','alerta','critico')"),
+        db.CheckConstraint("budget_amount > 0"),
+    )
+\end{lstlisting}
+
+\subsubsection{FolioWorkflow --- Los 8 Pasos}
+
+\begin{lstlisting}[language=Python, caption={Modelo FolioWorkflow}]
+class FolioWorkflow(db.Model):
+    __tablename__ = 'folio_workflows'
+    folio_id                 = db.Column(db.Integer,
+                                 db.ForeignKey('folios.id'), unique=True)
+    step_1_ui_folio          = db.Column(db.Boolean, default=False)
+    step_2_contab_sat        = db.Column(db.Boolean, default=False)
+    step_3_ui_deliverables   = db.Column(db.Boolean, default=False)
+    step_4_tesoreria_transfer= db.Column(db.Boolean, default=False)
+    step_5_contab_cfdi       = db.Column(db.Boolean, default=False)
+    step_6_contab_reconciliation = db.Column(db.Boolean, default=False)
+    step_7_ui_ready_to_close = db.Column(db.Boolean, default=False)
+    step_8_contab_closed     = db.Column(db.Boolean, default=False)
+    updated_at               = db.Column(db.DateTime, onupdate=datetime.utcnow)
+\end{lstlisting}
+
+\subsection{Entidades de Control Fiscal}
+
+\subsubsection{ProviderCompliance}
+
+Almacena el estado de cumplimiento SAT/EFOS de cada proveedor con relaci\'on 1:1.
+
+\begin{table}[h!]
+\centering
+\begin{tabularx}{\textwidth}{>{\ttfamily\small}l>{\small}X}
+\toprule
+\textnormal{\textbf{Campo}} & \textbf{Descripci\'on} \\
+\midrule
+sat\_opinion\_status & \texttt{no\_cargada} / \texttt{vigente} / \texttt{vencida} \\
+sat\_valid\_until    & Fecha de vencimiento de la opini\'on SAT \\
+efos\_flag           & Aparece en lista EFOS del SAT (booleano) \\
+activity\_match      & Actividad econ\'omica congruente con el servicio \\
+rfc\_matches\_account & RFC coincide con CLABE registrada \\
+notes                & Observaciones de Contabilidad \\
+\bottomrule
+\end{tabularx}
+\caption{Campos de ProviderCompliance}
+\end{table}
+
+\subsubsection{CfdiRecord}
+
+\begin{lstlisting}[language=Python, caption={Modelo CfdiRecord}]
+class CfdiRecord(db.Model):
+    __tablename__ = 'cfdi_records'
+    uuid      = db.Column(db.String(36), unique=True, nullable=False)
+    xml_ref   = db.Column(db.String(255))   # ruta del XML subido
+    pdf_ref   = db.Column(db.String(255))   # ruta del PDF subido
+    amount    = db.Column(db.Numeric(14, 2))
+    issued_at = db.Column(db.Date)
+    status    = db.Column(db.String(20), default='vigente')
+    # status: vigente | cancelado
+\end{lstlisting}
+
+\subsubsection{BankMovement y ReconciliationAlert}
+
+\begin{table}[h!]
+\centering
+\begin{tabularx}{\textwidth}{>{\ttfamily\small}l>{\small}X}
+\toprule
+\multicolumn{2}{l}{\textbf{ReconciliationAlert --- Tipos de alerta autom\'atica}} \\
+\midrule
+deposito\_sin\_folio     & Dep\'osito bancario sin folio SINGA asociado \\
+excede\_presupuesto      & Monto de traspaso o movimiento supera el presupuesto \\
+cuenta\_no\_autorizada   & Movimiento a cuenta no registrada en la plataforma \\
+diferencia\_cfdi\_banco  & Diferencia entre CFDI registrado y movimiento bancario \\
+\midrule
+\multicolumn{2}{l}{\textbf{Severidades:} \texttt{media} / \texttt{alta}} \\
+\multicolumn{2}{l}{\textbf{Estatus:} \texttt{abierta} / \texttt{resuelta}} \\
+\bottomrule
+\end{tabularx}
+\caption{Tipos de alerta de conciliaci\'on}
+\end{table}
+
+\subsection{Diagrama de Relaciones}
+
+\begin{lstlisting}[style=plain, caption={Relaciones entre entidades principales}]
+Role          1 ---< N   User
+Provider      1 ---< N   AuthorizedAccount
+Provider      1 ---< N   Folio
+Provider      1 ---  1   ProviderCompliance
+Folio         1 ---  1   FolioWorkflow
+Folio         1 ---< N   FolioDeliverableItem
+Folio         1 ---< N   Transfer
+Folio         1 ---< N   CfdiRecord
+Folio         1 ---< N   BankMovement
+Folio         1 ---< N   ReconciliationAlert
+Folio         1 ---< N   BudgetConfig
+AuthorizedAccount  1 ---< N  Transfer
+EvidenceFile  N ---  1   Folio
+EvidenceFile  N ---  1   FolioDeliverableItem (opcional)
+AuditLog      N ---  1   User (nullable)
+MonthlyDirectionReport  N ---  1  User
+\end{lstlisting}
+
+\newpage
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{Flujo Operativo de 8 Pasos}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+\begin{infobox}[Principio fundamental]
+\textbf{Ning\'un paso puede saltarse.} El sistema aplica bloqueos secuenciales en
+c\'odigo: intentar registrar un traspaso sin que SAT est\'e validado genera un error
+de negocio inmediato. El workflow avanza solo cuando el paso anterior est\'a completo.
+\end{infobox}
+
+\bigskip
+
+\begin{longtable}{>{\bfseries}cp{2.5cm}p{6cm}p{3.5cm}}
+\toprule
+\# & \'Area & Acci\'on en la plataforma & Desbloquea \\
+\midrule
+\endfirsthead
+\multicolumn{4}{c}{\small\textit{(continuaci\'on)}} \\
+\toprule
+\# & \'Area & Acci\'on & Desbloquea \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+1 & UI & Registrar folio SINGA con proveedor, tipo y responsable & Apertura del expediente \\[6pt]
+2 & Contabilidad & Verificar proveedor en SAT y subir Opini\'on de Cumplimiento & Cuenta autorizada para traspaso \\[6pt]
+3 & UI & Subir entregables operativos seg\'un tipo de proveedor & Expediente pasa a ``En proceso'' \\[6pt]
+4 & Tesorer\'ia & Registrar traspaso SPEI con folio bancario & Conciliaci\'on del monto \\[6pt]
+5 & Contabilidad & Vincular CFDI al folio y validar monto vs presupuesto & Sistema verifica excedente \\[6pt]
+6 & Contabilidad & Conciliar con estado de cuenta PDF & Sem\'aforo del Dashboard se actualiza \\[6pt]
+7 & UI & Confirmar que todos los entregables est\'an completos & Folio pasa a ``Listo para cierre'' \\[6pt]
+8 & Contabilidad & Revisar y aprobar expediente completo & Folio marcado ``Cerrado'' \\
+\end{longtable}
+
+\subsection{L\'ogica de Rec\'alculo Autom\'atico}
+
+La funci\'on \texttt{recalculate\_workflow\_from\_data()} en \texttt{services.py}
+implementa las reglas de avance de cada paso:
+
+\begin{lstlisting}[language=Python, caption={Recalculo del workflow -- services.py}]
+def recalculate_workflow_from_data(folio, workflow, deliverables,
+                                   has_transfer, has_cfdi,
+                                   has_reconciliation):
+    # Paso 1: siempre True (folio ya existe)
+    workflow.step_1_ui_folio = True
+
+    # Paso 2: SAT/EFOS vigente
+    compliance = ProviderCompliance.query.filter_by(
+        provider_id=folio.provider_id).first()
+    workflow.step_2_contab_sat = (
+        compliance and
+        compliance.sat_opinion_status == 'vigente' and
+        not compliance.efos_flag
+    )
+
+    # Paso 3: todos los entregables UI subidos
+    ui_items = [d for d in deliverables if d.owner_area == 'ui']
+    workflow.step_3_ui_deliverables = (
+        bool(ui_items) and all(d.uploaded for d in ui_items)
+    )
+
+    # Paso 4: traspaso solo si SAT validado
+    workflow.step_4_tesoreria_transfer = (
+        workflow.step_2_contab_sat and has_transfer
+    )
+
+    # Paso 5: CFDI solo si traspaso realizado
+    workflow.step_5_contab_cfdi = (
+        workflow.step_4_tesoreria_transfer and has_cfdi
+    )
+
+    # Paso 6: conciliacion solo si CFDI vigente
+    workflow.step_6_contab_reconciliation = (
+        workflow.step_5_contab_cfdi and has_reconciliation
+    )
+
+    # Paso 7: listo cierre si UI completo y conciliacion completa
+    workflow.step_7_ui_ready_to_close = (
+        workflow.step_3_ui_deliverables and
+        workflow.step_6_contab_reconciliation
+    )
+
+    # Paso 8: cerrado si listo + conciliacion
+    workflow.step_8_contab_closed = (
+        workflow.step_7_ui_ready_to_close and
+        workflow.step_6_contab_reconciliation
+    )
+\end{lstlisting}
+
+\subsection{Estatus Sem\'aforo del Folio}
+
+\begin{table}[h!]
+\centering
+\begin{tabularx}{\textwidth}{>{\ttfamily}lX}
+\toprule
+\textbf{Estatus} & \textbf{Condici\'on} \\
+\midrule
+critico             & Existen alertas de severidad ``alta'' abiertas \\
+cerrado             & Paso 8 completo \\
+listo\_para\_cierre & Pasos 7 y 6 completos \\
+en\_proceso         & Alguno de los pasos 3, 4 o 5 completo \\
+pendiente           & Estado inicial (ning\'un paso avanzado) \\
+\bottomrule
+\end{tabularx}
+\caption{Estatus sem\'aforo de los folios SINGA}
+\end{table}
+
+\newpage
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{M\'odulos del Sistema}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+\subsection{M\'odulo de Autenticaci\'on (\texttt{/auth})}
+
+\begin{itemize}
+  \item \textbf{GET/POST \texttt{/auth/login}}: Valida email y contrase\~na (bcrypt v\'ia
+    Werkzeug), crea sesi\'on con \texttt{user\_id}, \texttt{user\_name} y \texttt{role}.
+    Registra evento en \texttt{AuditLog}.
+  \item \textbf{POST \texttt{/auth/logout}}: Limpia sesi\'on y redirige al landing.
+  \item \textbf{POST \texttt{/auth/api/token}}: Emite JWT con claims \texttt{role} y
+    \texttt{name} para consumo de API externa.
+\end{itemize}
+
+\subsection{M\'odulo Principal (\texttt{/})}
+
+\subsubsection{Dashboard Ejecutivo}
+
+El dashboard se personaliza seg\'un el rol del usuario autenticado:
+
+\begin{table}[h!]
+\centering
+\begin{tabularx}{\textwidth}{>{\bfseries}lX}
+\toprule
+Rol & Informaci\'on en el Dashboard \\
+\midrule
+UI & Entregables pendientes, folios activos, folios cr\'iticos \\
+Contabilidad & Entregables contables, alertas abiertas, folios sin CFDI \\
+Tesorer\'ia & Folios por traspasar, alertas de severidad alta \\
+Direcci\'on & Reportes mensuales, alertas antiguas (+5 d\'ias), acuses firmados \\
+Auditor & Vista completa de KPIs sin permisos de escritura \\
+\bottomrule
+\end{tabularx}
+\caption{Informaci\'on personalizada por rol en el dashboard}
+\end{table}
+
+\subsubsection{B\'usqueda Global (\texttt{/busqueda})}
+
+Permite buscar por texto libre. Devuelve hasta 25 resultados por categor\'ia:
+folios (SINGA, responsable, proveedor), proveedores, UUIDs de CFDI, referencias
+SPEI y alertas.
+
+\subsection{M\'odulo de Folios (\texttt{/folios})}
+
+Vista \textit{master-detail}: lista de folios con filtros en el panel izquierdo
+y detalle del folio seleccionado en el panel derecho (workflow, entregables,
+transferencias, CFDIs, movimientos, alertas, evidencias y eventos).
+
+\subsubsection{Creaci\'on de un Folio}
+
+Al crear un nuevo folio, el sistema:
+\begin{enumerate}
+  \item Valida que el n\'umero SINGA sea \'unico.
+  \item Verifica que el proveedor tenga al menos una \textbf{cuenta bancaria autorizada
+    activa}. Si no la tiene, bloquea la operaci\'on.
+  \item Valida que el presupuesto no supere el monto del contrato.
+  \item Crea el registro \texttt{FolioWorkflow} (8 pasos en falso).
+  \item Genera autom\'aticamente el checklist de \texttt{FolioDeliverableItem}
+    seg\'un el tipo de proveedor.
+\end{enumerate}
+
+\subsection{M\'odulo Operativo (\texttt{/operacion})}
+
+\subsubsection{Cumplimiento SAT/EFOS}
+
+Contabilidad gestiona el estado fiscal de cada proveedor. Al actualizar:
+\begin{itemize}
+  \item Se registra la Opini\'on de Cumplimiento con su fecha de vencimiento.
+  \item Se marcan flags: EFOS, congruencia de actividad, coincidencia RFC-CLABE.
+  \item El sistema \textbf{recalcula autom\'aticamente el estatus de todos los folios}
+    activos del proveedor.
+\end{itemize}
+
+\begin{rulebox}[Regla cr\'itica de negocio]
+No es posible registrar un traspaso SPEI si el proveedor tiene
+\texttt{efos\_flag = True}, opini\'on SAT \texttt{vencida} o \texttt{no\_cargada},
+o si la actividad econ\'omica no coincide. El sistema retorna un error de negocio
+con mensaje espec\'ifico.
+\end{rulebox}
+
+\subsubsection{Entregables por Tipo de Proveedor}
+
+\begin{table}[h!]
+\centering
+\begin{tabularx}{\textwidth}{>{\bfseries}lX}
+\toprule
+Tipo & Entregables adicionales \\
+\midrule
+Outsourcing & Lista de personal, turnos, asistencias firmadas, bit\'acoras
+    operativas, evidencia fotogr\'afica, supervisi\'on documentada, relaci\'on de insumos \\[4pt]
+Materiales & Fotos de materiales recibidos, acuse de recepci\'on firmado, registro de
+    inventario, evidencia de entrega al destino final \\[4pt]
+Servicios & Definici\'on de procesos, reportes con KPIs, evidencia de intervenci\'on
+    (logs/tickets), resultados documentados, acta de entrega-recepci\'on \\
+\bottomrule
+\end{tabularx}
+\caption{Entregables espec\'ificos por tipo de proveedor}
+\end{table}
+
+Todos los tipos comparten los \textbf{entregables base}: orden de compra firmada,
+contrato vigente, responsable de comunicaci\'on y correos formales del per\'iodo.
+
+\subsubsection{Traspasos SPEI}
+
+El registro de un traspaso ejecuta \textbf{5 validaciones secuenciales}:
+
+\begin{enumerate}
+  \item Paso 2 (SAT) debe estar completo.
+  \item La cuenta bancaria debe pertenecer al proveedor del folio.
+  \item SAT vigente, EFOS negativo, actividad y RFC validados.
+  \item Opini\'on SAT no vencida a la fecha.
+  \item Monto $\leq$ presupuesto autorizado (o requiere aprobaci\'on de Direcci\'on).
+\end{enumerate}
+
+Si el monto supera el presupuesto y hay aprobaci\'on de Direcci\'on, el traspaso se
+registra pero \textbf{genera autom\'aticamente una alerta} de tipo
+\texttt{excede\_presupuesto} con severidad alta.
+
+\subsubsection{CFDI}
+
+Vincula comprobantes fiscales digitales a cada folio. Permite subir los archivos
+XML y PDF del CFDI. Requiere que el Paso~4 (Traspaso) est\'e completo. Registra
+UUID, monto, fecha de emisi\'on y estatus (vigente/cancelado). Las cancelaciones
+deben incluir motivo documentado.
+
+\subsubsection{Conciliaci\'on Bancaria}
+
+Dos modalidades:
+
+\begin{enumerate}
+  \item \textbf{Carga de PDF}: El sistema analiza el estado de cuenta bancario con
+    \texttt{pypdf} y extrae movimientos mediante expresiones regulares. Crea alertas
+    autom\'aticas para cada anomal\'ia detectada.
+  \item \textbf{Registro manual}: El operador captura movimientos individuales. Se
+    aplican 4 reglas de alerta autom\'aticas:
+    \begin{itemize}
+      \item Dep\'osito sin folio $\rightarrow$ alerta alta \texttt{deposito\_sin\_folio}
+      \item Monto $>$ presupuesto $\rightarrow$ alerta alta \texttt{excede\_presupuesto}
+      \item Cuenta no autorizada $\rightarrow$ alerta alta \texttt{cuenta\_no\_autorizada}
+      \item Sin CFDI vigente $\rightarrow$ alerta media \texttt{diferencia\_cfdi\_banco}
+    \end{itemize}
+\end{enumerate}
+
+\subsubsection{Presupuestos}
+
+Carga de presupuestos autorizados por per\'iodo (YYYY-MM). Dos modalidades:
+carga masiva desde Excel con columnas \texttt{folio}, \texttt{presupuesto autorizado},
+\texttt{periodo}; o alta manual individual por folio.
+
+\subsubsection{Reportes Mensuales}
+
+Generaci\'on autom\'atica de reporte ejecutivo con KPIs calculados:
+\begin{itemize}
+  \item Porcentaje de cierre de folios en el per\'iodo
+  \item Alertas abiertas y alertas cr\'iticas
+  \item N\'umero de proveedores con SAT vigente
+  \item Ratio de cumplimiento SAT sobre total de proveedores
+\end{itemize}
+
+\subsubsection{Acuses de Conformidad}
+
+Registro digital de la firma de conformidad de dos \'areas: UI y Contabilidad.
+Incluye nombre del firmante, fecha y notas. Visible en el dashboard de Direcci\'on.
+
+\newpage
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{Responsabilidades Operativas por \'Area}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+Esta secci\'on est\'a basada en la \textit{Carta de Instrucciones Operativas} emitida
+por Direcci\'on General para UI y Contabilidad.
+
+\subsection{Unidad de Inteligencia (UI)}
+
+La UI es el \'area responsable de construir y mantener el expediente operativo de cada
+folio SINGA. \textbf{Sin la evidencia generada por UI, no existe sustento para la
+factura ni para el pago}.
+
+\begin{table}[h!]
+\centering
+\begin{tabularx}{\textwidth}{Xlc}
+\toprule
+\textbf{Acci\'on} & \textbf{Plazo m\'aximo} & \textbf{KPI} \\
+\midrule
+Registrar folio SINGA en la plataforma & Mismo d\'ia de apertura & \% en tiempo \\
+Subir orden de compra y contrato & 48 horas de iniciado & \% OC subidas \\
+Subir evidencia operativa del per\'iodo & Antes del d\'ia 25 & \% expedientes completos \\
+Subir asistencias y bit\'acoras & M\'ax.\ 5 d\'ias h\'abiles & \% asistencias \\
+Subir evidencia fotogr\'afica & M\'ax.\ 5 d\'ias h\'abiles & \% fotos subidas \\
+Comunicaciones relevantes del mes & Antes del cierre & \% comunicaciones \\
+Marcar folio listo para revisi\'on & D\'ia 27 de cada mes & \% folios enviados \\
+\bottomrule
+\end{tabularx}
+\caption{KPIs de la Unidad de Inteligencia}
+\end{table}
+
+\subsection{\'Area de Contabilidad}
+
+\begin{table}[h!]
+\centering
+\begin{tabularx}{\textwidth}{Xlc}
+\toprule
+\textbf{Acci\'on} & \textbf{Plazo m\'aximo} & \textbf{KPI} \\
+\midrule
+Subir opini\'on SAT antes de autorizar pago & Previo al traspaso & \% opiniones previas \\
+Subir Excel de presupuestos SINGA & D\'ia 5 de cada mes & \% meses con presupuesto \\
+Correr conciliaci\'on bancaria & D\'ias 28--30 del mes & \% conciliaciones \\
+Documentar y resolver alertas & 5 d\'ias h\'abiles & \% alertas en plazo \\
+Vincular CFDIs a folios SINGA & M\'ax.\ 3 d\'ias de emitido & \% CFDIs vinculados \\
+Entregar reporte mensual a Direcci\'on & D\'ia 5 del mes siguiente & \% reportes a tiempo \\
+Verificar proveedores en lista EFOS & Antes del primer pago & \% verificados \\
+\bottomrule
+\end{tabularx}
+\caption{KPIs del \'Area de Contabilidad}
+\end{table}
+
+\subsection{Conciliaciones Cr\'iticas Mensuales}
+
+Contabilidad debe realizar y documentar \textbf{tres cruces de conciliaci\'on} antes
+del cierre mensual:
+
+\begin{table}[h!]
+\centering
+\begin{tabularx}{\textwidth}{lXl}
+\toprule
+\textbf{Conciliaci\'on} & \textbf{Qu\'e se cruza} & \textbf{Entregable} \\
+\midrule
+Bancos vs CFDIs vs Contabilidad &
+  Cada dep\'osito/retiro debe tener CFDI y asiento contable. Sin diferencias. &
+  Reporte conciliaci\'on IA \\[6pt]
+IVA acreditable vs IVA trasladado &
+  IVA de facturas recibidas vs IVA cobrado. &
+  Reporte fiscal mensual \\[6pt]
+N\'omina vs IMSS vs CFDIs &
+  CFDIs de n\'omina coinciden con pagos SUA y n\'omina contabilizada. &
+  Constancias SUA \\
+\bottomrule
+\end{tabularx}
+\caption{Conciliaciones mensuales obligatorias}
+\end{table}
+
+\newpage
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{Sistema de Alertas y Auditor\'ia}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+\subsection{Centro de Alertas}
+
+Las alertas se generan autom\'aticamente por el motor de conciliaci\'on y las
+validaciones de traspasos. Cada alerta tiene severidad (\texttt{media}/\texttt{alta})
+y estatus (\texttt{abierta}/\texttt{resuelta}).
+
+\begin{rulebox}[Regla de resoluci\'on]
+Toda alerta abierta debe resolverse en un plazo m\'aximo de \textbf{5 d\'ias h\'abiles}.
+Las alertas de severidad alta que superen este plazo aparecen destacadas en el
+dashboard de Direcci\'on. Un folio con alertas altas abiertas cambia autom\'aticamente
+su estatus a \texttt{critico}.
+\end{rulebox}
+
+\subsection{Log de Auditor\'ia}
+
+El modelo \texttt{AuditLog} registra \textbf{toda acci\'on importante} en el sistema.
+La funci\'on \texttt{log\_action()} en \texttt{audit.py} se invoca desde todas las rutas
+de escritura:
+
+\begin{lstlisting}[language=Python, caption={Funci\'on de log de auditor\'ia}]
+def log_action(*, user_id, action, entity, entity_id=None, details=None):
+    """
+    Crea un registro de auditoria en la base de datos.
+    Solo usa argumentos nombrados (keyword-only).
+    """
+    entry = AuditLog(
+        user_id=user_id,
+        action=action,       # ej: 'folio_creado', 'traspaso_registrado'
+        entity=entity,       # ej: 'Folio', 'Transfer', 'ProviderCompliance'
+        entity_id=entity_id,
+        details=details      # JSON o texto libre con contexto
+    )
+    db.session.add(entry)
+    db.session.commit()
+\end{lstlisting}
+
+Eventos auditados: login/logout, creaci\'on de folios, actualizaci\'on de SAT,
+registro de traspasos, vinculaci\'on de CFDI, carga de presupuestos, generaci\'on
+de reportes.
+
+\newpage
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{C\'alculo de Fechas L\'imite y KPI de Entregables}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+El m\'odulo \texttt{services.py} implementa la l\'ogica de c\'alculo de plazos y
+el estado KPI de cada entregable.
+
+\begin{lstlisting}[language=Python, caption={C\'alculo de fechas l\'imite por tipo de entregable}]
+def due_date_for_code(code, owner_area):
+    today = date.today()
+    if code in ('oc', 'contrato'):
+        return add_business_days(today, 2)
+    elif code in ('asistencias', 'fotos', 'bitacoras', 'insumos',
+                  'acuse_recepcion', 'inventario', 'evidencia_entrega',
+                  'procesos', 'kpis', 'logs', 'resultados'):
+        return add_business_days(today, 5)
+    elif code == 'comunicaciones':
+        return month_cutoff(25)     # dia 25 del mes en curso
+    elif code in ('sat', 'efos'):
+        return add_business_days(today, 1)
+    elif code == 'cfdi':
+        return add_business_days(today, 3)
+    elif code == 'conciliacion':
+        return month_cutoff(30)     # dia 30 del mes en curso
+    return add_business_days(today, 5)
+
+def kpi_status_for_item(item):
+    if item.uploaded:
+        return 'completo'
+    if item.due_date and item.due_date < date.today():
+        return 'vencido'
+    return 'pendiente'
+\end{lstlisting}
+
+\newpage
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{Datos de Demostraci\'on}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+El archivo \texttt{app/seed.py} carga datos de demostraci\'on de forma
+\textbf{idempotente} (no duplica registros si ya existen).
+
+\subsection{Usuarios Demo}
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Email} & \textbf{Rol} & \textbf{Contrase\~na} \\
+\midrule
+salo@batia.local        & Direcci\'on   & servicia2026 \\
+mgonzalez@batia.local   & Tesorer\'ia   & servicia2026 \\
+lhernandez@batia.local  & Tesorer\'ia   & servicia2026 \\
+rfuentes@batia.local    & UI            & servicia2026 \\
+cmorales@batia.local    & UI            & servicia2026 \\
+pramirez@batia.local    & Contabilidad  & servicia2026 \\
+\bottomrule
+\end{tabular}
+\caption{Usuarios de demostraci\'on}
+\end{table}
+
+\subsection{Proveedores y Folios Demo}
+
+\begin{itemize}
+  \item \textbf{Limpiadores SA} (outsourcing) --- con cuentas Banorte y BBVA
+  \item \textbf{Insumos Alfa} (materiales) --- con cuenta BBVA
+  \item \textbf{TechServ} (servicios) --- con cuenta Banorte
+  \item \textbf{Mant.\ Delta} (outsourcing) --- con cuenta Banorte
+\end{itemize}
+
+Tres folios demo con estatus variables para prueba de todas las funcionalidades.
+
+\newpage
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{Despliegue y Operaci\'on}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+\subsection{Entornos}
+
+\begin{table}[h!]
+\centering
+\begin{tabularx}{\textwidth}{>{\bfseries}lXl}
+\toprule
+Entorno & Base de datos & Servidor \\
+\midrule
+Desarrollo & SQLite (\texttt{instance/servicia.db}) & \texttt{python run.py} \\
+Producci\'on & PostgreSQL (Cloud SQL, GCP) & Gunicorn en Cloud Run \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Dockerfile}
+
+\begin{lstlisting}[style=plain, caption={Dockerfile de producci\'on}]
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PORT=8080
+
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+
+CMD ["sh", "-c", \
+  "gunicorn --bind 0.0.0.0:${PORT} \
+            --workers 1 --threads 8 --timeout 120 wsgi:app"]
+\end{lstlisting}
+
+\subsection{Cloud Run --- Configuraci\'on}
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Par\'ametro} & \textbf{Valor} \\
+\midrule
+Instancias m\'inimas & 0 (scale-to-zero) \\
+Instancias m\'aximas & 3 \\
+CPU                  & 1 vCPU \\
+Memoria              & 512 MiB \\
+Timeout              & 120 segundos \\
+Cuenta de servicio   & cloud-run-mlh@\ldots.iam.gserviceaccount.com \\
+Regi\'on             & us-central1 \\
+\bottomrule
+\end{tabular}
+\caption{Configuraci\'on de Cloud Run}
+\end{table}
+
+\subsection{Variables de Entorno}
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Variable} & \textbf{Prop\'osito} \\
+\midrule
+\texttt{SECRET\_KEY}          & Clave de sesiones Flask \\
+\texttt{JWT\_SECRET\_KEY}     & Clave para firma de tokens JWT \\
+\texttt{DATABASE\_URL}        & Cadena de conexi\'on (SQLite o PostgreSQL) \\
+\texttt{COMPANY\_NAME}        & Nombre de la empresa para branding \\
+\texttt{UPLOAD\_FOLDER}       & Ruta local para archivos subidos \\
+\texttt{MAX\_CONTENT\_LENGTH} & Tama\~no m\'aximo de upload (16~MB) \\
+\bottomrule
+\end{tabular}
+\caption{Variables de entorno}
+\end{table}
+
+\subsection{Instalaci\'on en Desarrollo}
+
+\begin{lstlisting}[style=plain, caption={Pasos de instalaci\'on local}]
+# 1. Instalar dependencias
+pip install -r requirements.txt
+
+# 2. Configurar entorno
+cp .env.example .env
+# Editar .env con los valores correspondientes
+
+# 3. Iniciar aplicacion (auto-seed incluido)
+python run.py
+
+# 4. Acceder a la plataforma
+# http://127.0.0.1:5000
+\end{lstlisting}
+
+\newpage
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{Reglas Absolutas del Sistema}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+Las siguientes reglas est\'an implementadas en c\'odigo como bloqueos duros y
+no tienen excepciones operativas:
+
+\begin{rulebox}[Reglas absolutas --- Aplicables a todas las \'areas]
+\begin{enumerate}
+  \item No se registra ning\'un folio sin el n\'umero de SINGA correspondiente.
+  \item No se puede traspasar dinero a una cuenta que no est\'e autorizada por
+    Direcci\'on en la plataforma.
+  \item No se emite ni se paga ninguna factura sin contrato firmado previo.
+  \item No se deduce ning\'un gasto sin materializaci\'on completa del servicio.
+  \item No se paga a ning\'un proveedor sin Opini\'on de Cumplimiento SAT
+    vigente y cargada.
+  \item Todo debe estar conciliado: \textbf{Banco $\leftrightarrow$ CFDI
+    $\leftrightarrow$ Contabilidad $\leftrightarrow$ Folio SINGA}.
+  \item Cualquier diferencia entre el dep\'osito y el presupuesto SINGA requiere
+    autorizaci\'on escrita de Direcci\'on antes de proceder.
+  \item Las alertas generadas por el sistema deben resolverse en m\'aximo
+    \textbf{5 d\'ias h\'abiles}.
+\end{enumerate}
+\end{rulebox}
+
+\bigskip
+
+\begin{alertbox}[Riesgo fiscal cr\'itico]
+Pagar a un proveedor que aparezca en la lista EFOS (Empresas que Facturan
+Operaciones Simuladas) \textbf{invalida autom\'aticamente la deducci\'on fiscal}
+y genera responsabilidad solidaria para la empresa. Servicia bloquea este
+escenario en c\'odigo: un proveedor con \texttt{efos\_flag = True} no puede
+recibir traspasos.
+\end{alertbox}
+
+\newpage
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{Dise\~no de Interfaz}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+\subsection{Paleta de Colores}
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{>{\ttfamily}lll}
+\toprule
+\textbf{Variable} & \textbf{Uso} & \textbf{Hex} \\
+\midrule
+ink-900   & Fondo oscuro, textos primarios    & \#0b1736 \\
+sky-500   & Acento principal, links, headers  & \#1c78c0 \\
+teal-500  & Acento secundario, subt\'itulos   & \#0f8d8f \\
+lime-500  & Estados ok, \'exito               & \#5f9d2f \\
+amber-500 & Advertencias, estado pendiente    & \#c97a1a \\
+rose-500  & Errores, estados cr\'iticos       & \#c94a56 \\
+paper-100 & Fondo de tarjetas y panels        & \#f8fafc \\
+\bottomrule
+\end{tabular}
+\caption{Sistema de colores de la interfaz}
+\end{table}
+
+\subsection{Componentes Principales}
+
+\begin{itemize}
+  \item \textbf{Dashboard de rol}: Hero personalizado con KPIs focalizados y
+    accesos r\'apidos.
+  \item \textbf{Master-Detail de folios}: Lista filtrable con panel de detalle
+    contextual.
+  \item \textbf{Workflow visual}: Indicadores de los 8 pasos con estado
+    completado/pendiente.
+  \item \textbf{Alertas flash}: Auto-cierre en 5.2 segundos con animaci\'on.
+  \item \textbf{Efectos visuales}: Orbs flotantes animados en el fondo
+    (CSS keyframes).
+  \item \textbf{Reveal al scroll}: Intersection Observer para animar elementos
+    al entrar en viewport.
+\end{itemize}
+
+\newpage
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{Acuse de Recibo}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+\vspace{1cm}
+
+\begin{table}[h!]
+\centering
+\begin{tabularx}{\textwidth}{XX}
+\toprule
+\multicolumn{1}{c}{\textbf{Unidad de Inteligencia (UI)}} &
+\multicolumn{1}{c}{\textbf{\'Area de Contabilidad}} \\
+\midrule
+& \\[1.8cm]
+\underline{\hspace{6cm}} & \underline{\hspace{6cm}} \\
+Nombre y firma del responsable & Nombre y firma del responsable \\[0.5cm]
+Fecha: \underline{\hspace{3cm}} & Fecha: \underline{\hspace{3cm}} \\[0.5cm]
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\vspace{2cm}
+
+\begin{center}
+{\small\color{gray}
+Este documento es de uso interno y confidencial.\\
+Servicia $\cdot$ M\'odulo de Aseguramiento Contable $\cdot$ Batia\\[0.2cm]
+Generado a partir del an\'alisis del c\'odigo fuente\\
+y la Carta de Instrucciones Operativas oficial.\\[0.2cm]
+Versi\'on 2.0 $\cdot$ Abril 2026
+}
+\end{center}
+
+\end{document}

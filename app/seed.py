@@ -5,6 +5,8 @@ El seed es idempotente: si ya existen registros, no inserta duplicados.
 
 from datetime import date
 
+from sqlalchemy.exc import OperationalError
+
 from app.extensions import db
 from app.models import (
     AuthorizedAccount,
@@ -43,7 +45,15 @@ PROVIDERS = [
 def seed_data():
     """Inicializa catalogos, usuarios, proveedores y muestras operativas."""
     # Crea tablas si aun no existen.
-    db.create_all()
+    try:
+        db.create_all()
+    except OperationalError as exc:
+        # Proteccion para arranques concurrentes en Cloud Run/SQLite:
+        # si otro proceso creo tablas entre la verificacion y el CREATE,
+        # continuamos con el seed idempotente sin tumbar el worker.
+        message = str(exc).lower()
+        if "already exists" not in message:
+            raise
 
     if Role.query.count() == 0:
         for role_name in ROLES:
