@@ -1,4 +1,5 @@
-﻿# Servicia (Piloto Batia)
+﻿# CODIGO PRUEBA  
+# Servicia (Piloto Batia)
 
 Plataforma de aseguramiento contable construida con Flask (App Factory + Blueprints), con frontend server-rendered y flujo operativo integral para UI, Contabilidad, Tesoreria y Direccion.
 
