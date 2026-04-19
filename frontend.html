@@ -1644,17 +1644,26 @@ async function registrarProveedor(){
     return;
   }
   try{
-    await apiSend('/proveedores','POST',{
+    const periodo = new Date().toISOString().slice(0,7);
+    const resp = await apiSend('/proveedores','POST',{
       nombre,
       rfc,
       tipo,
       monto,
       repse: tipo === 'outsourcing' || tipo === 'consultoria',
       tiene_fisico: tipo === 'materia' || tipo === 'construccion',
-      usuario: 'frontend'
+      usuario: 'frontend',
+      crear_folio: true,
+      folio_periodo: periodo,
+      folio_presupuesto: monto
     });
     closeModal('modal-proveedor');
+    if(resp && resp.folio && resp.folio.numero){
+      alert(`Proveedor creado con folio #${resp.folio.numero} y checklist generado.`);
+    }
     await loadDashboard();
+    await loadFoliosForFrontend();
+    await loadReportesPorNivel();
   }catch(err){
     alert(`No se pudo registrar proveedor: ${err.message}`);
   }

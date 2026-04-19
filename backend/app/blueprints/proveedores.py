@@ -1,12 +1,24 @@
 from flask import Blueprint, jsonify, request
 
 from ..extensions import db
-from ..models import Expediente, Proveedor
+from ..models import Documento, Expediente, Folio, Proveedor
 from ..services.auditoria import log_event
+from ..services.bloqueo import calcular_completitud
+from ..services.catalogo import DOCS_BY_LEVEL
 from ..services.clasificador import clasificar_proveedor
 from ..services.serializers import expediente_to_dict
 
 proveedores_bp = Blueprint("proveedores", __name__)
+
+
+def _next_folio_numero() -> str:
+    rows = Folio.query.with_entities(Folio.numero).all()
+    nums = []
+    for (n,) in rows:
+        if isinstance(n, str) and n.isdigit():
+            nums.append(int(n))
+    base = max(nums) + 1 if nums else 10001
+    return str(base)
 
 
 def _proveedor_dict(p: Proveedor) -> dict:
@@ -70,9 +82,39 @@ def crear_proveedor():
     db.session.add(proveedor)
     db.session.flush()
     log_event("proveedores", proveedor.id, "crear", {"nivel": proveedor.nivel}, body.get("usuario"))
-    db.session.commit()
+    folio_creado = None
+    if bool(body.get("crear_folio", False)):
+        folio = Folio(
+            numero=str(body.get("folio_numero") or _next_folio_numero()),
+            proveedor_id=proveedor.id,
+            presupuesto=float(body.get("folio_presupuesto", body.get("monto", 0))),
+            periodo=body.get("folio_periodo", "2026-04"),
+            estado="activo",
+        )
+        db.session.add(folio)
+        db.session.flush()
 
-    return jsonify({**_proveedor_dict(proveedor), "clasificacion": clasificado}), 201
+        expediente = Expediente(folio_id=folio.id, completitud=0.0, pago_bloqueado=True)
+        db.session.add(expediente)
+        db.session.flush()
+
+        for tipo_doc in DOCS_BY_LEVEL[proveedor.nivel]:
+            db.session.add(Documento(expediente_id=expediente.id, tipo=tipo_doc, subido=False))
+
+        folio_creado = {
+            "id": folio.id,
+            "numero": folio.numero,
+            "periodo": folio.periodo,
+            "presupuesto": folio.presupuesto,
+            "expediente_id": expediente.id,
+        }
+        log_event("folios", folio.id, "crear", {"proveedor_id": proveedor.id}, body.get("usuario"))
+
+    db.session.commit()
+    if folio_creado:
+        calcular_completitud(folio_creado["expediente_id"])
+
+    return jsonify({**_proveedor_dict(proveedor), "clasificacion": clasificado, "folio": folio_creado}), 201
 
 
 @proveedores_bp.patch("/proveedores/<int:proveedor_id>")
