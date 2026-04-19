@@ -1,0 +1,27 @@
+{% extends 'reports/_base.html' %}
+{% block body %}
+<div class="header">
+  <div class="brand">SERVICIA · Batia</div>
+  <div class="sub">Semáforo Fiscal y Cumplimiento</div>
+  <div class="meta">Generado: {{ generated_at }} · Art. 69-B CFF · Art. 29-A CFF · NOM-151 · Art. 5-A CFF</div>
+</div>
+
+<div class="title">Reporte de Semáforo Fiscal</div>
+<div class="grid2">
+{% for key, item in semaforo.items() %}
+  <div class="card">
+    <div>
+      {% if item.estado == 'verde' %}<span class="state-dot" style="background:#16a34a"></span>{% endif %}
+      {% if item.estado == 'amarillo' %}<span class="state-dot" style="background:#ca8a04"></span>{% endif %}
+      {% if item.estado == 'rojo' %}<span class="state-dot" style="background:#dc2626"></span>{% endif %}
+      <strong>{{ key.replace('_',' ').upper() }}</strong>
+    </div>
+    <div style="margin-top:6px">Estado: <strong>{{ item.estado|upper }}</strong></div>
+    <div>Valor: {{ item.valor }}</div>
+    <div style="color:#475569">Base legal: {{ item.ley }}</div>
+  </div>
+{% endfor %}
+</div>
+
+<div class="foot">Este semáforo se calcula automáticamente con base en expediente, CFDI, REPSE y controles de materialidad.</div>
+{% endblock %}

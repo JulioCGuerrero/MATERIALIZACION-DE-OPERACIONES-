@@ -1,0 +1,48 @@
+{% extends 'reports/_base.html' %}
+{% block body %}
+<div class="header">
+  <div class="brand">SERVICIA · Batia</div>
+  <div class="sub">Trazabilidad Bancaria</div>
+  <div class="meta">Generado: {{ generated_at }} · Conciliación operacional</div>
+</div>
+
+<div class="title">Reporte de Trazabilidad y Presupuesto</div>
+<div class="kpis">
+  <div class="kpi"><div class="l">Movimientos</div><div class="v">{{ report['total'] }}</div></div>
+  <div class="kpi"><div class="l">Con alerta</div><div class="v">{{ report['items']|selectattr('excede_presup')|list|length }}</div></div>
+  <div class="kpi"><div class="l">Pagos bloqueados</div><div class="v">{{ report['items']|selectattr('pago_bloqueado')|list|length }}</div></div>
+  <div class="kpi"><div class="l">Sin folio bancario</div><div class="v">{{ report['items']|rejectattr('folio_bancario')|list|length }}</div></div>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>Folio</th><th>Proveedor</th><th>Nivel</th><th>Materialidad</th><th>Folio bancario</th><th>Monto</th><th>Presupuesto</th><th>Estado</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in report['items'] %}
+    <tr>
+      <td class="mono">#{{ r.folio }}</td>
+      <td>{{ r.proveedor }}</td>
+      <td>N{{ r.nivel }}</td>
+      <td>
+        {% if r.materialidad >= 100 %}<span class="badge ok">{{ '%.0f'|format(r.materialidad) }}%</span>
+        {% elif r.materialidad >= 70 %}<span class="badge warn">{{ '%.0f'|format(r.materialidad) }}%</span>
+        {% else %}<span class="badge bad">{{ '%.0f'|format(r.materialidad) }}%</span>
+        {% endif %}
+      </td>
+      <td class="mono">{{ r.folio_bancario or 'Pendiente' }}</td>
+      <td class="mono">${{ '{:,.0f}'.format(r.monto) }}</td>
+      <td class="mono">${{ '{:,.0f}'.format(r.presupuesto) }}</td>
+      <td>
+        {% if r.pago_bloqueado %}<span class="badge bad">Bloqueado</span>{% else %}<span class="badge ok">Pagado</span>{% endif %}
+        {% if r.excede_presup %}<span class="badge warn">Excede</span>{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="foot">Uso interno Tesorería/Contabilidad para control de ejecución contra presupuesto SINGA.</div>
+{% endblock %}

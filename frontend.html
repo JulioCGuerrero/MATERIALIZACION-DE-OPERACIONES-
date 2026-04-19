@@ -1,0 +1,1699 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SINGA · Aseguramiento Contable</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,600;0,800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0d12;--surface:#111318;--surface2:#181c24;--surface3:#1f2430;
+  --border:#252c3a;--border2:#2e3850;
+  --text:#e6e9f4;--muted:#5a6380;--muted2:#8892b0;
+  --accent:#4f84ff;--accent2:#7b5ea7;
+  --green:#20d68a;--green-bg:rgba(32,214,138,.1);--green-dim:#0d4a30;
+  --yellow:#f5c842;--yellow-bg:rgba(245,200,66,.1);--yellow-dim:#4a3800;
+  --red:#ff4d6a;--red-bg:rgba(255,77,106,.1);--red-dim:#5a0d1e;
+  --n1-c:#20d68a;--n2-c:#4f84ff;--n3-c:#f5c842;--n4-c:#ff4d6a;
+  --mono:'DM Mono',monospace;--display:'Fraunces',serif;--sans:'DM Sans',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;min-height:100vh;display:flex;overflow-x:hidden;}
+
+/* SIDEBAR */
+.sidebar{width:228px;min-height:100vh;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;overflow-y:auto;}
+.logo{padding:20px 16px 16px;border-bottom:1px solid var(--border);}
+.logo-mark{font-family:var(--mono);font-size:10px;color:var(--accent);letter-spacing:.15em;margin-bottom:5px;display:flex;align-items:center;gap:6px;}
+.logo-mark::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--accent);}
+.logo h1{font-family:var(--display);font-size:15px;font-weight:600;line-height:1.3;}
+.epill{margin:10px 12px;background:var(--surface2);border:1px solid var(--accent);border-radius:8px;padding:8px 11px;display:flex;align-items:center;gap:7px;}
+.epill .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent);}
+.epill span{font-size:12px;font-weight:500;}
+.epill small{margin-left:auto;font-size:10px;color:var(--muted);font-family:var(--mono);}
+nav{flex:1;padding:6px 0;}
+.ns{padding:10px 14px 3px;font-size:10px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;}
+.ni{display:flex;align-items:center;gap:8px;padding:7px 14px;cursor:pointer;border-left:2px solid transparent;transition:all .15s;font-size:12px;color:var(--muted2);}
+.ni:hover{background:var(--surface2);color:var(--text);}
+.ni.active{background:var(--surface2);color:var(--accent);border-left-color:var(--accent);font-weight:500;}
+.ni .ico{font-size:14px;width:16px;text-align:center;}
+.nb{margin-left:auto;font-size:10px;font-family:var(--mono);padding:1px 5px;border-radius:6px;}
+.nb.r{background:var(--red-dim);color:var(--red);}
+.nb.y{background:var(--yellow-dim);color:var(--yellow);}
+.nb.g{background:var(--green-dim);color:var(--green);}
+
+/* MAIN */
+.main{margin-left:228px;flex:1;display:flex;flex-direction:column;min-height:100vh;}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:52px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:50;}
+.topbar h2{font-family:var(--display);font-size:15px;font-weight:600;flex:1;}
+.period{background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:3px 10px;font-family:var(--mono);font-size:11px;color:var(--muted2);}
+.btn{padding:6px 14px;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;border:none;font-family:var(--sans);transition:all .15s;display:inline-flex;align-items:center;gap:5px;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:#3a72f5;}
+.btn-ghost{background:transparent;color:var(--muted2);border:1px solid var(--border2);}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent);}
+.btn-danger{background:var(--red-dim);color:var(--red);border:1px solid rgba(255,77,106,.3);}
+.btn-success{background:var(--green-dim);color:var(--green);border:1px solid rgba(32,214,138,.3);}
+.btn-warn{background:var(--yellow-dim);color:var(--yellow);border:1px solid rgba(245,200,66,.3);}
+.content{flex:1;padding:24px;overflow-y:auto;}
+.view{display:none;animation:fi .2s ease;}
+.view.active{display:block;}
+@keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+/* GRID / CARD */
+.cg{display:grid;gap:12px;margin-bottom:20px;}
+.cg4{grid-template-columns:repeat(4,1fr);}
+.cg3{grid-template-columns:repeat(3,1fr);}
+.cg2{grid-template-columns:1fr 1fr;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:16px;}
+.clabel{font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:7px;}
+.cval{font-size:24px;font-family:var(--mono);font-weight:500;}
+.cval.g{color:var(--green);}
+.cval.r{color:var(--red);}
+.cval.y{color:var(--yellow);}
+.csub{font-size:11px;color:var(--muted);margin-top:4px;}
+
+/* TABLE */
+.tw{background:var(--surface);border:1px solid var(--border);border-radius:11px;overflow:hidden;margin-bottom:18px;}
+.th{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.th h3{font-size:13px;font-weight:600;flex:1;}
+table{width:100%;border-collapse:collapse;}
+thead th{padding:8px 12px;text-align:left;font-size:10px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;background:var(--surface2);border-bottom:1px solid var(--border);font-weight:500;}
+tbody tr{border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:var(--surface2);}
+tbody td{padding:10px 12px;font-size:12px;}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500;font-family:var(--mono);}
+.badge::before{content:'';width:5px;height:5px;border-radius:50%;}
+.badge.g{background:var(--green-bg);color:var(--green);}
+.badge.g::before{background:var(--green);}
+.badge.r{background:var(--red-bg);color:var(--red);}
+.badge.r::before{background:var(--red);}
+.badge.y{background:var(--yellow-bg);color:var(--yellow);}
+.badge.y::before{background:var(--yellow);}
+.badge.b{background:rgba(79,132,255,.1);color:var(--accent);}
+.badge.b::before{background:var(--accent);}
+.badge.mu{background:var(--surface3);color:var(--muted2);}
+.badge.mu::before{background:var(--muted);}
+
+/* PROGRESS */
+.pb{background:var(--surface3);border-radius:99px;height:5px;overflow:hidden;}
+.pf{height:100%;border-radius:99px;}
+.pf.g{background:var(--green);}
+.pf.y{background:var(--yellow);}
+.pf.r{background:var(--red);}
+.pf.b{background:var(--accent);}
+
+/* SECTION HEAD */
+.sh{display:flex;align-items:baseline;gap:8px;margin-bottom:12px;}
+.sh h3{font-family:var(--display);font-size:16px;font-weight:600;}
+.sh span{font-size:11px;color:var(--muted);}
+.sh a{font-size:11px;color:var(--accent);cursor:pointer;margin-left:auto;}
+
+/* CHIP */
+.chip{display:inline-block;padding:2px 7px;border-radius:4px;font-size:11px;font-family:var(--mono);background:var(--surface3);color:var(--muted2);}
+
+/* NIVEL BADGE */
+.nlvl{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:4px;font-size:11px;font-family:var(--mono);font-weight:500;}
+.nlvl.n1{background:rgba(32,214,138,.12);color:var(--n1-c);}
+.nlvl.n2{background:rgba(79,132,255,.12);color:var(--n2-c);}
+.nlvl.n3{background:rgba(245,200,66,.12);color:var(--n3-c);}
+.nlvl.n4{background:rgba(255,77,106,.12);color:var(--n4-c);}
+
+/* SEMAFORO ROW */
+.smrow{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface2);border-radius:8px;margin-bottom:5px;border:1px solid var(--border);transition:all .2s;cursor:pointer;}
+.smrow:hover{border-color:var(--border2);}
+.smlight{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.smlabel{font-size:12px;flex:1;}
+.smval{font-family:var(--mono);font-size:12px;color:var(--muted2);}
+.smlaw{font-size:10px;font-family:var(--mono);color:var(--muted);margin-left:8px;}
+
+/* CHECKLIST */
+.clist{display:flex;flex-direction:column;gap:6px;}
+.citem{display:flex;align-items:flex-start;gap:8px;padding:8px 11px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;}
+.cbox{width:17px;height:17px;border-radius:4px;border:2px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;margin-top:1px;}
+.cbox.done{background:var(--green);border-color:var(--green);color:#000;}
+.cbox.pend{border-color:var(--yellow);}
+.cbox.miss{border-color:var(--red);}
+.cbox.lock{border-color:var(--muted);background:var(--surface3);}
+.clabel2{flex:1;font-size:12px;line-height:1.4;}
+.clabel2.done{text-decoration:line-through;color:var(--muted);}
+.ctag{font-size:10px;font-family:var(--mono);padding:2px 5px;border-radius:3px;background:var(--surface3);color:var(--muted);flex-shrink:0;}
+.ctag.legal{background:rgba(79,132,255,.12);color:var(--accent);}
+.ctag.fiscal{background:rgba(245,200,66,.12);color:var(--yellow);}
+.ctag.campo{background:rgba(32,214,138,.12);color:var(--green);}
+.ctag.critico{background:rgba(255,77,106,.12);color:var(--red);}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:300;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:14px;width:520px;max-height:88vh;overflow-y:auto;padding:26px;}
+.modal h3{font-family:var(--display);font-size:17px;font-weight:600;margin-bottom:18px;}
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:10px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px;}
+.field input,.field select,.field textarea{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:8px 11px;font-size:13px;color:var(--text);font-family:var(--sans);outline:none;transition:border-color .15s;}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);}
+.field select option{background:var(--surface2);}
+.field textarea{resize:vertical;min-height:56px;}
+.modal-footer{display:flex;gap:8px;margin-top:18px;padding-top:14px;border-top:1px solid var(--border);}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+/* DETAIL PANEL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:none;align-items:flex-start;justify-content:flex-end;backdrop-filter:blur(3px);}
+.overlay.open{display:flex;}
+.dpanel{width:560px;height:100vh;background:var(--surface);border-left:1px solid var(--border);overflow-y:auto;animation:slideIn .22s ease;}
+@keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
+.dtop{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;position:sticky;top:0;background:var(--surface);z-index:10;}
+.dtop h3{font-family:var(--display);font-size:16px;font-weight:600;flex:1;}
+.xbtn{width:28px;height:28px;border-radius:7px;background:var(--surface2);border:1px solid var(--border2);color:var(--muted2);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;}
+.dbody{padding:20px;}
+
+/* NIVEL CARDS (clasificador) */
+.nivel-card{border-radius:10px;padding:14px;margin-bottom:10px;border:1px solid;cursor:pointer;transition:all .2s;}
+.nivel-card:hover{transform:translateY(-1px);}
+.nivel-card.n1{background:rgba(32,214,138,.05);border-color:rgba(32,214,138,.2);}
+.nivel-card.n2{background:rgba(79,132,255,.05);border-color:rgba(79,132,255,.2);}
+.nivel-card.n3{background:rgba(245,200,66,.05);border-color:rgba(245,200,66,.2);}
+.nivel-card.n4{background:rgba(255,77,106,.05);border-color:rgba(255,77,106,.2);}
+.nivel-card.selected{transform:none;}
+.nivel-card.n1.selected{background:rgba(32,214,138,.12);border-color:var(--n1-c);}
+.nivel-card.n2.selected{background:rgba(79,132,255,.12);border-color:var(--n2-c);}
+.nivel-card.n3.selected{background:rgba(245,200,66,.12);border-color:var(--n3-c);}
+.nivel-card.n4.selected{background:rgba(255,77,106,.12);border-color:var(--n4-c);}
+.nc-head{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+.nc-icon{font-size:20px;}
+.nc-title{font-weight:600;font-size:13px;}
+.nc-sub{font-size:11px;color:var(--muted2);line-height:1.4;}
+.nc-docs{margin-top:8px;font-size:11px;color:var(--muted);font-family:var(--mono);}
+
+/* BLOQUEO DE PAGO */
+.bloqueo{background:rgba(255,77,106,.06);border:1px solid rgba(255,77,106,.3);border-radius:10px;padding:14px 16px;margin-bottom:14px;}
+.bloqueo h4{font-size:13px;font-weight:600;color:var(--red);display:flex;align-items:center;gap:7px;margin-bottom:6px;}
+.bloqueo p{font-size:12px;color:var(--muted2);line-height:1.5;}
+.desbloqueado{background:rgba(32,214,138,.06);border:1px solid rgba(32,214,138,.3);border-radius:10px;padding:14px 16px;margin-bottom:14px;}
+.desbloqueado h4{font-size:13px;font-weight:600;color:var(--green);display:flex;align-items:center;gap:7px;margin-bottom:4px;}
+
+/* PORTAL PROVEEDOR */
+.portal-wrap{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:18px;}
+.portal-header{background:linear-gradient(135deg,rgba(79,132,255,.08),rgba(123,94,167,.08));padding:20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;}
+.portal-icon{width:42px;height:42px;border-radius:11px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:20px;}
+.portal-body{padding:20px;}
+.upload-zone{border:2px dashed var(--border2);border-radius:10px;padding:22px;text-align:center;cursor:pointer;transition:all .2s;background:var(--surface2);margin-bottom:10px;}
+.upload-zone:hover{border-color:var(--accent);background:rgba(79,132,255,.04);}
+.uz-icon{font-size:28px;margin-bottom:6px;}
+.step-num{width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.step-row{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border);}
+.step-row:last-child{border-bottom:none;}
+.step-info{flex:1;}
+.step-title{font-size:13px;font-weight:500;margin-bottom:2px;}
+.step-sub{font-size:11px;color:var(--muted);}
+
+/* TABS */
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:20px;}
+.tab{padding:8px 14px;font-size:12px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;margin-bottom:-1px;font-weight:500;}
+.tab:hover{color:var(--text);}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+
+/* ALERT STRIP */
+.astrip{display:flex;align-items:center;gap:10px;padding:10px 13px;border-radius:8px;margin-bottom:7px;font-size:12px;}
+.astrip.late{background:var(--red-bg);border:1px solid rgba(255,77,106,.25);}
+.astrip.warn{background:var(--yellow-bg);border:1px solid rgba(245,200,66,.25);}
+.astrip.ok{background:var(--green-bg);border:1px solid rgba(32,214,138,.25);}
+.astrip-ico{font-size:16px;flex-shrink:0;}
+.astrip-txt{flex:1;}
+.astrip-txt strong{display:block;margin-bottom:1px;}
+
+/* AI PANEL */
+.ai-panel{background:linear-gradient(135deg,rgba(79,132,255,.05),rgba(123,94,167,.05));border:1px solid rgba(79,132,255,.18);border-radius:14px;padding:20px;margin-bottom:20px;}
+.ai-header{display:flex;align-items:center;gap:11px;margin-bottom:18px;}
+.ai-icon{width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:17px;}
+.ai-title h3{font-family:var(--display);font-size:15px;font-weight:600;}
+.ai-title p{font-size:11px;color:var(--muted);margin-top:1px;}
+.ai-status{margin-left:auto;display:flex;align-items:center;gap:5px;font-size:11px;font-family:var(--mono);}
+.ai-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.thinking{display:flex;align-items:center;gap:8px;padding:10px 14px;font-size:12px;color:var(--accent);font-family:var(--mono);}
+.thinking-dots span{animation:blink 1.2s infinite;}
+.thinking-dots span:nth-child(2){animation-delay:.2s;}
+.thinking-dots span:nth-child(3){animation-delay:.4s;}
+@keyframes blink{0%,100%{opacity:.2}50%{opacity:1}}
+
+/* AUDIT LOG */
+.aentry{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);}
+.aentry:last-child{border-bottom:none;}
+.atime{font-family:var(--mono);font-size:10px;color:var(--muted);width:80px;flex-shrink:0;padding-top:2px;}
+.adot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+.atext{font-size:12px;}
+.atext .asub{font-size:11px;color:var(--muted);margin-top:1px;}
+
+/* CIERRE */
+.timeline{position:relative;padding-left:26px;}
+.timeline::before{content:'';position:absolute;left:7px;top:0;bottom:0;width:2px;background:var(--border);}
+.hito{position:relative;margin-bottom:8px;}
+.hito-dot{position:absolute;left:-22px;top:13px;width:14px;height:14px;border-radius:50%;border:2px solid var(--border2);background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:8px;z-index:1;}
+.hito-dot.done{background:var(--green);border-color:var(--green);color:#000;}
+.hito-dot.warn{background:var(--yellow);border-color:var(--yellow);color:#000;}
+.hito-dot.late{background:var(--red);border-color:var(--red);color:#fff;animation:pulse 1.5s infinite;}
+.hito-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:10px;}
+.hito-card:hover{border-color:var(--border2);}
+.hito-card.done{border-color:rgba(32,214,138,.18);}
+.hito-card.late{border-color:rgba(255,77,106,.28);background:rgba(255,77,106,.03);}
+.hito-card.warn{border-color:rgba(245,200,66,.25);}
+.hito-info{flex:1;}
+.hito-title{font-size:12px;font-weight:500;margin-bottom:2px;}
+.hito-title.done{text-decoration:line-through;color:var(--muted);}
+.hito-meta{font-size:10px;color:var(--muted);display:flex;gap:8px;align-items:center;}
+.hito-area{font-size:10px;font-family:var(--mono);padding:1px 6px;border-radius:3px;}
+.hito-area.cont{background:rgba(15,118,110,.15);color:#0d9488;}
+.hito-area.tes{background:rgba(79,132,255,.12);color:var(--accent);}
+.hito-area.ui{background:rgba(124,58,237,.12);color:#8b5cf6;}
+.hito-day{font-family:var(--mono);font-size:11px;color:var(--muted2);flex-shrink:0;}
+.hito-day.late{color:var(--red);}
+.hito-day.warn{color:var(--yellow);}
+.hito-day.done{color:var(--green);}
+.week-band{font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;padding:5px 0 3px;margin:8px 0 3px;border-bottom:1px solid var(--border);}
+
+/* HIST */
+.hist-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;}
+.hist-col{background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:9px 6px;text-align:center;}
+.hc-mes{font-size:10px;color:var(--muted);margin-bottom:5px;font-family:var(--mono);}
+.hc-score{font-family:var(--mono);font-size:18px;font-weight:500;margin-bottom:3px;}
+.hc-bar{height:3px;border-radius:99px;margin-bottom:3px;}
+.hc-late{font-size:10px;color:var(--muted);}
+
+.div{height:1px;background:var(--border);margin:16px 0;}
+.mono{font-family:var(--mono);font-size:12px;}
+.muted{color:var(--muted);}
+
+/* KPI */
+.kcard{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:14px;}
+.kcard .kh{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:9px;}
+.kcard .kn{font-size:11px;color:var(--muted);}
+.kcard .kv{font-family:var(--mono);font-size:22px;font-weight:500;}
+.kcard .ksub{font-size:11px;color:var(--muted);margin-top:5px;}
+
+/* 69-B RISK INDICATOR */
+.risk-box{border-radius:10px;padding:13px 15px;margin-bottom:8px;border:1px solid;}
+.risk-box.bajo{background:rgba(32,214,138,.05);border-color:rgba(32,214,138,.2);}
+.risk-box.medio{background:rgba(245,200,66,.05);border-color:rgba(245,200,66,.2);}
+.risk-box.alto{background:rgba(255,77,106,.05);border-color:rgba(255,77,106,.2);}
+.risk-head{display:flex;align-items:center;gap:8px;margin-bottom:5px;}
+.risk-icon{font-size:15px;}
+.risk-title{font-size:13px;font-weight:600;}
+.risk-art{font-size:10px;font-family:var(--mono);margin-left:auto;padding:2px 6px;border-radius:3px;background:var(--surface3);color:var(--muted);}
+.risk-desc{font-size:11px;color:var(--muted2);line-height:1.5;}
+.risk-status{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;}
+
+/* PORTAL PROVEEDOR VIEW */
+.pv-header{background:linear-gradient(135deg,rgba(79,132,255,.07),rgba(123,94,167,.07));border:1px solid rgba(79,132,255,.18);border-radius:12px;padding:18px 20px;margin-bottom:20px;display:flex;align-items:center;gap:14px;}
+.pv-icon{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:22px;}
+.pv-txt h3{font-family:var(--display);font-size:16px;font-weight:600;}
+.pv-txt p{font-size:12px;color:var(--muted2);margin-top:2px;}
+.pv-lock{margin-left:auto;text-align:center;}
+.pv-lock .lk{font-size:26px;}
+.pv-lock p{font-size:10px;color:var(--red);font-family:var(--mono);margin-top:2px;}
+
+.doc-req{background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;}
+.doc-req .dr-icon{font-size:18px;flex-shrink:0;}
+.doc-req .dr-info{flex:1;}
+.doc-req .dr-title{font-size:12px;font-weight:500;margin-bottom:1px;}
+.doc-req .dr-sub{font-size:11px;color:var(--muted);}
+.doc-req .dr-status{font-size:11px;font-family:var(--mono);}
+.doc-req.done{border-color:rgba(32,214,138,.2);}
+.doc-req.pend{border-color:rgba(245,200,66,.2);}
+.doc-req.miss{border-color:rgba(255,77,106,.2);}
+
+input[type=file]{display:none;}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-mark">SERVICIA</div>
+    <h1>Aseguramiento<br>Contable</h1>
+  </div>
+  <div class="epill">
+    <div class="dot"></div>
+    <span>Batia</span>
+    <small>PILOTO</small>
+  </div>
+  <nav>
+    <div class="ns">Principal</div>
+    <div class="ni active" onclick="goNav(this,'dashboard')"><span class="ico">◈</span>Dashboard General</div>
+    <div class="ns">Materialización</div>
+    <div class="ni" onclick="goNav(this,'clasificador')"><span class="ico">⬡</span>Clasificador de Nivel<span class="nb y">4</span></div>
+    <div class="ni" onclick="goNav(this,'expedientes')"><span class="ico">▦</span>Expedientes<span class="nb r">3</span></div>
+    <div class="ni" onclick="goNav(this,'semaforo')"><span class="ico">◎</span>Semáforo Fiscal<span class="nb r">2</span></div>
+    <div class="ni" onclick="goNav(this,'portal')"><span class="ico">◷</span>Portal Proveedor</div>
+    <div class="ns">Control Bancario</div>
+    <div class="ni" onclick="goNav(this,'trazabilidad')"><span class="ico">⬡</span>Trazabilidad Bancaria<span class="nb y">3</span></div>
+    <div class="ni" onclick="goNav(this,'kpis')"><span class="ico">◉</span>KPIs del Personal</div>
+    <div class="ni" onclick="goNav(this,'cierre')"><span class="ico">◷</span>Cierre Mensual<span class="nb y">2</span></div>
+    <div class="ns">IA</div>
+    <div class="ni" onclick="goNav(this,'auditoria')"><span class="ico">✦</span>Auditoría IA<span class="nb r">2</span></div>
+  </nav>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+<div class="topbar">
+  <h2 id="ptitle">Dashboard General</h2>
+  <div class="period">Marzo 2026</div>
+  <button class="btn btn-ghost">Exportar</button>
+  <button class="btn btn-primary" onclick="openModal('modal-proveedor')">＋ Nuevo Proveedor</button>
+</div>
+<div class="content">
+
+<!-- ═══ DASHBOARD ═══ -->
+<div class="view active" id="view-dashboard">
+  <div class="cg cg4">
+    <div class="card"><div class="clabel">Expedientes activos</div><div class="cval">24</div><div class="csub">↑ 4 vs mes anterior</div></div>
+    <div class="card"><div class="clabel">Materializados ✓</div><div class="cval g">18</div><div class="csub">75% tasa de cierre</div></div>
+    <div class="card"><div class="clabel">Pagos bloqueados</div><div class="cval r">3</div><div class="csub" style="color:var(--red)">Sin materialidad completa</div></div>
+    <div class="card"><div class="clabel">Alertas 69-B / EFOS</div><div class="cval y">2</div><div class="csub">Ver semáforo fiscal →</div></div>
+  </div>
+
+  <div class="cg cg2">
+    <!-- Semáforo fiscal resumen -->
+    <div>
+      <div class="sh"><h3>Semáforo Fiscal</h3><span>Art. 69-B CFF · EFOS · NOM-151</span><a onclick="goNav(document.querySelector('.ni:nth-child(9)'),'semaforo')">Ver detalle →</a></div>
+      <div class="smrow"><div class="smlight" style="background:var(--green)"></div><div class="smlabel">CFDIs con código correcto (SAT)</div><div class="smval">94%</div><div class="smlaw">Art. 29-A CFF</div></div>
+      <div class="smrow"><div class="smlight" style="background:var(--green)"></div><div class="smlabel">Proveedores sin EFOS</div><div class="smval">100%</div><div class="smlaw">Art. 69-B</div></div>
+      <div class="smrow"><div class="smlight" style="background:var(--green)"></div><div class="smlabel">Contratos con fecha cierta (NOM-151)</div><div class="smval">83%</div><div class="smlaw">NOM-151</div></div>
+      <div class="smrow"><div class="smlight" style="background:var(--yellow)"></div><div class="smlabel">Nivel 3 con manifiesto de materialidad</div><div class="smval">67%</div><div class="smlaw">Art. 69-B</div></div>
+      <div class="smrow" style="border-color:rgba(255,77,106,.3)"><div class="smlight" style="background:var(--red)"></div><div class="smlabel">⚠ Pagos sin materialidad completa</div><div class="smval" style="color:var(--red)">3 folios</div><div class="smlaw">CFF</div></div>
+      <div class="smrow" style="border-color:rgba(255,77,106,.3)"><div class="smlight" style="background:var(--red)"></div><div class="smlabel">⚠ Nivel 3/4 sin e.firma en contrato</div><div class="smval" style="color:var(--red)">2 folios</div><div class="smlaw">NOM-151</div></div>
+    </div>
+
+    <!-- Proveedores por nivel -->
+    <div>
+      <div class="sh"><h3>Proveedores por Nivel de Riesgo</h3><a onclick="goNav(null,'clasificador')">Clasificador →</a></div>
+      <div class="cg" style="grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+        <div style="background:rgba(32,214,138,.05);border:1px solid rgba(32,214,138,.2);border-radius:9px;padding:12px;text-align:center">
+          <div style="font-size:10px;color:var(--n1-c);font-family:var(--mono);margin-bottom:4px">NIVEL 1 · Transaccional</div>
+          <div style="font-size:22px;font-family:var(--mono);color:var(--n1-c)">6</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:2px">Limpieza, papelería</div>
+        </div>
+        <div style="background:rgba(79,132,255,.05);border:1px solid rgba(79,132,255,.2);border-radius:9px;padding:12px;text-align:center">
+          <div style="font-size:10px;color:var(--n2-c);font-family:var(--mono);margin-bottom:4px">NIVEL 2 · Operativo</div>
+          <div style="font-size:22px;font-family:var(--mono);color:var(--n2-c)">8</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:2px">Materia prima, insumos</div>
+        </div>
+        <div style="background:rgba(245,200,66,.05);border:1px solid rgba(245,200,66,.2);border-radius:9px;padding:12px;text-align:center">
+          <div style="font-size:10px;color:var(--n3-c);font-family:var(--mono);margin-bottom:4px">NIVEL 3 · Servicios</div>
+          <div style="font-size:22px;font-family:var(--mono);color:var(--n3-c)">7</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:2px">Consultoría, outsourcing</div>
+        </div>
+        <div style="background:rgba(255,77,106,.05);border:1px solid rgba(255,77,106,.2);border-radius:9px;padding:12px;text-align:center">
+          <div style="font-size:10px;color:var(--n4-c);font-family:var(--mono);margin-bottom:4px">NIVEL 4 · Estratégico</div>
+          <div style="font-size:22px;font-family:var(--mono);color:var(--n4-c)">3</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:2px">Constructoras, maquinaria</div>
+        </div>
+      </div>
+      <div class="tw" style="margin:0">
+        <div class="th"><h3>Expedientes recientes</h3></div>
+        <table>
+          <thead><tr><th>Proveedor</th><th>Nivel</th><th>Pago</th><th>Estado</th></tr></thead>
+          <tbody id="dashboard-expedientes-tbody">
+            <tr onclick="openExp('17172')"><td>Limpiadores SA</td><td><span class="nlvl n3">N3</span></td><td class="mono" style="color:var(--red)">🔒 Bloqueado</td><td><span class="badge y">Incompleto</span></td></tr>
+            <tr onclick="openExp('17165')"><td>Insumos Alfa</td><td><span class="nlvl n2">N2</span></td><td class="mono" style="color:var(--green)">✓ Liberado</td><td><span class="badge g">Completo</span></td></tr>
+            <tr onclick="openExp('17160')"><td>TechServ</td><td><span class="nlvl n3">N3</span></td><td class="mono" style="color:var(--red)">🔒 Bloqueado</td><td><span class="badge r">Alerta IA</span></td></tr>
+            <tr onclick="openExp('17148')"><td>Mant. Delta</td><td><span class="nlvl n4">N4</span></td><td class="mono" style="color:var(--red)">🔒 Bloqueado</td><td><span class="badge r">Crítico</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ CLASIFICADOR ═══ -->
+<div class="view" id="view-clasificador">
+  <div style="background:rgba(79,132,255,.05);border:1px solid rgba(79,132,255,.18);border-radius:10px;padding:14px 16px;margin-bottom:20px;font-size:12px;color:var(--muted2);">
+    <strong style="color:var(--accent);">Clasificador automático de nivel de riesgo.</strong>
+    El nivel determina qué documentos de materialización se solicitarán al proveedor. Basado en el marco del Art. 69-B del CFF y jurisprudencia del SAT.
+  </div>
+
+  <div class="cg cg2">
+    <div>
+      <div class="sh"><h3>Clasificar nuevo proveedor</h3><span>Lógica condicional automática</span></div>
+
+      <div class="field">
+        <label>Tipo de servicio o bien</label>
+        <select id="cl-tipo" onchange="clasificar()">
+          <option value="">— Seleccionar tipo —</option>
+          <option value="limpieza">Servicios generales (limpieza, cafetería, papelería)</option>
+          <option value="materia">Materia prima / insumos tangibles</option>
+          <option value="outsourcing">Outsourcing / personal especializado</option>
+          <option value="consultoria">Consultoría, software, marketing, legal</option>
+          <option value="construccion">Construcción, maquinaria, financiero</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Monto estimado de la operación</label>
+        <select id="cl-monto" onchange="clasificar()">
+          <option value="">— Seleccionar rango —</option>
+          <option value="bajo">Menos de $50,000</option>
+          <option value="medio">$50,000 – $500,000</option>
+          <option value="alto">Más de $500,000</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>¿El personal del proveedor opera en tus instalaciones?</label>
+        <select id="cl-repse" onchange="clasificar()">
+          <option value="">— Seleccionar —</option>
+          <option value="si">Sí (requiere REPSE)</option>
+          <option value="no">No</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>¿Hay un bien físico que entra al almacén?</label>
+        <select id="cl-fisico" onchange="clasificar()">
+          <option value="">— Seleccionar —</option>
+          <option value="si">Sí</option>
+          <option value="no">No (servicio intangible)</option>
+        </select>
+      </div>
+
+      <div id="clasificador-result" style="display:none;margin-top:16px"></div>
+    </div>
+
+    <div>
+      <div class="sh"><h3>Guía de niveles</h3><span>Marco 69-B CFF</span></div>
+      <div class="nivel-card n1">
+        <div class="nc-head"><div class="nc-icon">🟢</div><div><div class="nc-title" style="color:var(--n1-c)">Nivel 1 · Transaccional</div><div style="font-size:10px;color:var(--muted);font-family:var(--mono)">Bajo Capital / Bajo Riesgo</div></div></div>
+        <div class="nc-sub">Proveedores de servicios generales con montos pequeños. El SAT rara vez audita aquí.</div>
+        <div class="nc-docs">📄 CFDI · Nota de remisión · Foto de entrega · CRP · RFC sin EFOS</div>
+      </div>
+      <div class="nivel-card n2">
+        <div class="nc-head"><div class="nc-icon">🔵</div><div><div class="nc-title" style="color:var(--n2-c)">Nivel 2 · Operativo</div><div style="font-size:10px;color:var(--muted);font-family:var(--mono)">Medio Capital / Bienes Tangibles</div></div></div>
+        <div class="nc-sub">Materia prima y suministros. Materialidad fácil de probar con nota de entrada.</div>
+        <div class="nc-docs">📄 + Opinión 32-D · Contrato · Carta porte · Certificado calidad · Entrada ERP</div>
+      </div>
+      <div class="nivel-card n3">
+        <div class="nc-head"><div class="nc-icon">🟡</div><div><div class="nc-title" style="color:var(--n3-c)">Nivel 3 · Servicios Intangibles</div><div style="font-size:10px;color:var(--muted);font-family:var(--mono)">Alto Riesgo · Siempre auditado</div></div></div>
+        <div class="nc-sub">Donde el SAT siempre ataca. Sin algo físico que tocar, la carga probatoria es máxima.</div>
+        <div class="nc-docs">📄 + REPSE · Bitácoras · Minutas · e.firma · NOM-151 · Manifiesto materialidad</div>
+      </div>
+      <div class="nivel-card n4">
+        <div class="nc-head"><div class="nc-icon">🔴</div><div><div class="nc-title" style="color:var(--n4-c)">Nivel 4 · Estratégico</div><div style="font-size:10px;color:var(--muted);font-family:var(--mono)">Alto Capital / Riesgo Estructural</div></div></div>
+        <div class="nc-sub">Montos que pueden quebrar a la empresa si no se deducen. Due diligence completo.</div>
+        <div class="nc-docs">📄 + Acta constitutiva · Nómina IMSS · Cédula activos · Cuestionario 5-A CFF</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Proveedores clasificados -->
+  <div class="sh" style="margin-top:4px"><h3>Proveedores Clasificados</h3><span>Batia · Marzo 2026</span><a onclick="openModal('modal-proveedor')">＋ Agregar proveedor →</a></div>
+  <div class="tw" style="margin:0">
+    <table>
+      <thead><tr><th>Proveedor</th><th>Nivel</th><th>Tipo</th><th>Monto op.</th><th>REPSE</th><th>Físico</th><th>EFOS</th><th>Materialidad</th></tr></thead>
+      <tbody id="clasificados-tbody">
+        <tr onclick="openExp('17172')"><td><strong>Limpiadores SA</strong></td><td><span class="nlvl n3">N3 · Servicios</span></td><td><span class="chip">Outsourcing</span></td><td class="mono">$148,500</td><td style="color:var(--red)">⚠ Pend.</td><td style="color:var(--muted)">No</td><td><span class="badge g">OK</span></td><td><div class="pb" style="width:70px"><div class="pf y" style="width:60%"></div></div></td></tr>
+        <tr onclick="openExp('17165')"><td><strong>Insumos Alfa</strong></td><td><span class="nlvl n2">N2 · Operativo</span></td><td><span class="chip">Materiales</span></td><td class="mono">$89,200</td><td style="color:var(--muted)">N/A</td><td style="color:var(--green)">Sí</td><td><span class="badge g">OK</span></td><td><div class="pb" style="width:70px"><div class="pf g" style="width:100%"></div></div></td></tr>
+        <tr onclick="openExp('17160')"><td><strong>TechServ</strong></td><td><span class="nlvl n3">N3 · Servicios</span></td><td><span class="chip">Consultoría</span></td><td class="mono">$210,000</td><td style="color:var(--green)">✓</td><td style="color:var(--muted)">No</td><td><span class="badge g">OK</span></td><td><div class="pb" style="width:70px"><div class="pf r" style="width:35%"></div></div></td></tr>
+        <tr onclick="openExp('17148')"><td><strong>Mant. Delta</strong></td><td><span class="nlvl n4">N4 · Estratégico</span></td><td><span class="chip">Construcción</span></td><td class="mono">$320,000</td><td style="color:var(--red)">⚠ Pend.</td><td style="color:var(--green)">Sí</td><td><span class="badge r">Revisar</span></td><td><div class="pb" style="width:70px"><div class="pf r" style="width:10%"></div></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ EXPEDIENTES (checklist dinámico) ═══ -->
+<div class="view" id="view-expedientes">
+  <div class="tabs">
+    <div class="tab active" onclick="stab(this,'etab-todos')">Todos (24)</div>
+    <div class="tab" onclick="stab(this,'etab-bloq')">🔒 Bloqueados (3)</div>
+    <div class="tab" onclick="stab(this,'etab-n3')">Nivel 3 (7)</div>
+    <div class="tab" onclick="stab(this,'etab-n4')">Nivel 4 (3)</div>
+  </div>
+
+  <div id="etab-todos">
+    <div class="tw">
+      <div class="th"><h3>Expedientes de Materialización · Batia</h3><button class="btn btn-ghost">Exportar</button></div>
+      <table>
+        <thead><tr><th>Proveedor</th><th>Nivel</th><th>Trinidad documental</th><th>Capacidad operativa</th><th>Entrega / campo</th><th>Razón de negocio</th><th>Pago</th><th>Estado</th></tr></thead>
+        <tbody>
+          <tr onclick="openExp('17172')">
+            <td><strong>Limpiadores SA</strong></td><td><span class="nlvl n3">N3</span></td>
+            <td><span style="color:var(--yellow)">2/3</span></td>
+            <td><span style="color:var(--red)">0/2</span></td>
+            <td><span style="color:var(--yellow)">2/4</span></td>
+            <td><span style="color:var(--red)">0/1</span></td>
+            <td style="color:var(--red);font-family:var(--mono)">🔒</td>
+            <td><span class="badge y">Incompleto</span></td>
+          </tr>
+          <tr onclick="openExp('17165')">
+            <td><strong>Insumos Alfa</strong></td><td><span class="nlvl n2">N2</span></td>
+            <td><span style="color:var(--green)">3/3</span></td>
+            <td><span style="color:var(--green)">2/2</span></td>
+            <td><span style="color:var(--green)">3/3</span></td>
+            <td><span style="color:var(--green)">1/1</span></td>
+            <td style="color:var(--green);font-family:var(--mono)">✓</td>
+            <td><span class="badge g">Completo</span></td>
+          </tr>
+          <tr onclick="openExp('17160')">
+            <td><strong>TechServ</strong></td><td><span class="nlvl n3">N3</span></td>
+            <td><span style="color:var(--green)">3/3</span></td>
+            <td><span style="color:var(--yellow)">1/2</span></td>
+            <td><span style="color:var(--red)">1/4</span></td>
+            <td><span style="color:var(--red)">0/1</span></td>
+            <td style="color:var(--red);font-family:var(--mono)">🔒</td>
+            <td><span class="badge r">Alerta IA</span></td>
+          </tr>
+          <tr onclick="openExp('17148')">
+            <td><strong>Mant. Delta</strong></td><td><span class="nlvl n4">N4</span></td>
+            <td><span style="color:var(--red)">1/3</span></td>
+            <td><span style="color:var(--red)">0/3</span></td>
+            <td><span style="color:var(--red)">0/4</span></td>
+            <td><span style="color:var(--red)">0/2</span></td>
+            <td style="color:var(--red);font-family:var(--mono)">🔒</td>
+            <td><span class="badge r">Crítico</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div id="etab-bloq" style="display:none">
+    <div class="bloqueo"><h4>🔒 3 pagos bloqueados por materialidad incompleta</h4><p>Los siguientes proveedores no pueden recibir pago hasta completar su expediente de materialización conforme al Art. 69-B CFF. El sistema bloquea automáticamente el botón de traspaso bancario.</p></div>
+    <div class="astrip late"><div class="astrip-ico">🔒</div><div class="astrip-txt"><strong>Limpiadores SA · #17172 · $148,500</strong>Faltan: REPSE, lista de asistencia, manifiesto de materialidad, razón de negocios</div><button class="btn btn-warn" style="flex-shrink:0" onclick="openExp('17172')">Ver expediente</button></div>
+    <div class="astrip late"><div class="astrip-ico">🔒</div><div class="astrip-txt"><strong>TechServ · #17160 · $210,000</strong>Faltan: bitácoras, minutas, e.firma en contrato (NOM-151), manifiesto materialidad</div><button class="btn btn-warn" style="flex-shrink:0" onclick="openExp('17160')">Ver expediente</button></div>
+    <div class="astrip late"><div class="astrip-ico">🔒</div><div class="astrip-txt"><strong>Mant. Delta · #17148 · $320,000</strong>Expediente prácticamente vacío. Riesgo 69-B crítico. Acción urgente requerida.</div><button class="btn btn-danger" style="flex-shrink:0" onclick="openExp('17148')">Ver expediente</button></div>
+  </div>
+  <div id="etab-n3" style="display:none"><div class="card" style="padding:28px;text-align:center;color:var(--muted)">7 proveedores Nivel 3 · Carga probatoria máxima requerida por SAT</div></div>
+  <div id="etab-n4" style="display:none"><div class="card" style="padding:28px;text-align:center;color:var(--muted)">3 proveedores Nivel 4 · Due diligence completo + 5-A CFF</div></div>
+</div>
+
+<!-- ═══ SEMÁFORO FISCAL ═══ -->
+<div class="view" id="view-semaforo">
+  <div style="background:rgba(255,77,106,.05);border:1px solid rgba(255,77,106,.2);border-radius:10px;padding:14px 16px;margin-bottom:20px;font-size:12px;color:var(--muted2);">
+    <strong style="color:var(--red);">Marco legal activo:</strong>
+    Art. 69-B CFF (EFOS / operaciones simuladas) · Art. 29-A CFF (CFDI) · Art. 5-A CFF (razón de negocios) · NOM-151 (fecha cierta) · REPSE (outsourcing especializado)
+  </div>
+
+  <div class="cg cg2">
+    <div>
+      <div class="sh"><h3>Indicadores por ley</h3></div>
+
+      <div class="risk-box bajo" data-sem-key="efos" onclick="mostrarDetalleSemaforo('efos')">
+        <div class="risk-head"><div class="risk-icon">🟢</div><div class="risk-title">EFOS — Lista negra SAT</div><div class="risk-art">Art. 69-B CFF</div></div>
+        <div class="risk-desc">Validación automática de RFC en listas del SAT. Todos los proveedores activos están fuera de EFOS.</div>
+        <div class="risk-status"><span class="badge g">24/24 proveedores OK</span><span class="badge g">Actualizado hoy</span></div>
+      </div>
+
+      <div class="risk-box bajo" data-sem-key="cfdi_correcto" onclick="mostrarDetalleSemaforo('cfdi_correcto')">
+        <div class="risk-head"><div class="risk-icon">🟢</div><div class="risk-title">CFDI — Código producto/servicio</div><div class="risk-art">Art. 29-A CFF</div></div>
+        <div class="risk-desc">El código SAT del CFDI debe coincidir con lo que realmente se compra. 94% de los CFDIs son correctos.</div>
+        <div class="risk-status"><span class="badge g">22/24 correctos</span><span class="badge y">2 en revisión</span></div>
+      </div>
+
+      <div class="risk-box medio" data-sem-key="nom151" onclick="mostrarDetalleSemaforo('nom151')">
+        <div class="risk-head"><div class="risk-icon">🟡</div><div class="risk-title">NOM-151 — Contratos con fecha cierta</div><div class="risk-art">NOM-151</div></div>
+        <div class="risk-desc">El SAT ya no acepta contratos sin sello digital o ratificación notarial. 5 contratos de Nivel 3/4 aún sin NOM-151.</div>
+        <div class="risk-status"><span class="badge g">19/24 OK</span><span class="badge r">5 sin NOM-151</span></div>
+      </div>
+
+      <div class="risk-box medio" data-sem-key="repse" onclick="mostrarDetalleSemaforo('repse')">
+        <div class="risk-head"><div class="risk-icon">🟡</div><div class="risk-title">REPSE — Outsourcing especializado</div><div class="risk-art">LFT / IMSS</div></div>
+        <div class="risk-desc">Proveedores que operan en instalaciones de Batia requieren registro REPSE. 2 pendientes.</div>
+        <div class="risk-status"><span class="badge g">5/7 registrados</span><span class="badge r">2 pendientes</span></div>
+      </div>
+
+      <div class="risk-box alto" data-sem-key="manifiesto" onclick="mostrarDetalleSemaforo('manifiesto')">
+        <div class="risk-head"><div class="risk-icon">🔴</div><div class="risk-title">Manifiesto de materialidad — Nivel 3</div><div class="risk-art">Art. 69-B CFF</div></div>
+        <div class="risk-desc">Carta bajo protesta de decir verdad de que el servicio se prestó con recursos propios. Obligatorio para Nivel 3.</div>
+        <div class="risk-status"><span class="badge g">4/7 OK</span><span class="badge r">3 sin manifiesto</span></div>
+      </div>
+
+      <div class="risk-box alto" data-sem-key="razon_negocios" onclick="mostrarDetalleSemaforo('razon_negocios')">
+        <div class="risk-head"><div class="risk-icon">🔴</div><div class="risk-title">Razón de negocios — Art. 5-A CFF</div><div class="risk-art">Art. 5-A CFF</div></div>
+        <div class="risk-desc">Demostrar que el gasto es para ganar dinero o ser más eficiente, no solo para bajar impuestos. Cuestionario obligatorio Nivel 3/4.</div>
+        <div class="risk-status"><span class="badge r">Solo 3/10 completados</span><span class="badge r">Riesgo alto</span></div>
+      </div>
+    </div>
+
+    <div>
+      <div id="semaforo-detalle" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:16px;font-size:12px;color:var(--muted2)">
+        Selecciona un indicador de la izquierda para ver detalle real.
+      </div>
+      <div class="sh"><h3>Cuestionario 5-A CFF</h3><span>Razón de negocios</span></div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px;">
+        <div style="font-size:12px;color:var(--muted2);margin-bottom:14px;">Responde estas preguntas para cada proveedor Nivel 3/4. El SAT puede pedirlas en auditoría.</div>
+        <div class="field"><label>Proveedor</label><select><option>TechServ (N3 · Pendiente)</option><option>Mant. Delta (N4 · Pendiente)</option><option>Limpiadores SA (N3 · Pendiente)</option></select></div>
+        <div class="field"><label>¿Para qué se contrató este servicio?</label><textarea placeholder="Ej: Para automatizar el proceso de facturación y reducir errores humanos en 40%..."></textarea></div>
+        <div class="field"><label>¿Cómo contribuye a generar ingresos o reducir costos?</label><textarea placeholder="Ej: Estimamos un ahorro de $X mensuales en horas-hombre al eliminar el proceso manual..."></textarea></div>
+        <div class="field"><label>¿Por qué este proveedor y no otro?</label><textarea placeholder="Ej: Fue el único con certificación ISO 27001 requerida para manejar datos fiscales..."></textarea></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost" style="flex:1">Guardar borrador</button>
+          <button class="btn btn-primary" style="flex:1">Firmar con e.firma</button>
+        </div>
+      </div>
+
+      <div class="sh"><h3>Cuestionario Beneficiario Controlador</h3><span>Obligatorio N4</span></div>
+      <div style="background:rgba(255,77,106,.04);border:1px solid rgba(255,77,106,.15);border-radius:10px;padding:14px;">
+        <div style="font-size:12px;color:var(--muted2);margin-bottom:10px;">El SAT quiere saber quién es el dueño real y beneficiario directo del proveedor. Aplica a Nivel 4.</div>
+        <div class="clist">
+          <div class="citem"><div class="cbox done">✓</div><div class="clabel2 done">Acta constitutiva del proveedor</div><div class="ctag critico">N4</div></div>
+          <div class="citem"><div class="cbox done">✓</div><div class="clabel2 done">Poderes del representante legal</div><div class="ctag critico">N4</div></div>
+          <div class="citem"><div class="cbox miss"></div><div class="clabel2">Declaración anual del ejercicio anterior</div><div class="ctag critico">N4</div></div>
+          <div class="citem"><div class="cbox miss"></div><div class="clabel2">Cuestionario beneficiario controlador firmado</div><div class="ctag critico">N4</div></div>
+          <div class="citem"><div class="cbox miss"></div><div class="clabel2">Cédula de activos fijos del proveedor</div><div class="ctag critico">N4</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PORTAL PROVEEDOR ═══ -->
+<div class="view" id="view-portal">
+  <div class="pv-header">
+    <div class="pv-icon">🏢</div>
+    <div class="pv-txt">
+      <h3>Portal de Autoservicio · Proveedor</h3>
+      <p>Vista simulada del portal que verá el proveedor. Sube tu materialidad antes de poder facturar.</p>
+    </div>
+    <div class="pv-lock">
+      <div class="lk">🔒</div>
+      <p>Factura bloqueada</p>
+    </div>
+  </div>
+
+  <div class="cg cg2">
+    <div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:16px;">
+        <div style="font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;">Simulando proveedor</div>
+        <select onchange="portalNivel(this.value)" id="portal-select">
+          <option value="">— Elegir proveedor para ver su portal —</option>
+          <option value="n1">Serv. Cafetería (Nivel 1 · Bajo riesgo)</option>
+          <option value="n2">Insumos Alfa (Nivel 2 · Operativo)</option>
+          <option value="n3">Limpiadores SA (Nivel 3 · Alto riesgo)</option>
+          <option value="n4">Mant. Delta (Nivel 4 · Estratégico)</option>
+        </select>
+      </div>
+
+      <div id="portal-contenido">
+        <div style="padding:32px;text-align:center;color:var(--muted);font-size:12px;">Selecciona un proveedor para ver su portal personalizado</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="sh"><h3>Flujo de desbloqueado</h3><span>Lógica de bloqueo automático</span></div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;">
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-info">
+            <div class="step-title">Proveedor sube documentos de materialidad</div>
+            <div class="step-sub">El portal muestra exactamente qué pide según su nivel (1–4). No más, no menos.</div>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-info">
+            <div class="step-title">Sistema valida RFC en EFOS (API SAT)</div>
+            <div class="step-sub">Automático. Si está en lista negra, se bloquea todo y se notifica a Dirección.</div>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-info">
+            <div class="step-title">IA revisa completitud del expediente</div>
+            <div class="step-sub">Verifica que los documentos existan y correspondan al nivel asignado.</div>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">4</div>
+          <div class="step-info">
+            <div class="step-title">Proveedor sube CFDI (XML + PDF)</div>
+            <div class="step-sub">Solo disponible si el expediente está completo. Si falta materialidad → botón bloqueado.</div>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num" style="background:var(--green)">5</div>
+          <div class="step-info">
+            <div class="step-title" style="color:var(--green)">Pago liberado por Tesorería</div>
+            <div class="step-sub">Solo entonces se puede registrar el traspaso bancario en la plataforma.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TRAZABILIDAD ═══ -->
+<div class="view" id="view-trazabilidad">
+  <div class="cg cg4">
+    <div class="card"><div class="clabel">Total folios</div><div class="cval" id="tr-kpi-total">24</div></div>
+    <div class="card"><div class="clabel">Conciliados</div><div class="cval g" id="tr-kpi-conciliados">18</div></div>
+    <div class="card"><div class="clabel">Sin folio bancario</div><div class="cval y" id="tr-kpi-sin-folio">3</div></div>
+    <div class="card"><div class="clabel">Críticos</div><div class="cval r" id="tr-kpi-criticos">3</div></div>
+  </div>
+  <div class="tw">
+    <div class="th"><h3>Traspasos Bancarios · Batia</h3><button class="btn btn-primary" onclick="openModal('modal-traspaso')">＋ Registrar Traspaso</button></div>
+    <table>
+      <thead><tr><th>Folio</th><th>Proveedor</th><th>Nivel</th><th>Materialidad</th><th>Folio bancario</th><th>Monto</th><th>Presup. SINGA</th><th>Pago</th></tr></thead>
+      <tbody id="trazabilidad-tbody">
+        <tr onclick="openExp('17172')"><td class="mono">#17172</td><td>Limpiadores SA</td><td><span class="nlvl n3">N3</span></td><td><span class="badge y">60%</span></td><td class="mono" style="color:var(--accent)">182822</td><td class="mono">$148,500</td><td><span class="badge g">Dentro</span></td><td style="color:var(--red);font-family:var(--mono)">🔒 Bloqueado</td></tr>
+        <tr onclick="openExp('17165')"><td class="mono">#17165</td><td>Insumos Alfa</td><td><span class="nlvl n2">N2</span></td><td><span class="badge g">100%</span></td><td class="mono" style="color:var(--accent)">91822</td><td class="mono">$89,200</td><td><span class="badge g">Dentro</span></td><td style="color:var(--green);font-family:var(--mono)">✓ Pagado</td></tr>
+        <tr onclick="openExp('17160')"><td class="mono">#17160</td><td>TechServ</td><td><span class="nlvl n3">N3</span></td><td><span class="badge r">35%</span></td><td class="mono" style="color:var(--yellow)">28228</td><td class="mono">$210,000</td><td><span class="badge r">⚠ Excede</span></td><td style="color:var(--red);font-family:var(--mono)">🔒 Bloqueado</td></tr>
+        <tr onclick="openExp('17148')"><td class="mono">#17148</td><td>Mant. Delta</td><td><span class="nlvl n4">N4</span></td><td><span class="badge r">10%</span></td><td class="mono muted">Pendiente</td><td class="mono">$320,000</td><td><span class="badge r">⚠ Sin SINGA</span></td><td style="color:var(--red);font-family:var(--mono)">🔒 Bloqueado</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ KPIs ═══ -->
+<div class="view" id="view-kpis">
+  <div class="cg cg3">
+    <div class="kcard"><div class="kh"><div class="kn">Score promedio equipo</div><span class="badge y">⚠ Bajo meta</span></div><div class="kv">78<span style="font-size:12px;color:var(--muted)">/100</span></div><div class="pb" style="margin-top:8px"><div class="pf y" style="width:78%"></div></div><div class="ksub">Meta: 85 · 6 personas</div></div>
+    <div class="kcard"><div class="kh"><div class="kn">Expedientes materializados</div><span class="badge g">OK</span></div><div class="kv">75<span style="font-size:12px;color:var(--muted)">%</span></div><div class="pb" style="margin-top:8px"><div class="pf y" style="width:75%"></div></div><div class="ksub">18 de 24 completos</div></div>
+    <div class="kcard"><div class="kh"><div class="kn">Opiniones SAT gestionadas</div><span class="badge b">Contabilidad</span></div><div class="kv">100<span style="font-size:12px;color:var(--muted)">%</span></div><div class="pb" style="margin-top:8px"><div class="pf g" style="width:100%"></div></div><div class="ksub">KPI exclusivo Contabilidad</div></div>
+  </div>
+  <div class="tw"><div class="th"><h3>KPIs Individuales · Batia</h3></div>
+    <table>
+      <thead><tr><th>Persona</th><th>Área</th><th>KPI principal</th><th>Score</th><th>Tendencia</th></tr></thead>
+      <tbody>
+        <tr><td>M. González</td><td><span class="chip">Tesorería</span></td><td>Traspasos registrados &lt;24h</td><td><span style="font-family:var(--mono);font-size:16px;color:var(--yellow)">72</span></td><td style="color:var(--red)">↓ 3</td></tr>
+        <tr><td>L. Hernández</td><td><span class="chip">Tesorería</span></td><td>Folios conciliados sin diferencia</td><td><span style="font-family:var(--mono);font-size:16px;color:var(--green)">96</span></td><td style="color:var(--green)">↑ 4</td></tr>
+        <tr><td>R. Fuentes</td><td><span class="chip">Administración</span></td><td>Expedientes completados en plazo</td><td><span style="font-family:var(--mono);font-size:16px;color:var(--yellow)">79</span></td><td style="color:var(--muted)">→ 0</td></tr>
+        <tr><td>C. Morales</td><td><span class="chip">Supervisión</span></td><td>Bitácoras y asistencias capturadas</td><td><span style="font-family:var(--mono);font-size:16px;color:var(--green)">88</span></td><td style="color:var(--green)">↑ 2</td></tr>
+        <tr><td><strong>P. Ramírez</strong></td><td><span class="chip" style="background:rgba(79,132,255,.12);color:var(--accent)">Contabilidad</span></td><td>Opiniones SAT + EFOS gestionadas</td><td><span style="font-family:var(--mono);font-size:16px;color:var(--green)">100</span></td><td style="color:var(--green)">↑ 0</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ CIERRE ═══ -->
+<div class="view" id="view-cierre">
+  <div class="cg cg4" style="margin-bottom:18px">
+    <div class="card"><div class="clabel">Avance del cierre</div><div class="cval y">67%</div><div class="pb" style="margin-top:6px"><div class="pf y" style="width:67%"></div></div><div class="csub">9 de 14 hitos</div></div>
+    <div class="card"><div class="clabel">Hitos vencidos</div><div class="cval r">2</div><div class="csub" style="color:var(--red)">Acción inmediata</div></div>
+    <div class="card"><div class="clabel">En riesgo</div><div class="cval y">1</div><div class="csub">Próximos 3 días</div></div>
+    <div class="card"><div class="clabel">Días al cierre</div><div class="cval">4</div><div class="csub">Límite: día 30</div></div>
+  </div>
+  <div class="astrip late"><div class="astrip-ico">🔴</div><div class="astrip-txt"><strong>Conciliación bancaria IA — vencida hace 2 días</strong>Debió ejecutarse el día 28. Responsable: P. Ramírez · Contabilidad</div><button class="btn btn-danger" style="flex-shrink:0">Notificar</button></div>
+  <div class="astrip warn"><div class="astrip-ico">🟡</div><div class="astrip-txt"><strong>Cierre contable — vence en 4 días (día 30)</strong>P. Ramírez aún no ha declarado el cierre. Revisar avance.</div></div>
+  <div class="cg cg2" style="margin-top:16px">
+    <div>
+      <div class="sh"><h3>Hitos del mes</h3><span>Marzo 2026</span></div>
+      <div class="timeline" id="timeline-hitos"></div>
+    </div>
+    <div>
+      <div class="sh"><h3>Historial</h3><span>Últimos 6 meses</span></div>
+      <div class="hist-grid">
+        <div class="hist-col"><div class="hc-mes">Oct</div><div class="hc-score" style="color:var(--green)">92</div><div class="hc-bar" style="background:var(--green)"></div><div class="hc-late">0 tardíos</div></div>
+        <div class="hist-col"><div class="hc-mes">Nov</div><div class="hc-score" style="color:var(--green)">88</div><div class="hc-bar" style="background:var(--green)"></div><div class="hc-late">1 tardío</div></div>
+        <div class="hist-col"><div class="hc-mes">Dic</div><div class="hc-score" style="color:var(--yellow)">71</div><div class="hc-bar" style="background:var(--yellow)"></div><div class="hc-late">3 tardíos</div></div>
+        <div class="hist-col"><div class="hc-mes">Ene</div><div class="hc-score" style="color:var(--green)">86</div><div class="hc-bar" style="background:var(--green)"></div><div class="hc-late">1 tardío</div></div>
+        <div class="hist-col"><div class="hc-mes">Feb</div><div class="hc-score" style="color:var(--green)">90</div><div class="hc-bar" style="background:var(--green)"></div><div class="hc-late">0 tardíos</div></div>
+        <div class="hist-col" style="border-color:var(--accent)"><div class="hc-mes" style="color:var(--accent)">Mar ←</div><div class="hc-score" style="color:var(--yellow)">67</div><div class="hc-bar" style="background:var(--yellow)"></div><div class="hc-late" style="color:var(--red)">2 tardíos</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ AUDITORÍA IA ═══ -->
+<div class="view" id="view-auditoria">
+  <div class="ai-panel">
+    <div class="ai-header">
+      <div class="ai-icon">🤖</div>
+      <div class="ai-title">
+        <h3>Motor de Conciliación + Materialización IA</h3>
+        <p>Cruza estado de cuenta · SINGA · EFOS · expedientes de materialización</p>
+      </div>
+      <div class="ai-status"><div class="ai-dot"></div><span style="color:var(--green)">IA activa</span></div>
+    </div>
+    <div class="upload-zone" onclick="document.getElementById('pdf-upload').click()">
+      <div class="uz-icon">📄</div>
+      <p style="font-size:13px;color:var(--muted2)">Subir estado de cuenta bancario</p>
+      <span style="font-size:11px;color:var(--muted);display:block;margin-top:3px;font-family:var(--mono)">PDF · Banorte, BBVA, Santander, HSBC</span>
+    </div>
+    <input type="file" id="pdf-upload" accept=".pdf" onchange="runConciliacionIA(this)">
+    <div id="ai-proc" style="display:none"><div class="thinking"><span>🤖</span><span>Analizando · cruzando EFOS · revisando expedientes</span><span class="thinking-dots"><span>·</span><span>·</span><span>·</span></span></div></div>
+    <div id="ai-res" style="display:none">
+      <div id="ai-res-content">
+        <div class="astrip ok" style="margin-top:8px"><div class="astrip-ico">✅</div><div class="astrip-txt"><strong>Listo para analizar</strong>Sube estado de cuenta para correr conciliación IA.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cg cg2">
+    <div class="tw" style="margin:0">
+      <div class="th"><h3>Log de auditoría</h3></div>
+      <div id="audit-log-list" style="padding:4px 0">
+        <div class="aentry"><div class="atime">Cargando...</div><div class="adot" style="background:var(--accent)"></div><div class="atext"><strong>Sistema</strong> Consultando bitácora real<div class="asub">Espera un momento</div></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="clabel" style="margin-bottom:12px">Exportar para auditoría SAT</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <button class="btn btn-ghost" style="text-align:left;width:100%" onclick="descargarReporteNiveles()">📄 Expedientes por nivel (JSON)</button>
+        <button class="btn btn-ghost" style="text-align:left;width:100%" onclick="descargarReporteSemaforo()">📊 Reporte semáforo fiscal</button>
+        <button class="btn btn-ghost" style="text-align:left;width:100%" onclick="descargarReporteAudit()">⚖️ Bitácora auditoría IA</button>
+        <button class="btn btn-ghost" style="text-align:left;width:100%" onclick="descargarReporteTrazabilidad()">🏢 Validación trazabilidad bancaria</button>
+        <button class="btn btn-primary" style="width:100%" onclick="descargarPaqueteSAT()">📦 Paquete SAT (ZIP)</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /content -->
+</main>
+
+<!-- DETAIL PANEL -->
+<div class="overlay" id="detail-overlay" onclick="maybeClose(event)">
+  <div class="dpanel">
+    <div class="dtop">
+      <div>
+        <div style="font-size:10px;color:var(--muted);font-family:var(--mono);margin-bottom:1px">EXPEDIENTE DE MATERIALIZACIÓN</div>
+        <h3 id="d-folio">#17172</h3>
+      </div>
+      <span id="d-nivel" class="nlvl n3" style="font-size:12px">N3</span>
+      <span id="d-badge" class="badge y" style="margin-left:4px">Incompleto</span>
+      <button class="xbtn" onclick="closeDetail()">×</button>
+    </div>
+    <div class="dbody">
+      <!-- Bloqueo de pago -->
+      <div id="d-bloqueo"></div>
+
+      <!-- Info básica -->
+      <div class="cg" style="grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px">
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px">
+          <div style="font-size:10px;color:var(--muted);margin-bottom:2px">PROVEEDOR</div>
+          <div style="font-size:13px;font-weight:600" id="d-empresa">—</div>
+        </div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px">
+          <div style="font-size:10px;color:var(--muted);margin-bottom:2px">MONTO</div>
+          <div style="font-size:13px;font-weight:600;font-family:var(--mono)" id="d-monto">—</div>
+        </div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px">
+          <div style="font-size:10px;color:var(--muted);margin-bottom:2px">PRESUP. SINGA</div>
+          <div style="font-size:13px;font-weight:600;font-family:var(--mono)" id="d-presup">—</div>
+        </div>
+      </div>
+
+      <div class="div" style="margin:12px 0"></div>
+      <div style="font-size:10px;font-weight:600;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px">Checklist de Materialización (Art. 69-B)</div>
+      <div class="clist" id="d-checklist"></div>
+
+      <div class="div"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <select id="d-doc-select" class="field select" style="flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--text);padding:8px 10px"></select>
+        <input id="d-upload-file" type="file" style="display:none" />
+        <button class="btn btn-ghost" style="flex:1" onclick="subirDocumentoDetalle()">📎 Subir documento</button>
+        <button class="btn btn-primary" style="flex:1" id="d-pago-btn">🔒 Pago bloqueado</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PROVEEDOR -->
+<div class="modal-overlay" id="modal-proveedor">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3>Registrar Proveedor</h3>
+    <div class="field"><label>Razón social</label><input id="prov-nombre" type="text" placeholder="Nombre del proveedor" /></div>
+    <div class="field-row">
+      <div class="field"><label>RFC</label><input id="prov-rfc" type="text" placeholder="XAXX010101000" /></div>
+      <div class="field"><label>Tipo de servicio</label>
+        <select id="prov-tipo" onchange="autoClasificar(this.value)">
+          <option value="">— Seleccionar —</option>
+          <option value="limpieza">Servicios generales</option>
+          <option value="materia">Materia prima / insumos</option>
+          <option value="outsourcing">Outsourcing especializado</option>
+          <option value="consultoria">Consultoría / software</option>
+          <option value="construccion">Construcción / maquinaria</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Monto estimado</label><input id="prov-monto" type="text" placeholder="$0.00" /></div>
+      <div class="field"><label>¿Nivel asignado?</label>
+        <div id="nivel-result" style="background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:8px 11px;font-size:13px;color:var(--muted);font-family:var(--mono);">Completar campos →</div>
+      </div>
+    </div>
+    <div id="nivel-docs" style="display:none;background:rgba(79,132,255,.05);border:1px solid rgba(79,132,255,.15);border-radius:8px;padding:12px;font-size:11px;color:var(--muted2);margin-top:4px;"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" style="flex:1" onclick="closeModal('modal-proveedor')">Cancelar</button>
+      <button id="prov-registrar-btn" class="btn btn-primary" style="flex:2">Registrar y generar checklist</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL TRASPASO -->
+<div class="modal-overlay" id="modal-traspaso">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3>Registrar Traspaso Bancario</h3>
+    <div class="bloqueo"><h4>🔒 Verificación de materialidad</h4><p>El sistema verifica automáticamente que el expediente del proveedor esté completo antes de permitir el traspaso. Si la materialidad está incompleta, el botón de confirmar permanece bloqueado.</p></div>
+    <div class="field"><label>Proveedor</label>
+      <select id="traspaso-prov" onchange="checkMaterialidad(this.value)">
+        <option value="">— Seleccionar proveedor —</option>
+        <option value="ok">Insumos Alfa (N2 · ✓ Materialidad completa)</option>
+        <option value="bloq">Limpiadores SA (N3 · 🔒 Materialidad incompleta)</option>
+        <option value="bloq">TechServ (N3 · 🔒 Materialidad incompleta)</option>
+        <option value="bloq">Mant. Delta (N4 · 🔒 Materialidad incompleta)</option>
+      </select>
+    </div>
+    <div id="traspaso-status" style="margin-bottom:12px"></div>
+    <div class="field-row">
+      <div class="field"><label>Folio bancario</label><input id="traspaso-folio-bancario" type="text" placeholder="Ej. 182822" /></div>
+      <div class="field"><label>Monto</label><input id="traspaso-monto" type="text" placeholder="$0.00" /></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" style="flex:1" onclick="closeModal('modal-traspaso')">Cancelar</button>
+      <button class="btn btn-primary" style="flex:2" id="traspaso-confirm-btn">Confirmar traspaso</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ─────────────────────────────────────────
+const TITLES = {dashboard:'Dashboard General',clasificador:'Clasificador de Nivel de Riesgo',expedientes:'Expedientes de Materialización',semaforo:'Semáforo Fiscal · Art. 69-B CFF',portal:'Portal de Autoservicio · Proveedor',trazabilidad:'Trazabilidad Bancaria',kpis:'KPIs del Personal',cierre:'Cierre Mensual · Contabilidad',auditoria:'Auditoría IA'};
+const API_BASE = 'http://localhost:8000/api';
+const FOLIO_CACHE = {};
+let CURRENT_EXPEDIENTE = null;
+let CURRENT_FOLIO_NUMERO = null;
+
+function toMoney(value){
+  const n = Number(value||0);
+  return new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN',maximumFractionDigits:0}).format(n);
+}
+
+function cleanNumber(value){
+  return Number(String(value||'').replace(/[^0-9.-]/g,'')) || 0;
+}
+
+async function apiGet(path){
+  const res = await fetch(`${API_BASE}${path}`);
+  if(!res.ok) throw new Error(`GET ${path} -> ${res.status}`);
+  return res.json();
+}
+
+async function apiSend(path, method, body){
+  const res = await fetch(`${API_BASE}${path}`, {
+    method,
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(body||{})
+  });
+  const data = await res.json().catch(()=>({}));
+  if(!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+  return data;
+}
+
+const NIVELES = {
+  n1:{label:'N1 · Transaccional',cls:'n1',docs:[
+    {done:true,label:'CFDI (XML y PDF)',tag:'legal',tip:'trinidad'},
+    {done:true,label:'Constancia de Situación Fiscal (≤ 3 meses)',tag:'fiscal',tip:'trinidad'},
+    {done:true,label:'RFC validado — fuera de lista EFOS',tag:'fiscal',tip:'trinity'},
+    {done:false,label:'Nota de remisión o acuse de recibo firmado',tag:'campo',tip:'entrega'},
+    {done:false,label:'Fotografía del producto en almacén / sitio',tag:'campo',tip:'entrega'},
+    {done:true,label:'Complemento de Recepción de Pagos (CRP)',tag:'legal',tip:'pago'},
+  ]},
+  n2:{label:'N2 · Operativo',cls:'n2',docs:[
+    {done:true,label:'CFDI (XML y PDF)',tag:'legal',tip:'trinidad'},
+    {done:true,label:'Opinión de Cumplimiento SAT 32-D positiva',tag:'fiscal',tip:'trinidad'},
+    {done:true,label:'Contrato con Fecha Cierta (NOM-151)',tag:'legal',tip:'trinidad'},
+    {done:true,label:'RFC validado — fuera de EFOS',tag:'fiscal',tip:'trinity'},
+    {done:true,label:'Guías de embarque / carta porte',tag:'campo',tip:'logística'},
+    {done:true,label:'Certificado de calidad o ficha técnica',tag:'campo',tip:'recepción'},
+    {done:true,label:'Registro de entrada al ERP con sello de almacén',tag:'campo',tip:'recepción'},
+    {done:true,label:'Acuse de recibido en tiempo y forma',tag:'campo',tip:'entrega'},
+    {done:true,label:'Estado de cuenta bancario (salida del pago)',tag:'legal',tip:'pago'},
+  ]},
+  n3:{label:'N3 · Servicios Intangibles',cls:'n3',docs:[
+    {done:true,label:'CFDI (XML y PDF) con código correcto',tag:'legal',tip:'trinidad'},
+    {done:true,label:'Contrato con Fecha Cierta (NOM-151 + e.firma)',tag:'legal',tip:'trinidad'},
+    {done:true,label:'Estado de cuenta bancario (salida)',tag:'legal',tip:'trinidad'},
+    {done:true,label:'Opinión 32-D positiva',tag:'fiscal',tip:'trinidad'},
+    {done:true,label:'RFC validado — fuera de EFOS',tag:'fiscal',tip:'trinity'},
+    {done:false,label:'Registro REPSE del proveedor',tag:'legal',tip:'capacidad'},
+    {done:false,label:'Currículum empresarial y perfil del personal',tag:'legal',tip:'capacidad'},
+    {done:false,label:'Bitácora de actividades con fechas inicio/fin',tag:'campo',tip:'ejecución'},
+    {done:false,label:'Minutas de trabajo / capturas Zoom/Teams',tag:'campo',tip:'ejecución'},
+    {done:false,label:'Correos electrónicos de avances (hilos)',tag:'campo',tip:'comunicación'},
+    {done:false,label:'Entregable final con e.firma',tag:'legal',tip:'materialidad'},
+    {done:false,label:'Manifiesto de materialidad bajo protesta',tag:'legal',tip:'materialidad'},
+    {done:false,label:'Análisis de razón de negocios (Art. 5-A CFF)',tag:'fiscal',tip:'razón'},
+  ]},
+  n4:{label:'N4 · Estratégico',cls:'n4',docs:[
+    {done:true,label:'CFDI con código correcto',tag:'legal',tip:'trinidad'},
+    {done:false,label:'Contrato NOM-151 + e.firma + notario',tag:'legal',tip:'trinidad'},
+    {done:false,label:'Acta constitutiva del proveedor',tag:'legal',tip:'due-diligence'},
+    {done:false,label:'Poderes del representante legal',tag:'legal',tip:'due-diligence'},
+    {done:false,label:'Comprobante domicilio fiscal (no virtual)',tag:'legal',tip:'due-diligence'},
+    {done:false,label:'Declaración anual ejercicio anterior',tag:'fiscal',tip:'due-diligence'},
+    {done:false,label:'Cuestionario Beneficiario Controlador',tag:'fiscal',tip:'due-diligence'},
+    {done:false,label:'Reportes fotográficos con geolocalización GPS',tag:'campo',tip:'ejecución'},
+    {done:false,label:'Nómina IMSS/Infonavit del personal asignado',tag:'campo',tip:'ejecución'},
+    {done:false,label:'Seguros responsabilidad civil / fianzas',tag:'legal',tip:'ejecución'},
+    {done:false,label:'Estado de cuenta bancario (salida)',tag:'legal',tip:'pago'},
+    {done:false,label:'Cédula de activos fijos del proveedor',tag:'fiscal',tip:'capacidad'},
+    {done:false,label:'Análisis razón de negocios 5-A CFF',tag:'fiscal',tip:'razón'},
+    {done:false,label:'RFC validado — fuera de EFOS',tag:'fiscal',tip:'trinity'},
+  ]},
+};
+
+const FOLIOS = {
+  '17172':{empresa:'Limpiadores SA',nivel:'n3',monto:'$148,500',presup:'$150,000',badge:'y',badgeLabel:'Incompleto',completo:false},
+  '17165':{empresa:'Insumos Alfa',nivel:'n2',monto:'$89,200',presup:'$90,000',badge:'g',badgeLabel:'Completo',completo:true},
+  '17160':{empresa:'TechServ',nivel:'n3',monto:'$210,000',presup:'$185,000',badge:'r',badgeLabel:'Alerta IA',completo:false},
+  '17148':{empresa:'Mant. Delta',nivel:'n4',monto:'$320,000',presup:'Sin presupuesto',badge:'r',badgeLabel:'Crítico',completo:false},
+};
+
+// ── NAV ──────────────────────────────────────────
+function goNav(el, id) {
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+  const v = document.getElementById('view-'+id);
+  if(v) v.classList.add('active');
+  document.getElementById('ptitle').textContent = TITLES[id]||id;
+  if(el&&el.classList) el.classList.add('active');
+  if(id==='semaforo') loadSemaforo();
+  if(id==='auditoria') loadAuditLog();
+  if(id==='trazabilidad') loadTrazabilidad();
+  if(id==='expedientes') loadReportesPorNivel();
+}
+
+function stab(el, id) {
+  el.parentElement.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  const par = el.closest('.view')||document.body;
+  par.querySelectorAll('[id^="etab-"]').forEach(t=>t.style.display='none');
+  const target = document.getElementById(id);
+  if(target) target.style.display='block';
+}
+
+// ── MODAL ────────────────────────────────────────
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');}));
+
+// ── EXPEDIENTE DETAIL ────────────────────────────
+async function openExp(numeroFolio) {
+  try{
+    CURRENT_FOLIO_NUMERO = numeroFolio;
+    let folio = FOLIO_CACHE[numeroFolio];
+    if(!folio){
+      const all = await apiGet('/folios');
+      folio = all.find(f=>f.numero===numeroFolio);
+      if(!folio) return;
+      FOLIO_CACHE[numeroFolio] = folio;
+    }
+
+    const detalle = await apiGet(`/folios/${folio.id}`);
+    const expediente = await apiGet(`/expedientes/${detalle.expediente_id}`);
+    CURRENT_EXPEDIENTE = expediente;
+
+    document.getElementById('d-folio').textContent = '#'+numeroFolio;
+    document.getElementById('d-empresa').textContent = expediente.proveedor_nombre;
+    document.getElementById('d-monto').textContent = toMoney(0);
+    const presEl = document.getElementById('d-presup');
+    presEl.textContent = expediente.presupuesto > 0 ? toMoney(expediente.presupuesto) : 'Sin presupuesto';
+    presEl.style.color = expediente.presupuesto > 0 ? 'var(--text)' : 'var(--red)';
+
+    const nivelKey = `n${expediente.nivel}`;
+    document.getElementById('d-nivel').className = 'nlvl ' + nivelKey;
+    document.getElementById('d-nivel').textContent = `N${expediente.nivel}`;
+
+    const badge = document.getElementById('d-badge');
+    const completitud = Number(expediente.completitud||0);
+    const badgeClass = completitud >= 100 ? 'g' : completitud >= 70 ? 'y' : 'r';
+    badge.className = `badge ${badgeClass}`;
+    badge.textContent = completitud >= 100 ? 'Completo' : `${completitud}%`;
+
+    const blq = document.getElementById('d-bloqueo');
+    const done = expediente.documentos.filter(d=>d.subido).length;
+    const total = expediente.documentos.length;
+    if(!expediente.pago_bloqueado){
+      blq.innerHTML = `<div class="desbloqueado"><h4>✅ Pago liberado · Materialización completa</h4><p>${done}/${total} documentos completados.</p></div>`;
+      document.getElementById('d-pago-btn').textContent = '✓ Autorizar pago';
+      document.getElementById('d-pago-btn').className = 'btn btn-success';
+    }else{
+      blq.innerHTML = `<div class="bloqueo"><h4>🔒 Pago bloqueado — Materialización incompleta</h4><p>${done}/${total} documentos completados. El sistema no permite traspasos hasta completar el expediente conforme Art. 69-B CFF.</p></div>`;
+      document.getElementById('d-pago-btn').textContent = '🔒 Pago bloqueado';
+      document.getElementById('d-pago-btn').className = 'btn btn-danger';
+    }
+
+    document.getElementById('d-checklist').innerHTML = expediente.documentos.map(d=>`
+      <div class="citem">
+        <div class="cbox ${d.subido?'done':'miss'}">${d.subido?'✓':''}</div>
+        <div class="clabel2 ${d.subido?'done':''}">${d.label || d.tipo}</div>
+        <div class="ctag">${d.tipo}</div>
+      </div>
+    `).join('');
+    const docSelect = document.getElementById('d-doc-select');
+    const faltantes = expediente.documentos.filter(d=>!d.subido);
+    if(faltantes.length===0){
+      docSelect.innerHTML = '<option value="">Todos los documentos están completos</option>';
+      docSelect.disabled = true;
+    }else{
+      docSelect.disabled = false;
+      docSelect.innerHTML = faltantes.map(d=>`<option value="${d.id}">${d.label || d.tipo}</option>`).join('');
+    }
+
+    document.getElementById('detail-overlay').classList.add('open');
+  }catch(err){
+    alert(`No se pudo abrir expediente: ${err.message}`);
+  }
+}
+
+async function subirDocumentoDetalle(){
+  if(!CURRENT_EXPEDIENTE){
+    alert('Abre un expediente primero');
+    return;
+  }
+  const select = document.getElementById('d-doc-select');
+  if(!select.value){
+    alert('No hay documentos pendientes');
+    return;
+  }
+  const fileInput = document.getElementById('d-upload-file');
+  fileInput.value = '';
+  fileInput.onchange = async () => {
+    const file = fileInput.files && fileInput.files[0];
+    if(!file) return;
+    const fd = new FormData();
+    fd.append('archivo', file);
+    fd.append('subido_por', 'frontend');
+    try{
+      const res = await fetch(`${API_BASE}/documentos/${select.value}/subir`, {method:'POST', body: fd});
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      await openExp(CURRENT_FOLIO_NUMERO);
+      await loadFoliosForFrontend();
+      await loadDashboard();
+    }catch(err){
+      alert(`No se pudo subir el documento: ${err.message}`);
+    }
+  };
+  fileInput.click();
+}
+function closeDetail(){document.getElementById('detail-overlay').classList.remove('open');}
+function maybeClose(e){if(e.target===document.getElementById('detail-overlay'))closeDetail();}
+
+// ── CLASIFICADOR ─────────────────────────────────
+async function clasificar() {
+  const tipo = document.getElementById('cl-tipo').value;
+  const monto = document.getElementById('cl-monto').value;
+  const repse = document.getElementById('cl-repse').value;
+  const fisico = document.getElementById('cl-fisico').value;
+  if(!tipo||!monto) return;
+  const el = document.getElementById('clasificador-result');
+  const montoNumero = monto === 'alto' ? 600000 : (monto === 'medio' ? 100000 : 30000);
+
+  try{
+    const data = await apiSend('/clasificar', 'POST', {
+      tipo,
+      monto: montoNumero,
+      repse: repse === 'si',
+      tiene_fisico: fisico === 'si',
+    });
+    const nivel = `n${data.nivel}`;
+    const color = `var(--n${data.nivel}-c)`;
+
+    el.style.display='block';
+    el.innerHTML = `
+      <div class="nivel-card ${nivel} selected">
+        <div class="nc-head">
+          <div class="nc-icon">${data.nivel===1?'🟢':data.nivel===2?'🔵':data.nivel===3?'🟡':'🔴'}</div>
+          <div><div class="nc-title" style="color:${color}">Nivel ${data.nivel} · ${data.label}</div><div style="font-size:10px;color:var(--muted);font-family:var(--mono)">Asignado automáticamente</div></div>
+          <span class="nlvl ${nivel}" style="margin-left:auto">${nivel.toUpperCase()}</span>
+        </div>
+        <div class="nc-sub">Riesgo ${data.riesgo.toUpperCase()}</div>
+        <div class="nc-docs" style="margin-top:10px">📋 Se generarán ${data.documentos.length} documentos requeridos en el expediente</div>
+      </div>`;
+  }catch(err){
+    el.style.display='block';
+    el.innerHTML = `<div class="bloqueo"><h4>Error de clasificación</h4><p>${err.message}</p></div>`;
+  }
+}
+
+function autoClasificar(tipo) {
+  const map = {limpieza:'n1',materia:'n2',outsourcing:'n3',consultoria:'n3',construccion:'n4'};
+  const labels = {n1:'🟢 Nivel 1 · Transaccional',n2:'🔵 Nivel 2 · Operativo',n3:'🟡 Nivel 3 · Servicios',n4:'🔴 Nivel 4 · Estratégico'};
+  const docs = {n1:'CFDI · Nota remisión · Foto · CRP',n2:'CFDI · 32-D · Carta porte · ERP · Calidad',n3:'CFDI · REPSE · NOM-151 · Bitácoras · e.firma · Manifiesto',n4:'CFDI · Acta constitutiva · Nómina IMSS · Activos · 5-A CFF'};
+  const n = map[tipo]||'';
+  const el = document.getElementById('nivel-result');
+  const dd = document.getElementById('nivel-docs');
+  if(n){
+    el.textContent = labels[n]; el.style.color='var(--text)';
+    dd.style.display='block';
+    dd.innerHTML = `<strong style="color:var(--accent)">Documentos que se solicitarán:</strong><br>${docs[n]}`;
+  }
+}
+
+// ── PORTAL PROVEEDOR ─────────────────────────────
+const PORTAL_DOCS = {
+  n1:[
+    {icon:'📄',title:'CFDI (XML y PDF)',sub:'Factura del servicio',status:'done'},
+    {icon:'📸',title:'Foto de entrega en sitio',sub:'Foto del producto entregado',status:'pend'},
+    {icon:'✍️',title:'Nota de remisión firmada',sub:'Acuse con firma del responsable',status:'miss'},
+  ],
+  n2:[
+    {icon:'📄',title:'CFDI (XML y PDF)',sub:'Factura de la operación',status:'done'},
+    {icon:'✅',title:'Opinión 32-D SAT',sub:'Positiva y vigente',status:'done'},
+    {icon:'🚛',title:'Carta porte / guía de envío',sub:'Trazabilidad de la mercancía',status:'done'},
+    {icon:'📦',title:'Certificado de calidad',sub:'Ficha técnica del material',status:'done'},
+    {icon:'📋',title:'Registro entrada ERP',sub:'Sello de almacén',status:'pend'},
+  ],
+  n3:[
+    {icon:'📄',title:'CFDI + contrato con NOM-151',sub:'Fecha cierta + e.firma obligatoria',status:'done'},
+    {icon:'🏢',title:'Registro REPSE',sub:'Si el personal opera en tus instalaciones',status:'miss'},
+    {icon:'📅',title:'Bitácora de actividades',sub:'Cronograma con fechas inicio/fin',status:'miss'},
+    {icon:'🤝',title:'Minutas de trabajo',sub:'Capturas Zoom/Teams con fecha',status:'miss'},
+    {icon:'📧',title:'Hilos de correo electrónico',sub:'Avances y borradores enviados',status:'miss'},
+    {icon:'📝',title:'Entregable final con e.firma',sub:'Reporte / código / diagnóstico',status:'miss'},
+    {icon:'⚖️',title:'Manifiesto de materialidad',sub:'Carta bajo protesta de decir verdad',status:'miss'},
+  ],
+  n4:[
+    {icon:'📄',title:'CFDI + contrato NOM-151',sub:'Notarial + e.firma',status:'done'},
+    {icon:'🏛️',title:'Acta constitutiva',sub:'Del proveedor',status:'miss'},
+    {icon:'👤',title:'Cuestionario Beneficiario Controlador',sub:'¿Quién es el dueño real?',status:'miss'},
+    {icon:'📊',title:'Declaración anual ejercicio anterior',sub:'Solvencia del proveedor',status:'miss'},
+    {icon:'📸',title:'Fotos con geolocalización GPS',sub:'Metadatos y coordenadas',status:'miss'},
+    {icon:'👷',title:'Nómina IMSS del personal',sub:'Pago de cuotas del equipo asignado',status:'miss'},
+    {icon:'🛡️',title:'Seguro de responsabilidad civil',sub:'O fianza de vicios ocultos',status:'miss'},
+    {icon:'⚙️',title:'Cédula de activos fijos',sub:'Maquinaria disponible del proveedor',status:'miss'},
+    {icon:'⚖️',title:'Análisis razón de negocios 5-A CFF',sub:'Por qué se contrató este servicio',status:'miss'},
+  ],
+};
+
+function portalNivel(v) {
+  const el = document.getElementById('portal-contenido');
+  if(!v){el.innerHTML='<div style="padding:32px;text-align:center;color:var(--muted);font-size:12px;">Selecciona un proveedor para ver su portal personalizado</div>';return;}
+  const docs = PORTAL_DOCS[v];
+  const done = docs.filter(d=>d.status==='done').length, total = docs.length;
+  const pct = Math.round(done/total*100);
+  const locked = pct < 100;
+  let html = `
+    <div style="background:${locked?'rgba(255,77,106,.06)':'rgba(32,214,138,.06)'};border:1px solid ${locked?'rgba(255,77,106,.2)':'rgba(32,214,138,.2)'};border-radius:10px;padding:14px;margin-bottom:14px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <span style="font-size:20px">${locked?'🔒':'✅'}</span>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600;color:${locked?'var(--red)':'var(--green)'}">Factura ${locked?'bloqueada — completa tu materialidad primero':'desbloqueada'}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:1px">${done}/${total} documentos completados</div>
+        </div>
+        <div style="font-family:var(--mono);font-size:18px;font-weight:500;color:${pct===100?'var(--green)':pct>50?'var(--yellow)':'var(--red)'}">${pct}%</div>
+      </div>
+      <div class="pb"><div class="pf ${pct===100?'g':pct>50?'y':'r'}" style="width:${pct}%"></div></div>
+    </div>
+    <div style="font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px">Documentos requeridos</div>`;
+  docs.forEach(d=>{
+    const sc = d.status==='done'?'done':d.status==='pend'?'pend':'miss';
+    const si = d.status==='done'?'✓':d.status==='pend'?'⏳':'✕';
+    const sc2 = d.status==='done'?'var(--green)':d.status==='pend'?'var(--yellow)':'var(--red)';
+    html+=`<div class="doc-req ${sc}"><div class="dr-icon">${d.icon}</div><div class="dr-info"><div class="dr-title">${d.title}</div><div class="dr-sub">${d.sub}</div></div><div class="dr-status" style="color:${sc2}">${si} ${d.status==='done'?'OK':d.status==='pend'?'Pendiente':'Falta'}</div></div>`;
+  });
+  if(locked) html+=`<button class="btn btn-ghost" style="width:100%;margin-top:12px;opacity:.4;cursor:not-allowed">📤 Subir factura (bloqueado)</button>`;
+  else html+=`<button class="btn btn-primary" style="width:100%;margin-top:12px">📤 Subir factura XML + PDF</button>`;
+  el.innerHTML = html;
+}
+
+// ── TRASPASO BLOQUEO ─────────────────────────────
+async function checkMaterialidad(v){
+  const el = document.getElementById('traspaso-status');
+  const btn = document.getElementById('traspaso-confirm-btn');
+  btn.dataset.folioId = '';
+  if(!v){ el.innerHTML=''; btn.disabled=false; btn.className='btn btn-primary'; btn.style.opacity='1'; return; }
+  try{
+    const detalle = await apiGet(`/folios/${Number(v)}`);
+    const comp = await apiGet(`/expedientes/${detalle.expediente_id}/completitud`);
+    btn.dataset.folioId = String(Number(v));
+    if(comp.puede_pagar){
+      el.innerHTML='<div class="desbloqueado"><h4>✅ Materialidad completa · Pago permitido</h4></div>';
+      btn.disabled=false; btn.className='btn btn-primary'; btn.style.opacity='1';
+    } else {
+      el.innerHTML=`<div class="bloqueo"><h4>🔒 Pago bloqueado — Materialización incompleta</h4><p>Faltantes: ${comp.documentos_faltantes.join(', ')}</p></div>`;
+      btn.disabled=true; btn.className='btn btn-danger'; btn.style.opacity='.5';
+    }
+  }catch(err){
+    el.innerHTML=`<div class="bloqueo"><h4>Error de validación</h4><p>${err.message}</p></div>`;
+    btn.disabled=true; btn.className='btn btn-danger'; btn.style.opacity='.5';
+  }
+}
+
+// ── AUDITORIA / CONCILIACION ─────────────────────
+async function runConciliacionIA(input){
+  const file = input && input.files && input.files[0];
+  if(!file) return;
+  const proc = document.getElementById('ai-proc');
+  const resWrap = document.getElementById('ai-res');
+  const resContent = document.getElementById('ai-res-content');
+  proc.style.display='block';
+  resWrap.style.display='none';
+  try{
+    const fd = new FormData();
+    fd.append('archivo', file);
+    fd.append('usuario', 'IA');
+    const res = await fetch(`${API_BASE}/conciliacion/estado_cuenta`, {method:'POST', body:fd});
+    const data = await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    const ok = `<div class="astrip ok" style="margin-top:8px"><div class="astrip-ico">✅</div><div class="astrip-txt"><strong>${data.conciliados} movimientos conciliados correctamente</strong>Archivo: ${data.archivo} · Total analizado: ${data.total}</div></div>`;
+    const alerts = (data.alertas||[]).slice(0,5).map(a=>`<div class="astrip ${a.motivo.includes('excede')?'warn':'late'}"><div class="astrip-ico">${a.motivo.includes('excede')?'🟡':'🔴'}</div><div class="astrip-txt"><strong>${a.proveedor} · $${Number(a.monto).toLocaleString('es-MX')}</strong>${a.motivo} · Folio #${a.folio}</div><button class="btn btn-warn" style="flex-shrink:0" onclick="openExp('${a.folio}')">Ver expediente</button></div>`).join('');
+    resContent.innerHTML = ok + (alerts || '<div class="astrip ok"><div class="astrip-ico">✅</div><div class="astrip-txt"><strong>Sin alertas</strong>Todo dentro de política</div></div>');
+  }catch(err){
+    resContent.innerHTML = `<div class="astrip late" style="margin-top:8px"><div class="astrip-ico">🔴</div><div class="astrip-txt"><strong>Error de conciliación</strong>${err.message}</div></div>`;
+  }finally{
+    proc.style.display='none';
+    resWrap.style.display='block';
+    input.value = '';
+    loadAuditLog();
+    loadTrazabilidad();
+  }
+}
+
+async function loadAuditLog(){
+  try{
+    const rows = await apiGet('/audit_log');
+    const el = document.getElementById('audit-log-list');
+    if(!el) return;
+    el.innerHTML = rows.slice(0,30).map(r=>{
+      const d = new Date(r.creado_en);
+      const hh = d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+      const mmdd = d.toLocaleDateString('es-MX',{month:'short',day:'2-digit'});
+      const when = Number.isNaN(d.getTime()) ? '—' : `${mmdd} ${hh}`;
+      const color = r.accion.includes('alerta') || r.accion.includes('bloquear') ? 'var(--red)' : (r.accion.includes('liberar') ? 'var(--green)' : 'var(--accent)');
+      return `<div class="aentry"><div class="atime">${when}</div><div class="adot" style="background:${color}"></div><div class="atext"><strong>${r.usuario||'Sistema'}</strong> ${r.accion} · ${r.tabla}#${r.tabla_id}<div class="asub">${(r.detalle||'').toString().slice(0,140)}</div></div></div>`;
+    }).join('') || '<div class="aentry"><div class="atime">—</div><div class="adot" style="background:var(--muted)"></div><div class="atext"><strong>Sin eventos</strong><div class="asub">Aún no hay auditoría registrada</div></div></div>';
+  }catch(err){
+    console.error(err);
+  }
+}
+
+let SEMAFORO_CACHE = null;
+async function loadSemaforo(){
+  try{
+    const data = await apiGet('/semaforo');
+    SEMAFORO_CACHE = data;
+    document.querySelectorAll('[data-sem-key]').forEach(box=>{
+      const key = box.getAttribute('data-sem-key');
+      const item = data[key];
+      if(!item) return;
+      const st = item.estado;
+      box.classList.remove('bajo','medio','alto');
+      box.classList.add(st==='verde'?'bajo':st==='amarillo'?'medio':'alto');
+      const status = box.querySelector('.risk-status');
+      if(status){
+        const badge = st==='verde'?'g':st==='amarillo'?'y':'r';
+        status.innerHTML = `<span class="badge ${badge}">${item.valor}</span><span class="badge mu">${item.ley}</span>`;
+      }
+    });
+    mostrarDetalleSemaforo('efos');
+  }catch(err){
+    console.error(err);
+  }
+}
+
+function mostrarDetalleSemaforo(key){
+  const wrap = document.getElementById('semaforo-detalle');
+  if(!wrap || !SEMAFORO_CACHE || !SEMAFORO_CACHE[key]) return;
+  const item = SEMAFORO_CACHE[key];
+  const color = item.estado==='verde'?'var(--green)':item.estado==='amarillo'?'var(--yellow)':'var(--red)';
+  wrap.innerHTML = `<div style="font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px">Detalle indicador</div><div style="font-size:14px;font-weight:600;color:${color};margin-bottom:4px">${key.replace('_',' ').toUpperCase()} · ${item.estado.toUpperCase()}</div><div style="margin-bottom:6px">${item.valor}</div><div class="mono" style="color:var(--muted2)">${item.ley}</div>`;
+}
+
+async function loadTrazabilidad(){
+  try{
+    const tr = await apiGet('/reportes/trazabilidad');
+    const tbody = document.getElementById('trazabilidad-tbody');
+    if(tbody){
+      tbody.innerHTML = tr.items.map(t=>{
+        const matClass = t.materialidad>=100?'g':t.materialidad>=70?'y':'r';
+        const dentroClass = t.excede_presup?'r':'g';
+        const dentroTxt = t.excede_presup?'⚠ Excede':'Dentro';
+        const pagoTxt = t.pago_bloqueado?'🔒 Bloqueado':'✓ Pagado';
+        const pagoColor = t.pago_bloqueado?'var(--red)':'var(--green)';
+        return `<tr onclick="openExp('${t.folio}')"><td class="mono">#${t.folio}</td><td>${t.proveedor}</td><td><span class="nlvl n${t.nivel}">N${t.nivel}</span></td><td><span class="badge ${matClass}">${Math.round(t.materialidad)}%</span></td><td class="mono" style="color:var(--accent)">${t.folio_bancario||'Pendiente'}</td><td class="mono">${toMoney(t.monto)}</td><td><span class="badge ${dentroClass}">${dentroTxt}</span></td><td style="color:${pagoColor};font-family:var(--mono)">${pagoTxt}</td></tr>`;
+      }).join('') || '<tr><td colspan="8" class="muted">Sin traspasos</td></tr>';
+    }
+    const total = tr.items.length;
+    const conciliados = tr.items.filter(i=>!i.pago_bloqueado && !i.excede_presup).length;
+    const sinFolio = tr.items.filter(i=>!i.folio_bancario).length;
+    const criticos = tr.items.filter(i=>i.pago_bloqueado || i.excede_presup).length;
+    const setTxt = (id,val)=>{ const el=document.getElementById(id); if(el) el.textContent=String(val); };
+    setTxt('tr-kpi-total', total);
+    setTxt('tr-kpi-conciliados', conciliados);
+    setTxt('tr-kpi-sin-folio', sinFolio);
+    setTxt('tr-kpi-criticos', criticos);
+  }catch(err){
+    console.error(err);
+  }
+}
+
+async function loadReportesPorNivel(){
+  try{
+    const [n3, n4, all] = await Promise.all([
+      apiGet('/reportes/nivel?nivel=3'),
+      apiGet('/reportes/nivel?nivel=4'),
+      apiGet('/reportes/nivel'),
+    ]);
+    const b = all.items.filter(i=>i.pago_bloqueado);
+    const etBloq = document.getElementById('etab-bloq');
+    if(etBloq){
+      etBloq.innerHTML = `<div class="bloqueo"><h4>🔒 ${b.length} pagos bloqueados por materialidad incompleta</h4><p>Reporte dinámico desde backend.</p></div>` + (b.map(i=>`<div class="astrip late"><div class="astrip-ico">🔒</div><div class="astrip-txt"><strong>${i.proveedor} · #${i.folio}</strong>Completitud ${Math.round(i.completitud)}% · Nivel ${i.nivel}</div><button class="btn btn-warn" style="flex-shrink:0" onclick="openExp('${i.folio}')">Ver expediente</button></div>`).join('') || '<div class="card" style="padding:18px">Sin bloqueados</div>');
+    }
+    const mkTable = (rep)=>`<div class="tw" style="margin:0"><table><thead><tr><th>Folio</th><th>Proveedor</th><th>Nivel</th><th>Completitud</th><th>Pago</th></tr></thead><tbody>${rep.items.map(i=>`<tr onclick="openExp('${i.folio}')"><td class="mono">#${i.folio}</td><td>${i.proveedor}</td><td><span class="nlvl n${i.nivel}">N${i.nivel}</span></td><td><span class="badge ${i.completitud>=100?'g':i.completitud>=70?'y':'r'}">${Math.round(i.completitud)}%</span></td><td style="color:${i.pago_bloqueado?'var(--red)':'var(--green)'};font-family:var(--mono)">${i.pago_bloqueado?'🔒 Bloqueado':'✓ Liberado'}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">Sin datos</td></tr>'}</tbody></table></div>`;
+    const etN3 = document.getElementById('etab-n3');
+    const etN4 = document.getElementById('etab-n4');
+    if(etN3) etN3.innerHTML = mkTable(n3);
+    if(etN4) etN4.innerHTML = mkTable(n4);
+    const tabs = document.querySelectorAll('#view-expedientes .tab');
+    if(tabs.length>=4){
+      tabs[0].textContent = `Todos (${all.resumen.total})`;
+      tabs[1].textContent = `🔒 Bloqueados (${all.resumen.bloqueados})`;
+      tabs[2].textContent = `Nivel 3 (${n3.resumen.total})`;
+      tabs[3].textContent = `Nivel 4 (${n4.resumen.total})`;
+    }
+  }catch(err){
+    console.error(err);
+  }
+}
+
+function descargarJSON(nombre, data){
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = nombre;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function descargarPdf(url){
+  const res = await fetch(url);
+  if(!res.ok){
+    const data = await res.json().catch(()=>({}));
+    throw new Error(data.error || `HTTP ${res.status}`);
+  }
+  const blob = await res.blob();
+  const link = document.createElement('a');
+  const objUrl = URL.createObjectURL(blob);
+  const dispo = res.headers.get('Content-Disposition') || '';
+  const m = dispo.match(/filename=\"?([^\";]+)\"?/i);
+  link.href = objUrl;
+  link.download = m ? m[1] : 'reporte.pdf';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(objUrl);
+}
+
+async function descargarArchivo(url){
+  const res = await fetch(url);
+  if(!res.ok){
+    const data = await res.json().catch(()=>({}));
+    throw new Error(data.error || `HTTP ${res.status}`);
+  }
+  const blob = await res.blob();
+  const link = document.createElement('a');
+  const objUrl = URL.createObjectURL(blob);
+  const dispo = res.headers.get('Content-Disposition') || '';
+  const m = dispo.match(/filename=\"?([^\";]+)\"?/i);
+  link.href = objUrl;
+  link.download = m ? m[1] : 'archivo.bin';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(objUrl);
+}
+
+async function descargarReporteNiveles(){
+  try{ await descargarPdf(`${API_BASE}/export/reportes/nivel.pdf`); }catch(err){ alert(`No se pudo exportar PDF: ${err.message}`); }
+}
+async function descargarReporteSemaforo(){
+  try{ await descargarPdf(`${API_BASE}/export/reportes/semaforo.pdf`); }catch(err){ alert(`No se pudo exportar PDF: ${err.message}`); }
+}
+async function descargarReporteAudit(){
+  try{ await descargarPdf(`${API_BASE}/export/reportes/auditoria.pdf`); }catch(err){ alert(`No se pudo exportar PDF: ${err.message}`); }
+}
+async function descargarReporteTrazabilidad(){
+  try{ await descargarPdf(`${API_BASE}/export/reportes/trazabilidad.pdf`); }catch(err){ alert(`No se pudo exportar PDF: ${err.message}`); }
+}
+async function descargarPaqueteSAT(){
+  try{ await descargarArchivo(`${API_BASE}/export/paquete_sat.zip`); }catch(err){ alert(`No se pudo exportar paquete SAT: ${err.message}`); }
+}
+
+// ── CIERRE TIMELINE ──────────────────────────────
+const HITOS=[
+  {sem:1,dia:5,t:'Subir Excel presupuestos SINGA',area:'cont',st:'done'},
+  {sem:1,dia:5,t:'Cargar CFDIs al sistema',area:'cont',st:'done'},
+  {sem:1,dia:10,t:'Pago IVA mensual (DIOT)',area:'cont',st:'done'},
+  {sem:2,dia:17,t:'Pago ISR retenciones',area:'cont',st:'done'},
+  {sem:2,dia:17,t:'Declaración provisional ISR',area:'cont',st:'done'},
+  {sem:3,dia:20,t:'Validación EFOS proveedores',area:'cont',st:'done'},
+  {sem:3,dia:22,t:'Entregables operativos completos',area:'ui',st:'done'},
+  {sem:3,dia:25,t:'Traspasos bancarios conciliados',area:'tes',st:'done'},
+  {sem:4,dia:26,t:'Cierre contable para estrategia fiscal',area:'cont',st:'late'},
+  {sem:4,dia:28,t:'Conciliación bancaria IA ejecutada',area:'cont',st:'late'},
+  {sem:4,dia:29,t:'Alertas IA y 69-B documentadas',area:'cont',st:'warn'},
+  {sem:4,dia:30,t:'Cierre contable declarado por contador',area:'cont',st:'open'},
+];
+const SLABS={1:'Semana 1 · Días 1–10',2:'Semana 2 · Días 11–17',3:'Semana 3 · Días 18–25',4:'Semana 4 · Días 26–30'};
+const ICONS={done:'✓',warn:'!',late:'✕',open:''};
+
+function renderTimeline(){
+  const el=document.getElementById('timeline-hitos'); if(!el)return;
+  let html='',last=0;
+  HITOS.forEach(h=>{
+    if(h.sem!==last){html+=`<div class="week-band">${SLABS[h.sem]}</div>`;last=h.sem;}
+    html+=`<div class="hito"><div class="hito-dot ${h.st}">${ICONS[h.st]}</div>
+    <div class="hito-card ${h.st}"><div class="hito-info">
+    <div class="hito-title ${h.st==='done'?'done':''}">${h.t}</div>
+    <div class="hito-meta"><span class="hito-area ${h.area}">${h.area==='cont'?'Contabilidad':h.area==='tes'?'Tesorería':'UI'}</span>
+    ${h.st==='late'?'<span style="color:var(--red);font-size:10px">● Vencido</span>':h.st==='warn'?'<span style="color:var(--yellow);font-size:10px">● En riesgo</span>':h.st==='done'?'<span style="color:var(--green);font-size:10px">● OK</span>':'<span style="color:var(--muted);font-size:10px">● Pendiente</span>'}
+    </div></div><div class="hito-day ${h.st}">día ${h.dia}</div></div></div>`;
+  });
+  el.innerHTML=html;
+}
+
+async function loadDashboard(){
+  try{
+    const dash = await apiGet('/dashboard');
+    const cards = document.querySelectorAll('#view-dashboard .cg.cg4 .card .cval');
+    if(cards.length >= 4){
+      cards[0].textContent = String(dash.folios_activos);
+      cards[1].textContent = String(dash.materializados);
+      cards[2].textContent = String(dash.pagos_bloqueados);
+      cards[3].textContent = String(dash.alertas_ia);
+    }
+  }catch(err){
+    console.error(err);
+  }
+}
+
+async function loadFoliosForFrontend(){
+  try{
+    const folios = await apiGet('/folios');
+    const proveedores = await apiGet('/proveedores');
+    const proveedorById = Object.fromEntries(proveedores.map(p=>[p.id,p]));
+    const select = document.getElementById('traspaso-prov');
+    const tbodyDash = document.getElementById('dashboard-expedientes-tbody');
+    const tbodyClasif = document.getElementById('clasificados-tbody');
+    let dashHtml = '';
+    let clasifHtml = '';
+    if(select){
+      select.innerHTML = '<option value="">— Seleccionar proveedor —</option>';
+      folios.forEach(f=>{
+        const prov = proveedorById[f.proveedor_id] || {};
+        FOLIO_CACHE[f.numero] = f;
+        FOLIOS[f.numero] = {
+          empresa: f.proveedor_nombre,
+          nivel: `n${f.nivel}`,
+          monto: toMoney(0),
+          presup: f.presupuesto > 0 ? toMoney(f.presupuesto) : 'Sin presupuesto',
+          badge: f.completitud >= 100 ? 'g' : f.completitud >= 70 ? 'y' : 'r',
+          badgeLabel: f.completitud >= 100 ? 'Completo' : `${Math.round(f.completitud)}%`,
+          completo: !f.pago_bloqueado
+        };
+        const op = document.createElement('option');
+        op.value = String(f.id);
+        op.textContent = `${f.proveedor_nombre} (${f.numero} · N${f.nivel})`;
+        select.appendChild(op);
+
+        const pagoTxt = f.pago_bloqueado ? '🔒 Bloqueado' : '✓ Liberado';
+        const pagoColor = f.pago_bloqueado ? 'var(--red)' : 'var(--green)';
+        const estadoBadge = f.completitud >= 100 ? 'g' : (f.completitud >= 70 ? 'y' : 'r');
+        const estadoText = f.completitud >= 100 ? 'Completo' : `${Math.round(f.completitud)}%`;
+        dashHtml += `<tr onclick="openExp('${f.numero}')"><td>${f.proveedor_nombre}</td><td><span class="nlvl n${f.nivel}">N${f.nivel}</span></td><td class="mono" style="color:${pagoColor}">${pagoTxt}</td><td><span class="badge ${estadoBadge}">${estadoText}</span></td></tr>`;
+
+        const repseTxt = prov.repse ? '✓' : 'N/A';
+        const repseColor = prov.repse ? 'var(--green)' : 'var(--muted)';
+        const fisicoTxt = prov.tiene_fisico ? 'Sí' : 'No';
+        const fisicoColor = prov.tiene_fisico ? 'var(--green)' : 'var(--muted)';
+        const efosClass = prov.efos_ok ? 'g' : 'r';
+        const efosLabel = prov.efos_ok ? 'OK' : 'Revisar';
+        const pfClass = f.completitud >= 100 ? 'g' : (f.completitud >= 70 ? 'y' : 'r');
+        clasifHtml += `<tr onclick="openExp('${f.numero}')"><td><strong>${f.proveedor_nombre}</strong></td><td><span class="nlvl n${f.nivel}">N${f.nivel}</span></td><td><span class="chip">${(prov.tipo||'').toString()}</span></td><td class="mono">${toMoney(0)}</td><td style="color:${repseColor}">${repseTxt}</td><td style="color:${fisicoColor}">${fisicoTxt}</td><td><span class="badge ${efosClass}">${efosLabel}</span></td><td><div class="pb" style="width:70px"><div class="pf ${pfClass}" style="width:${Math.round(f.completitud)}%"></div></div></td></tr>`;
+      });
+    }
+    if(tbodyDash) tbodyDash.innerHTML = dashHtml || '<tr><td colspan="4" class="muted">Sin folios</td></tr>';
+    if(tbodyClasif) tbodyClasif.innerHTML = clasifHtml || '<tr><td colspan="8" class="muted">Sin proveedores</td></tr>';
+  }catch(err){
+    console.error(err);
+  }
+}
+
+async function registrarProveedor(){
+  const nombre = document.getElementById('prov-nombre').value.trim();
+  const rfc = document.getElementById('prov-rfc').value.trim();
+  const tipo = document.getElementById('prov-tipo').value;
+  const monto = cleanNumber(document.getElementById('prov-monto').value);
+  if(!nombre || !rfc || !tipo){
+    alert('Completa nombre, RFC y tipo');
+    return;
+  }
+  try{
+    await apiSend('/proveedores','POST',{
+      nombre,
+      rfc,
+      tipo,
+      monto,
+      repse: tipo === 'outsourcing' || tipo === 'consultoria',
+      tiene_fisico: tipo === 'materia' || tipo === 'construccion',
+      usuario: 'frontend'
+    });
+    closeModal('modal-proveedor');
+    await loadDashboard();
+  }catch(err){
+    alert(`No se pudo registrar proveedor: ${err.message}`);
+  }
+}
+
+async function confirmarTraspaso(){
+  const btn = document.getElementById('traspaso-confirm-btn');
+  const folioId = Number(btn.dataset.folioId || 0);
+  const monto = cleanNumber(document.getElementById('traspaso-monto').value);
+  const folioBancario = document.getElementById('traspaso-folio-bancario').value.trim();
+  if(!folioId || !monto){
+    alert('Selecciona proveedor y monto');
+    return;
+  }
+  try{
+    await apiSend('/traspasos', 'POST', {
+      folio_id: folioId,
+      folio_bancario: folioBancario || null,
+      monto,
+      banco_origen: 'Banorte',
+      fecha: new Date().toISOString().slice(0,10),
+      registrado_por: 'frontend'
+    });
+    closeModal('modal-traspaso');
+    await loadDashboard();
+  }catch(err){
+    alert(`No se pudo registrar traspaso: ${err.message}`);
+  }
+}
+
+document.getElementById('prov-registrar-btn').addEventListener('click', registrarProveedor);
+document.getElementById('traspaso-confirm-btn').addEventListener('click', confirmarTraspaso);
+loadDashboard();
+loadFoliosForFrontend();
+loadSemaforo();
+loadAuditLog();
+loadTrazabilidad();
+loadReportesPorNivel();
+setTimeout(renderTimeline,100);
+</script>
+</body>
+</html>

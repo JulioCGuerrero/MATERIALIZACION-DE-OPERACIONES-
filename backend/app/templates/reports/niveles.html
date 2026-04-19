@@ -1,0 +1,47 @@
+{% extends 'reports/_base.html' %}
+{% block body %}
+<div class="header">
+  <div class="brand">SERVICIA · Batia</div>
+  <div class="sub">Materialización de Operaciones</div>
+  <div class="meta">Generado: {{ generated_at }} · Reporte por niveles{% if nivel %} (N{{ nivel }}){% endif %}</div>
+</div>
+
+<div class="title">Reporte Ejecutivo por Nivel</div>
+<div class="kpis">
+  <div class="kpi"><div class="l">Total Folios</div><div class="v">{{ report['resumen']['total'] }}</div></div>
+  <div class="kpi"><div class="l">Completos</div><div class="v">{{ report['resumen']['completos'] }}</div></div>
+  <div class="kpi"><div class="l">Bloqueados</div><div class="v">{{ report['resumen']['bloqueados'] }}</div></div>
+  <div class="kpi"><div class="l">N3 + N4</div><div class="v">{{ report['resumen']['por_nivel']['n3'] + report['resumen']['por_nivel']['n4'] }}</div></div>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>Folio</th><th>Proveedor</th><th>Nivel</th><th>Tipo</th><th>Completitud</th><th>Pago</th><th>Presupuesto</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in report['items'] %}
+    <tr>
+      <td class="mono">#{{ r.folio }}</td>
+      <td>{{ r.proveedor }}</td>
+      <td>N{{ r.nivel }}</td>
+      <td>{{ r.tipo }}</td>
+      <td>
+        {% if r.completitud >= 100 %}
+          <span class="badge ok">{{ '%.0f'|format(r.completitud) }}%</span>
+        {% elif r.completitud >= 70 %}
+          <span class="badge warn">{{ '%.0f'|format(r.completitud) }}%</span>
+        {% else %}
+          <span class="badge bad">{{ '%.0f'|format(r.completitud) }}%</span>
+        {% endif %}
+      </td>
+      <td>{% if r.pago_bloqueado %}<span class="badge bad">Bloqueado</span>{% else %}<span class="badge ok">Liberado</span>{% endif %}</td>
+      <td class="mono">${{ '{:,.0f}'.format(r.presupuesto) }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="foot">Documento de control interno para evidencia de materialidad (Art. 69-B CFF).</div>
+{% endblock %}

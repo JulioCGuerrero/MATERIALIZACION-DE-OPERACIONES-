@@ -1,0 +1,43 @@
+{% extends 'reports/_base.html' %}
+{% block body %}
+<div class="header">
+  <div class="brand">SERVICIA · Batia</div>
+  <div class="sub">Bitácora de Auditoría IA</div>
+  <div class="meta">Generado: {{ generated_at }} · Trazabilidad de eventos críticos</div>
+</div>
+
+<div class="title">Reporte de Auditoría Operacional</div>
+<div class="kpis">
+  <div class="kpi"><div class="l">Eventos</div><div class="v">{{ items|length }}</div></div>
+  <div class="kpi"><div class="l">Alertas IA</div><div class="v">{{ items|selectattr('accion','equalto','alerta_ia')|list|length }}</div></div>
+  <div class="kpi"><div class="l">Bloqueos</div><div class="v">{{ items|selectattr('accion','equalto','bloquear')|list|length }}</div></div>
+  <div class="kpi"><div class="l">Liberaciones</div><div class="v">{{ items|selectattr('accion','equalto','liberar')|list|length }}</div></div>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>Fecha</th><th>Usuario</th><th>Tabla</th><th>Acción</th><th>Detalle</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in items %}
+    <tr>
+      <td class="mono">{{ r.creado_en }}</td>
+      <td>{{ r.usuario or 'Sistema' }}</td>
+      <td class="mono">{{ r.tabla }}#{{ r.tabla_id }}</td>
+      <td>
+        {% if 'alerta' in r.accion %}<span class="badge bad">{{ r.accion }}</span>
+        {% elif r.accion == 'liberar' %}<span class="badge ok">{{ r.accion }}</span>
+        {% elif r.accion == 'bloquear' %}<span class="badge bad">{{ r.accion }}</span>
+        {% else %}<span class="badge warn">{{ r.accion }}</span>
+        {% endif %}
+      </td>
+      <td>{{ (r.detalle or '')[:180] }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="foot">Documento de soporte para revisiones internas y cumplimiento.</div>
+{% endblock %}
