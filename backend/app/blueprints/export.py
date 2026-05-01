@@ -26,7 +26,8 @@ def _pdf_response(content: bytes, filename: str):
 @export_bp.get("/export/reportes/nivel.pdf")
 def export_nivel_pdf():
     nivel = request.args.get("nivel", type=int)
-    data = reporte_por_nivel_data(nivel)
+    empresa_id = request.args.get("empresa_id", type=int)
+    data = reporte_por_nivel_data(nivel, empresa_id)
     try:
         pdf = render_pdf("reports/niveles.html", report=data, nivel=nivel)
     except PdfEngineMissing as exc:
@@ -51,7 +52,8 @@ def export_semaforo_pdf():
 
 @export_bp.get("/export/reportes/trazabilidad.pdf")
 def export_trazabilidad_pdf():
-    data = reporte_trazabilidad_data()
+    empresa_id = request.args.get("empresa_id", type=int)
+    data = reporte_trazabilidad_data(empresa_id)
     try:
         pdf = render_pdf("reports/trazabilidad.html", report=data)
     except PdfEngineMissing as exc:
@@ -86,9 +88,10 @@ def export_auditoria_pdf():
 
 @export_bp.get("/export/paquete_sat.zip")
 def export_paquete_sat_zip():
-    nivel = reporte_por_nivel_data()
+    empresa_id = request.args.get("empresa_id", type=int)
+    nivel = reporte_por_nivel_data(empresa_id=empresa_id)
     semaforo = reporte_semaforo_data()
-    trazabilidad = reporte_trazabilidad_data()
+    trazabilidad = reporte_trazabilidad_data(empresa_id)
     rows = AuditLog.query.order_by(AuditLog.creado_en.desc()).limit(400).all()
     audit_items = [
         {

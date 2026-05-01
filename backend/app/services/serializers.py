@@ -17,12 +17,15 @@ def doc_to_dict(doc):
 def expediente_to_dict(expediente):
     folio = expediente.folio
     proveedor = folio.proveedor
+    empresa = folio.empresa
     return {
         "id": expediente.id,
         "folio_id": folio.id,
         "folio_numero": folio.numero,
         "proveedor_id": proveedor.id,
         "proveedor_nombre": proveedor.nombre,
+        "empresa_id": empresa.id if empresa else None,
+        "empresa_nombre": empresa.nombre if empresa else None,
         "nivel": proveedor.nivel,
         "completitud": expediente.completitud,
         "pago_bloqueado": expediente.pago_bloqueado,

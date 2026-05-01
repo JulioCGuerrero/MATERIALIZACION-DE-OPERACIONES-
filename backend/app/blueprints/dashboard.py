@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify
 
-from ..models import Expediente, Folio, Proveedor, Traspaso
+from ..models import Alerta, Expediente, Folio, Proveedor, Traspaso
 from ..services.semaforo import calcular_semaforo
 
 dashboard_bp = Blueprint("dashboard", __name__)
@@ -12,6 +12,7 @@ def dashboard():
     materializados = Expediente.query.filter(Expediente.completitud >= 100.0).count()
     pagos_bloqueados = Expediente.query.filter_by(pago_bloqueado=True).count()
     alertas_ia = Traspaso.query.filter((Traspaso.estado == "alerta") | (Traspaso.excede_presup.is_(True))).count()
+    alertas_activas = Alerta.query.filter_by(estado="activa").count()
 
     por_nivel = {
         "n1": Proveedor.query.filter_by(nivel=1, activo=True).count(),
@@ -26,6 +27,7 @@ def dashboard():
             "materializados": materializados,
             "pagos_bloqueados": pagos_bloqueados,
             "alertas_ia": alertas_ia,
+            "alertas_activas": alertas_activas,
             "por_nivel": por_nivel,
             "semaforo": calcular_semaforo(),
         }

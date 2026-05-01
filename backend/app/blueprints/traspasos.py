@@ -15,6 +15,8 @@ def listar_traspasos():
         q = q.filter(Traspaso.folio_id == int(request.args["folio_id"]))
     if request.args.get("estado"):
         q = q.filter(Traspaso.estado == request.args["estado"])
+    if request.args.get("empresa_id"):
+        q = q.join(Traspaso.folio).filter(Folio.empresa_id == int(request.args["empresa_id"]))
 
     items = q.order_by(Traspaso.creado_en.desc()).all()
     return jsonify([
@@ -23,6 +25,8 @@ def listar_traspasos():
             "folio_id": t.folio_id,
             "folio_numero": t.folio.numero,
             "proveedor": t.folio.proveedor.nombre,
+            "empresa_id": t.folio.empresa.id if t.folio.empresa else None,
+            "empresa": t.folio.empresa.nombre if t.folio.empresa else None,
             "folio_bancario": t.folio_bancario,
             "monto": t.monto,
             "fecha": t.fecha,
@@ -43,6 +47,8 @@ def detalle_traspaso(traspaso_id: int):
             "folio_id": t.folio_id,
             "folio_numero": t.folio.numero,
             "proveedor": t.folio.proveedor.nombre,
+            "empresa_id": t.folio.empresa.id if t.folio.empresa else None,
+            "empresa": t.folio.empresa.nombre if t.folio.empresa else None,
             "folio_bancario": t.folio_bancario,
             "banco_origen": t.banco_origen,
             "banco_destino": t.banco_destino,

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 
 from .extensions import db
 
@@ -23,19 +23,34 @@ class Proveedor(db.Model):
     folios = db.relationship("Folio", back_populates="proveedor", cascade="all, delete-orphan")
 
 
+class Empresa(db.Model):
+    __tablename__ = "empresas"
+
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String, nullable=False, unique=True)
+    rfc = db.Column(db.String, nullable=False, unique=True)
+    activo = db.Column(db.Boolean, default=True)
+    creado_en = db.Column(db.DateTime, default=datetime.utcnow)
+
+    folios = db.relationship("Folio", back_populates="empresa", cascade="all, delete-orphan")
+
+
 class Folio(db.Model):
     __tablename__ = "folios"
 
     id = db.Column(db.Integer, primary_key=True)
     numero = db.Column(db.String, nullable=False, unique=True)
     proveedor_id = db.Column(db.Integer, db.ForeignKey("proveedores.id"), nullable=False)
+    empresa_id = db.Column(db.Integer, db.ForeignKey("empresas.id"), nullable=True)
     presupuesto = db.Column(db.Float, nullable=False)
     periodo = db.Column(db.String, nullable=False)
+    fecha_limite_entrega = db.Column(db.Date, nullable=True)
     estado = db.Column(db.String, default="activo")
     creado_en = db.Column(db.DateTime, default=datetime.utcnow)
     cerrado_en = db.Column(db.DateTime)
 
     proveedor = db.relationship("Proveedor", back_populates="folios")
+    empresa = db.relationship("Empresa", back_populates="folios")
     expediente = db.relationship("Expediente", back_populates="folio", uselist=False, cascade="all, delete-orphan")
     traspasos = db.relationship("Traspaso", back_populates="folio", cascade="all, delete-orphan")
 
@@ -101,3 +116,36 @@ class AuditLog(db.Model):
     detalle = db.Column(db.Text)
     usuario = db.Column(db.String)
     creado_en = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class EfosRegistro(db.Model):
+    __tablename__ = "efos_registro"
+
+    id = db.Column(db.Integer, primary_key=True)
+    rfc = db.Column(db.String, nullable=False, unique=True)
+    publicado_en_sat = db.Column(db.Boolean, default=True)
+    fuente = db.Column(db.String, default="sat")
+    actualizado_en = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class Alerta(db.Model):
+    __tablename__ = "alertas"
+
+    id = db.Column(db.Integer, primary_key=True)
+    tipo = db.Column(db.String, nullable=False)
+    severidad = db.Column(db.String, nullable=False, default="amarillo")
+    mensaje = db.Column(db.Text, nullable=False)
+    estado = db.Column(db.String, nullable=False, default="activa")
+    origen = db.Column(db.String, nullable=False, default="auto")
+    proveedor_id = db.Column(db.Integer, db.ForeignKey("proveedores.id"), nullable=True)
+    empresa_id = db.Column(db.Integer, db.ForeignKey("empresas.id"), nullable=True)
+    folio_id = db.Column(db.Integer, db.ForeignKey("folios.id"), nullable=True)
+    expediente_id = db.Column(db.Integer, db.ForeignKey("expedientes.id"), nullable=True)
+    periodo = db.Column(db.String, nullable=True)
+    creado_en = db.Column(db.DateTime, default=datetime.utcnow)
+    actualizado_en = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    proveedor = db.relationship("Proveedor")
+    empresa = db.relationship("Empresa")
+    folio = db.relationship("Folio")
+    expediente = db.relationship("Expediente")

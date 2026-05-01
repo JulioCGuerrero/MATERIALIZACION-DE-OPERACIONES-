@@ -375,6 +375,15 @@ input[type=file]{display:none;}
     <div class="card"><div class="clabel">Pagos bloqueados</div><div class="cval r">3</div><div class="csub" style="color:var(--red)">Sin materialidad completa</div></div>
     <div class="card"><div class="clabel">Alertas 69-B / EFOS</div><div class="cval y">2</div><div class="csub">Ver semáforo fiscal →</div></div>
   </div>
+  <div id="dashboard-alertas-wrap" class="card" style="margin-bottom:20px;">
+    <div class="sh"><h3>Alertas Activas</h3><span>EFOS · vencimientos · semáforo</span></div>
+    <div id="dashboard-alertas-list" class="muted">Cargando alertas...</div>
+  </div>
+  <div id="dashboard-empresas-wrap" class="card" style="margin-bottom:20px;">
+    <div class="sh"><h3>Empresas Activas</h3><span>Clientes registrados</span></div>
+    <div id="dashboard-empresas-count" class="cval">0</div>
+    <div id="dashboard-empresas-list" class="muted" style="margin-top:8px;">Cargando empresas...</div>
+  </div>
 
   <div class="cg cg2">
     <!-- Semáforo fiscal resumen -->
@@ -530,50 +539,7 @@ input[type=file]{display:none;}
   </div>
 
   <div id="etab-todos">
-    <div class="tw">
-      <div class="th"><h3>Expedientes de Materialización · Batia</h3><button class="btn btn-ghost">Exportar</button></div>
-      <table>
-        <thead><tr><th>Proveedor</th><th>Nivel</th><th>Trinidad documental</th><th>Capacidad operativa</th><th>Entrega / campo</th><th>Razón de negocio</th><th>Pago</th><th>Estado</th></tr></thead>
-        <tbody>
-          <tr onclick="openExp('17172')">
-            <td><strong>Limpiadores SA</strong></td><td><span class="nlvl n3">N3</span></td>
-            <td><span style="color:var(--yellow)">2/3</span></td>
-            <td><span style="color:var(--red)">0/2</span></td>
-            <td><span style="color:var(--yellow)">2/4</span></td>
-            <td><span style="color:var(--red)">0/1</span></td>
-            <td style="color:var(--red);font-family:var(--mono)">🔒</td>
-            <td><span class="badge y">Incompleto</span></td>
-          </tr>
-          <tr onclick="openExp('17165')">
-            <td><strong>Insumos Alfa</strong></td><td><span class="nlvl n2">N2</span></td>
-            <td><span style="color:var(--green)">3/3</span></td>
-            <td><span style="color:var(--green)">2/2</span></td>
-            <td><span style="color:var(--green)">3/3</span></td>
-            <td><span style="color:var(--green)">1/1</span></td>
-            <td style="color:var(--green);font-family:var(--mono)">✓</td>
-            <td><span class="badge g">Completo</span></td>
-          </tr>
-          <tr onclick="openExp('17160')">
-            <td><strong>TechServ</strong></td><td><span class="nlvl n3">N3</span></td>
-            <td><span style="color:var(--green)">3/3</span></td>
-            <td><span style="color:var(--yellow)">1/2</span></td>
-            <td><span style="color:var(--red)">1/4</span></td>
-            <td><span style="color:var(--red)">0/1</span></td>
-            <td style="color:var(--red);font-family:var(--mono)">🔒</td>
-            <td><span class="badge r">Alerta IA</span></td>
-          </tr>
-          <tr onclick="openExp('17148')">
-            <td><strong>Mant. Delta</strong></td><td><span class="nlvl n4">N4</span></td>
-            <td><span style="color:var(--red)">1/3</span></td>
-            <td><span style="color:var(--red)">0/3</span></td>
-            <td><span style="color:var(--red)">0/4</span></td>
-            <td><span style="color:var(--red)">0/2</span></td>
-            <td style="color:var(--red);font-family:var(--mono)">🔒</td>
-            <td><span class="badge r">Crítico</span></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <div id="etab-todos-dyn" class="card" style="padding:18px">Cargando expedientes...</div>
   </div>
   <div id="etab-bloq" style="display:none">
     <div class="bloqueo"><h4>🔒 3 pagos bloqueados por materialidad incompleta</h4><p>Los siguientes proveedores no pueden recibir pago hasta completar su expediente de materialización conforme al Art. 69-B CFF. El sistema bloquea automáticamente el botón de traspaso bancario.</p></div>
@@ -911,6 +877,12 @@ input[type=file]{display:none;}
 <div class="modal-overlay" id="modal-proveedor">
   <div class="modal" onclick="event.stopPropagation()">
     <h3>Registrar Proveedor</h3>
+    <div class="field">
+      <label>Empresa (cliente)</label>
+      <select id="prov-empresa">
+        <option value="">— Seleccionar empresa —</option>
+      </select>
+    </div>
     <div class="field"><label>Razón social</label><input id="prov-nombre" type="text" placeholder="Nombre del proveedor" /></div>
     <div class="field-row">
       <div class="field"><label>RFC</label><input id="prov-rfc" type="text" placeholder="XAXX010101000" /></div>
@@ -972,6 +944,7 @@ const API_BASE = 'http://localhost:8000/api';
 const FOLIO_CACHE = {};
 let CURRENT_EXPEDIENTE = null;
 let CURRENT_FOLIO_NUMERO = null;
+let EMPRESAS_CACHE = [];
 
 function toMoney(value){
   const n = Number(value||0);
@@ -1077,7 +1050,10 @@ function stab(el, id) {
   el.parentElement.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
   const par = el.closest('.view')||document.body;
-  par.querySelectorAll('[id^="etab-"]').forEach(t=>t.style.display='none');
+  ['etab-todos','etab-bloq','etab-n3','etab-n4'].forEach(tabId=>{
+    const node = par.querySelector(`#${tabId}`);
+    if(node) node.style.display='none';
+  });
   const target = document.getElementById(id);
   if(target) target.style.display='block';
 }
@@ -1451,9 +1427,11 @@ async function loadReportesPorNivel(){
     if(etBloq){
       etBloq.innerHTML = `<div class="bloqueo"><h4>🔒 ${b.length} pagos bloqueados por materialidad incompleta</h4><p>Reporte dinámico desde backend.</p></div>` + (b.map(i=>`<div class="astrip late"><div class="astrip-ico">🔒</div><div class="astrip-txt"><strong>${i.proveedor} · #${i.folio}</strong>Completitud ${Math.round(i.completitud)}% · Nivel ${i.nivel}</div><button class="btn btn-warn" style="flex-shrink:0" onclick="openExp('${i.folio}')">Ver expediente</button></div>`).join('') || '<div class="card" style="padding:18px">Sin bloqueados</div>');
     }
-    const mkTable = (rep)=>`<div class="tw" style="margin:0"><table><thead><tr><th>Folio</th><th>Proveedor</th><th>Nivel</th><th>Completitud</th><th>Pago</th></tr></thead><tbody>${rep.items.map(i=>`<tr onclick="openExp('${i.folio}')"><td class="mono">#${i.folio}</td><td>${i.proveedor}</td><td><span class="nlvl n${i.nivel}">N${i.nivel}</span></td><td><span class="badge ${i.completitud>=100?'g':i.completitud>=70?'y':'r'}">${Math.round(i.completitud)}%</span></td><td style="color:${i.pago_bloqueado?'var(--red)':'var(--green)'};font-family:var(--mono)">${i.pago_bloqueado?'🔒 Bloqueado':'✓ Liberado'}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">Sin datos</td></tr>'}</tbody></table></div>`;
+    const mkTable = (rep, includeEmpresa=false, title='')=>`<div class="tw" style="margin:0">${title?`<div class="th"><h3>${title}</h3></div>`:''}<table><thead><tr><th>Folio</th><th>Proveedor</th>${includeEmpresa?'<th>Empresa</th>':''}<th>Nivel</th><th>Completitud</th><th>Pago</th></tr></thead><tbody>${rep.items.map(i=>`<tr onclick="openExp('${i.folio}')"><td class="mono">#${i.folio}</td><td>${i.proveedor}</td>${includeEmpresa?`<td><span class="chip">${i.empresa||'Sin empresa'}</span></td>`:''}<td><span class="nlvl n${i.nivel}">N${i.nivel}</span></td><td><span class="badge ${i.completitud>=100?'g':i.completitud>=70?'y':'r'}">${Math.round(i.completitud)}%</span></td><td style="color:${i.pago_bloqueado?'var(--red)':'var(--green)'};font-family:var(--mono)">${i.pago_bloqueado?'🔒 Bloqueado':'✓ Liberado'}</td></tr>`).join('') || `<tr><td colspan="${includeEmpresa?6:5}" class="muted">Sin datos</td></tr>`}</tbody></table></div>`;
+    const etTodos = document.getElementById('etab-todos-dyn');
     const etN3 = document.getElementById('etab-n3');
     const etN4 = document.getElementById('etab-n4');
+    if(etTodos) etTodos.innerHTML = mkTable(all, true, 'Expedientes de Materialización · Todas las empresas');
     if(etN3) etN3.innerHTML = mkTable(n3);
     if(etN4) etN4.innerHTML = mkTable(n4);
     const tabs = document.querySelectorAll('#view-expedientes .tab');
@@ -1575,10 +1553,59 @@ async function loadDashboard(){
       cards[0].textContent = String(dash.folios_activos);
       cards[1].textContent = String(dash.materializados);
       cards[2].textContent = String(dash.pagos_bloqueados);
-      cards[3].textContent = String(dash.alertas_ia);
+      cards[3].textContent = String(dash.alertas_activas ?? dash.alertas_ia);
     }
   }catch(err){
     console.error(err);
+  }
+}
+
+async function loadEmpresas(){
+  try{
+    EMPRESAS_CACHE = await apiGet('/empresas');
+    const sel = document.getElementById('prov-empresa');
+    if(!sel) return;
+    sel.innerHTML = '<option value="">— Seleccionar empresa —</option>';
+    EMPRESAS_CACHE.forEach(e=>{
+      const op = document.createElement('option');
+      op.value = String(e.id);
+      op.textContent = `${e.nombre} (${e.rfc})`;
+      sel.appendChild(op);
+    });
+    const active = EMPRESAS_CACHE.filter(e=>e.activo);
+    const countEl = document.getElementById('dashboard-empresas-count');
+    const listEl = document.getElementById('dashboard-empresas-list');
+    if(countEl) countEl.textContent = String(active.length);
+    if(listEl){
+      listEl.innerHTML = active.length
+        ? active.map(e=>`<div class="chip" style="margin-right:6px;margin-bottom:6px;display:inline-block">${e.nombre} · ${e.rfc}</div>`).join('')
+        : 'Sin empresas activas';
+    }
+  }catch(err){
+    console.error(err);
+    const listEl = document.getElementById('dashboard-empresas-list');
+    if(listEl) listEl.textContent = `No se pudieron cargar empresas: ${err.message}`;
+  }
+}
+
+async function loadAlertasActivas(){
+  try{
+    await apiSend('/alertas/generar', 'POST', {periodo: new Date().toISOString().slice(0,7)});
+    const items = await apiGet('/alertas?estado=activa');
+    const wrap = document.getElementById('dashboard-alertas-list');
+    if(!wrap) return;
+    if(!items.length){
+      wrap.innerHTML = '<div class="astrip ok"><div class="astrip-ico">✅</div><div class="astrip-txt"><strong>Sin alertas activas</strong>Todo en cumplimiento.</div></div>';
+      return;
+    }
+    wrap.innerHTML = items.slice(0,8).map(a=>{
+      const klass = a.severidad === 'rojo' ? 'late' : 'warn';
+      const icon = a.severidad === 'rojo' ? '🔴' : '🟡';
+      return `<div class="astrip ${klass}"><div class="astrip-ico">${icon}</div><div class="astrip-txt"><strong>${a.tipo}</strong>${a.mensaje}</div></div>`;
+    }).join('');
+  }catch(err){
+    const wrap = document.getElementById('dashboard-alertas-list');
+    if(wrap) wrap.innerHTML = `<div class="muted">No se pudieron cargar alertas: ${err.message}</div>`;
   }
 }
 
@@ -1598,7 +1625,7 @@ async function loadFoliosForFrontend(){
         const prov = proveedorById[f.proveedor_id] || {};
         FOLIO_CACHE[f.numero] = f;
         FOLIOS[f.numero] = {
-          empresa: f.proveedor_nombre,
+          empresa: f.empresa_nombre || f.proveedor_nombre,
           nivel: `n${f.nivel}`,
           monto: toMoney(0),
           presup: f.presupuesto > 0 ? toMoney(f.presupuesto) : 'Sin presupuesto',
@@ -1608,7 +1635,8 @@ async function loadFoliosForFrontend(){
         };
         const op = document.createElement('option');
         op.value = String(f.id);
-        op.textContent = `${f.proveedor_nombre} (${f.numero} · N${f.nivel})`;
+        const empTxt = f.empresa_nombre ? ` · ${f.empresa_nombre}` : '';
+        op.textContent = `${f.proveedor_nombre} (${f.numero} · N${f.nivel}${empTxt})`;
         select.appendChild(op);
 
         const pagoTxt = f.pago_bloqueado ? '🔒 Bloqueado' : '✓ Liberado';
@@ -1635,15 +1663,21 @@ async function loadFoliosForFrontend(){
 }
 
 async function registrarProveedor(){
+  const empresaId = Number(document.getElementById('prov-empresa').value || 0);
   const nombre = document.getElementById('prov-nombre').value.trim();
   const rfc = document.getElementById('prov-rfc').value.trim();
   const tipo = document.getElementById('prov-tipo').value;
   const monto = cleanNumber(document.getElementById('prov-monto').value);
-  if(!nombre || !rfc || !tipo){
-    alert('Completa nombre, RFC y tipo');
+  if(!empresaId || !nombre || !rfc || !tipo){
+    alert('Completa empresa, nombre, RFC y tipo');
     return;
   }
   try{
+    const efos = await apiGet(`/efos/consultar?rfc=${encodeURIComponent(rfc)}`);
+    if(efos.en_efos){
+      alert(`Registro bloqueado: RFC ${efos.rfc} aparece en EFOS.`);
+      return;
+    }
     const periodo = new Date().toISOString().slice(0,7);
     const resp = await apiSend('/proveedores','POST',{
       nombre,
@@ -1654,6 +1688,7 @@ async function registrarProveedor(){
       tiene_fisico: tipo === 'materia' || tipo === 'construccion',
       usuario: 'frontend',
       crear_folio: true,
+      empresa_id: empresaId,
       folio_periodo: periodo,
       folio_presupuesto: monto
     });
@@ -1664,6 +1699,7 @@ async function registrarProveedor(){
     await loadDashboard();
     await loadFoliosForFrontend();
     await loadReportesPorNivel();
+    await loadAlertasActivas();
   }catch(err){
     alert(`No se pudo registrar proveedor: ${err.message}`);
   }
@@ -1697,8 +1733,10 @@ async function confirmarTraspaso(){
 document.getElementById('prov-registrar-btn').addEventListener('click', registrarProveedor);
 document.getElementById('traspaso-confirm-btn').addEventListener('click', confirmarTraspaso);
 loadDashboard();
+loadEmpresas();
 loadFoliosForFrontend();
 loadSemaforo();
+loadAlertasActivas();
 loadAuditLog();
 loadTrazabilidad();
 loadReportesPorNivel();

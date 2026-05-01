@@ -2,10 +2,13 @@ from ..models import Folio, Proveedor, Traspaso
 from .semaforo import calcular_semaforo
 
 
-def reporte_por_nivel_data(nivel: int | None = None) -> dict:
-    q = Folio.query.join(Folio.proveedor).join(Folio.expediente)
+def reporte_por_nivel_data(nivel: int | None = None, empresa_id: int | None = None) -> dict:
+    # LEFT JOIN a expediente para no excluir folios/empresas si aún no tienen expediente ligado.
+    q = Folio.query.join(Folio.proveedor).outerjoin(Folio.expediente)
     if nivel:
         q = q.filter(Proveedor.nivel == nivel)
+    if empresa_id:
+        q = q.filter(Folio.empresa_id == empresa_id)
 
     folios = q.order_by(Folio.numero.asc()).all()
 
@@ -16,6 +19,8 @@ def reporte_por_nivel_data(nivel: int | None = None) -> dict:
             {
                 "folio": f.numero,
                 "proveedor": f.proveedor.nombre,
+                "empresa_id": f.empresa.id if f.empresa else None,
+                "empresa": f.empresa.nombre if f.empresa else "Sin empresa",
                 "nivel": f.proveedor.nivel,
                 "tipo": f.proveedor.tipo,
                 "completitud": exp.completitud if exp else 0.0,
@@ -44,8 +49,10 @@ def reporte_semaforo_data() -> dict:
     return calcular_semaforo()
 
 
-def reporte_trazabilidad_data() -> dict:
+def reporte_trazabilidad_data(empresa_id: int | None = None) -> dict:
     traspasos = Traspaso.query.join(Traspaso.folio).join(Folio.proveedor).order_by(Traspaso.creado_en.desc()).all()
+    if empresa_id:
+        traspasos = [t for t in traspasos if t.folio.empresa_id == empresa_id]
 
     items = []
     for t in traspasos:
@@ -55,6 +62,8 @@ def reporte_trazabilidad_data() -> dict:
                 "id": t.id,
                 "folio": t.folio.numero,
                 "proveedor": t.folio.proveedor.nombre,
+                "empresa_id": t.folio.empresa.id if t.folio.empresa else None,
+                "empresa": t.folio.empresa.nombre if t.folio.empresa else "Sin empresa",
                 "nivel": t.folio.proveedor.nivel,
                 "materialidad": exp.completitud if exp else 0.0,
                 "folio_bancario": t.folio_bancario,

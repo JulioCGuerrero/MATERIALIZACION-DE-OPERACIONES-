@@ -30,7 +30,15 @@ python backend/run.py
 - `GET /api/expedientes/{id}`
 - `GET /api/expedientes/{id}/completitud`
 - `POST /api/proveedores`
+- `GET /api/empresas`
+- `POST /api/empresas`
+- `GET /api/efos/consultar?rfc=...`
+- `POST /api/efos/cargar`
 - `POST /api/traspasos`
+- `POST /api/folios/ciclo-mensual`
+- `GET /api/alertas`
+- `POST /api/alertas/generar`
+- `PATCH /api/alertas/{id}/resolver`
 - `GET /api/semaforo`
 - `GET /api/audit_log`
 - `GET /api/reportes/nivel`

@@ -1,8 +1,10 @@
 from itertools import islice
+from calendar import monthrange
+from datetime import date
 
 from app import create_app
 from app.extensions import db
-from app.models import Documento, Expediente, Folio, Proveedor, Traspaso
+from app.models import Documento, Empresa, Expediente, Folio, Proveedor, Traspaso
 from app.services.bloqueo import calcular_completitud
 from app.services.catalogo import DOCS_BY_LEVEL
 
@@ -51,11 +53,16 @@ PROVEEDORES = [
     },
 ]
 
+EMPRESAS = [
+    {"nombre": "Batia", "rfc": "BAT010101AAA"},
+    {"nombre": "Grupo Norte", "rfc": "GRN010101BBB"},
+]
+
 FOLIOS = [
-    {"numero": "17172", "proveedor": "Limpiadores SA", "presupuesto": 150_000, "periodo": "2026-03"},
-    {"numero": "17165", "proveedor": "Insumos Alfa", "presupuesto": 90_000, "periodo": "2026-03"},
-    {"numero": "17160", "proveedor": "TechServ", "presupuesto": 185_000, "periodo": "2026-03"},
-    {"numero": "17148", "proveedor": "Mant. Delta", "presupuesto": 0, "periodo": "2026-03"},
+    {"numero": "17172", "proveedor": "Limpiadores SA", "empresa": "Batia", "presupuesto": 150_000, "periodo": "2026-03"},
+    {"numero": "17165", "proveedor": "Insumos Alfa", "empresa": "Batia", "presupuesto": 90_000, "periodo": "2026-03"},
+    {"numero": "17160", "proveedor": "TechServ", "empresa": "Grupo Norte", "presupuesto": 185_000, "periodo": "2026-03"},
+    {"numero": "17148", "proveedor": "Mant. Delta", "empresa": "Grupo Norte", "presupuesto": 0, "periodo": "2026-03"},
 ]
 
 TRASPASOS = [
@@ -87,6 +94,14 @@ with app.app_context():
     db.create_all()
 
     by_name = {}
+    empresas = {}
+    for e in EMPRESAS:
+        empresa = Empresa(nombre=e["nombre"], rfc=e["rfc"], activo=True)
+        empresas[e["nombre"]] = empresa
+        db.session.add(empresa)
+
+    db.session.flush()
+
     for p in PROVEEDORES:
         proveedor = Proveedor(
             nombre=p["nombre"],
@@ -107,11 +122,18 @@ with app.app_context():
     by_num = {}
     for f in FOLIOS:
         proveedor = by_name[f["proveedor"]]
+        empresa = empresas[f["empresa"]]
         folio = Folio(
             numero=f["numero"],
             proveedor_id=proveedor.id,
+            empresa_id=empresa.id,
             presupuesto=float(f["presupuesto"]),
             periodo=f["periodo"],
+            fecha_limite_entrega=date(
+                int(f["periodo"].split("-")[0]),
+                int(f["periodo"].split("-")[1]),
+                monthrange(int(f["periodo"].split("-")[0]), int(f["periodo"].split("-")[1]))[1],
+            ),
             estado="activo",
         )
         db.session.add(folio)

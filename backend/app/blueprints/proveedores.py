@@ -1,11 +1,15 @@
+from calendar import monthrange
+from datetime import date, datetime
+
 from flask import Blueprint, jsonify, request
 
 from ..extensions import db
-from ..models import Documento, Expediente, Folio, Proveedor
+from ..models import Documento, Empresa, Expediente, Folio, Proveedor
 from ..services.auditoria import log_event
 from ..services.bloqueo import calcular_completitud
 from ..services.catalogo import DOCS_BY_LEVEL
 from ..services.clasificador import clasificar_proveedor
+from ..services.efos import esta_en_efos, normalizar_rfc
 from ..services.serializers import expediente_to_dict
 
 proveedores_bp = Blueprint("proveedores", __name__)
@@ -19,6 +23,11 @@ def _next_folio_numero() -> str:
             nums.append(int(n))
     base = max(nums) + 1 if nums else 10001
     return str(base)
+
+
+def _fecha_limite_por_periodo(periodo: str) -> date:
+    year, month = [int(x) for x in periodo.split("-")]
+    return date(year, month, monthrange(year, month)[1])
 
 
 def _proveedor_dict(p: Proveedor) -> dict:
@@ -59,6 +68,10 @@ def crear_proveedor():
     if faltantes:
         return jsonify({"error": f"Campos faltantes: {', '.join(faltantes)}"}), 400
 
+    rfc = normalizar_rfc(body["rfc"])
+    if esta_en_efos(rfc):
+        return jsonify({"error": "RFC encontrado en EFOS SAT. Registro bloqueado.", "rfc": rfc}), 409
+
     clasificado = clasificar_proveedor(
         tipo=body["tipo"],
         monto=float(body["monto"]),
@@ -68,7 +81,7 @@ def crear_proveedor():
 
     proveedor = Proveedor(
         nombre=body["nombre"],
-        rfc=body["rfc"],
+        rfc=rfc,
         tipo=body["tipo"],
         nivel=clasificado["nivel"],
         banco=body.get("banco"),
@@ -76,7 +89,7 @@ def crear_proveedor():
         clabe=body.get("clabe"),
         repse=bool(body["repse"]),
         tiene_fisico=bool(body["tiene_fisico"]),
-        efos_ok=bool(body.get("efos_ok", True)),
+        efos_ok=not esta_en_efos(rfc),
         activo=bool(body.get("activo", True)),
     )
     db.session.add(proveedor)
@@ -84,11 +97,20 @@ def crear_proveedor():
     log_event("proveedores", proveedor.id, "crear", {"nivel": proveedor.nivel}, body.get("usuario"))
     folio_creado = None
     if bool(body.get("crear_folio", False)):
+        if "empresa_id" not in body:
+            return jsonify({"error": "Para crear folio al registrar proveedor debes enviar empresa_id"}), 400
+        empresa = Empresa.query.get_or_404(int(body["empresa_id"]))
         folio = Folio(
             numero=str(body.get("folio_numero") or _next_folio_numero()),
             proveedor_id=proveedor.id,
+            empresa_id=empresa.id,
             presupuesto=float(body.get("folio_presupuesto", body.get("monto", 0))),
             periodo=body.get("folio_periodo", "2026-04"),
+            fecha_limite_entrega=(
+                datetime.strptime(body["fecha_limite_entrega"], "%Y-%m-%d").date()
+                if body.get("fecha_limite_entrega")
+                else _fecha_limite_por_periodo(body.get("folio_periodo", "2026-04"))
+            ),
             estado="activo",
         )
         db.session.add(folio)
@@ -104,11 +126,19 @@ def crear_proveedor():
         folio_creado = {
             "id": folio.id,
             "numero": folio.numero,
+            "empresa_id": empresa.id,
+            "empresa_nombre": empresa.nombre,
             "periodo": folio.periodo,
             "presupuesto": folio.presupuesto,
             "expediente_id": expediente.id,
         }
-        log_event("folios", folio.id, "crear", {"proveedor_id": proveedor.id}, body.get("usuario"))
+        log_event(
+            "folios",
+            folio.id,
+            "crear",
+            {"proveedor_id": proveedor.id, "empresa_id": empresa.id, "periodo": folio.periodo},
+            body.get("usuario"),
+        )
 
     db.session.commit()
     if folio_creado:
@@ -124,11 +154,19 @@ def actualizar_proveedor(proveedor_id: int):
 
     for field in ["nombre", "rfc", "tipo", "banco", "cuenta", "clabe"]:
         if field in body:
-            setattr(p, field, body[field])
+            if field == "rfc":
+                value = normalizar_rfc(body[field])
+                if esta_en_efos(value):
+                    return jsonify({"error": "RFC encontrado en EFOS SAT. Actualización bloqueada.", "rfc": value}), 409
+                setattr(p, field, value)
+            else:
+                setattr(p, field, body[field])
 
     for field in ["repse", "tiene_fisico", "efos_ok", "activo"]:
         if field in body:
             setattr(p, field, bool(body[field]))
+
+    p.efos_ok = not esta_en_efos(p.rfc)
 
     if any(k in body for k in ["tipo", "monto", "repse", "tiene_fisico"]):
         monto = float(body.get("monto", 0))

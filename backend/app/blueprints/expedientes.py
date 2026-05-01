@@ -21,6 +21,8 @@ def listar_expedientes():
 
     if request.args.get("proveedor_id"):
         q = q.filter(Folio.proveedor_id == int(request.args["proveedor_id"]))
+    if request.args.get("empresa_id"):
+        q = q.filter(Folio.empresa_id == int(request.args["empresa_id"]))
 
     items = q.order_by(Expediente.id.desc()).all()
     return jsonify([expediente_to_dict(e) for e in items])
