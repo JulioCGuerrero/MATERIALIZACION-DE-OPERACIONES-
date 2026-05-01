@@ -362,6 +362,8 @@ input[type=file]{display:none;}
 <div class="topbar">
   <h2 id="ptitle">Dashboard General</h2>
   <div class="period">Marzo 2026</div>
+  <div id="usuario-badge" class="chip">No autenticado</div>
+  <button class="btn btn-ghost" onclick="logout()">Cerrar sesión</button>
   <button class="btn btn-ghost">Exportar</button>
   <button class="btn btn-primary" onclick="openModal('modal-proveedor')">＋ Nuevo Proveedor</button>
 </div>
@@ -648,14 +650,19 @@ input[type=file]{display:none;}
   <div class="cg cg2">
     <div>
       <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:16px;">
-        <div style="font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;">Simulando proveedor</div>
-        <select onchange="portalNivel(this.value)" id="portal-select">
-          <option value="">— Elegir proveedor para ver su portal —</option>
-          <option value="n1">Serv. Cafetería (Nivel 1 · Bajo riesgo)</option>
-          <option value="n2">Insumos Alfa (Nivel 2 · Operativo)</option>
-          <option value="n3">Limpiadores SA (Nivel 3 · Alto riesgo)</option>
-          <option value="n4">Mant. Delta (Nivel 4 · Estratégico)</option>
-        </select>
+        <div style="font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;">Portal real por empresa y proveedor</div>
+        <div class="field" style="margin-bottom:10px">
+          <label>Empresa</label>
+          <select id="portal-empresa-select" onchange="portalEmpresaChange(this.value)">
+            <option value="">— Elegir empresa —</option>
+          </select>
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <label>Proveedor (folio activo)</label>
+          <select onchange="portalNivel(this.value)" id="portal-select">
+            <option value="">— Elegir proveedor para ver su portal —</option>
+          </select>
+        </div>
       </div>
 
       <div id="portal-contenido">
@@ -714,15 +721,28 @@ input[type=file]{display:none;}
     <div class="card"><div class="clabel">Sin folio bancario</div><div class="cval y" id="tr-kpi-sin-folio">3</div></div>
     <div class="card"><div class="clabel">Críticos</div><div class="cval r" id="tr-kpi-criticos">3</div></div>
   </div>
+  <div class="card" style="margin-bottom:12px;">
+    <div class="field-row">
+      <div class="field" style="margin-bottom:0">
+        <label>Empresa</label>
+        <select id="tr-empresa-filter" onchange="loadTrazabilidad()">
+          <option value="">Todas las empresas</option>
+        </select>
+      </div>
+      <div class="field" style="margin-bottom:0">
+        <label>Proveedor</label>
+        <select id="tr-proveedor-filter" onchange="loadTrazabilidad()">
+          <option value="">Todos los proveedores</option>
+        </select>
+      </div>
+    </div>
+  </div>
   <div class="tw">
     <div class="th"><h3>Traspasos Bancarios · Batia</h3><button class="btn btn-primary" onclick="openModal('modal-traspaso')">＋ Registrar Traspaso</button></div>
     <table>
-      <thead><tr><th>Folio</th><th>Proveedor</th><th>Nivel</th><th>Materialidad</th><th>Folio bancario</th><th>Monto</th><th>Presup. SINGA</th><th>Pago</th></tr></thead>
+      <thead><tr><th>Folio</th><th>Empresa</th><th>Proveedor</th><th>Nivel</th><th>Materialidad</th><th>Folio bancario</th><th>Monto</th><th>Presup. SINGA</th><th>Pago</th></tr></thead>
       <tbody id="trazabilidad-tbody">
-        <tr onclick="openExp('17172')"><td class="mono">#17172</td><td>Limpiadores SA</td><td><span class="nlvl n3">N3</span></td><td><span class="badge y">60%</span></td><td class="mono" style="color:var(--accent)">182822</td><td class="mono">$148,500</td><td><span class="badge g">Dentro</span></td><td style="color:var(--red);font-family:var(--mono)">🔒 Bloqueado</td></tr>
-        <tr onclick="openExp('17165')"><td class="mono">#17165</td><td>Insumos Alfa</td><td><span class="nlvl n2">N2</span></td><td><span class="badge g">100%</span></td><td class="mono" style="color:var(--accent)">91822</td><td class="mono">$89,200</td><td><span class="badge g">Dentro</span></td><td style="color:var(--green);font-family:var(--mono)">✓ Pagado</td></tr>
-        <tr onclick="openExp('17160')"><td class="mono">#17160</td><td>TechServ</td><td><span class="nlvl n3">N3</span></td><td><span class="badge r">35%</span></td><td class="mono" style="color:var(--yellow)">28228</td><td class="mono">$210,000</td><td><span class="badge r">⚠ Excede</span></td><td style="color:var(--red);font-family:var(--mono)">🔒 Bloqueado</td></tr>
-        <tr onclick="openExp('17148')"><td class="mono">#17148</td><td>Mant. Delta</td><td><span class="nlvl n4">N4</span></td><td><span class="badge r">10%</span></td><td class="mono muted">Pendiente</td><td class="mono">$320,000</td><td><span class="badge r">⚠ Sin SINGA</span></td><td style="color:var(--red);font-family:var(--mono)">🔒 Bloqueado</td></tr>
+        <tr><td colspan="9" class="muted">Cargando trazabilidad...</td></tr>
       </tbody>
     </table>
   </div>
@@ -731,20 +751,14 @@ input[type=file]{display:none;}
 <!-- ═══ KPIs ═══ -->
 <div class="view" id="view-kpis">
   <div class="cg cg3">
-    <div class="kcard"><div class="kh"><div class="kn">Score promedio equipo</div><span class="badge y">⚠ Bajo meta</span></div><div class="kv">78<span style="font-size:12px;color:var(--muted)">/100</span></div><div class="pb" style="margin-top:8px"><div class="pf y" style="width:78%"></div></div><div class="ksub">Meta: 85 · 6 personas</div></div>
-    <div class="kcard"><div class="kh"><div class="kn">Expedientes materializados</div><span class="badge g">OK</span></div><div class="kv">75<span style="font-size:12px;color:var(--muted)">%</span></div><div class="pb" style="margin-top:8px"><div class="pf y" style="width:75%"></div></div><div class="ksub">18 de 24 completos</div></div>
-    <div class="kcard"><div class="kh"><div class="kn">Opiniones SAT gestionadas</div><span class="badge b">Contabilidad</span></div><div class="kv">100<span style="font-size:12px;color:var(--muted)">%</span></div><div class="pb" style="margin-top:8px"><div class="pf g" style="width:100%"></div></div><div class="ksub">KPI exclusivo Contabilidad</div></div>
+    <div class="kcard"><div class="kh"><div class="kn">Score promedio equipo</div><span class="badge y" id="kpi-badge-prom">⚠ Bajo meta</span></div><div class="kv"><span id="kpi-promedio">0</span><span style="font-size:12px;color:var(--muted)">/100</span></div><div class="pb" style="margin-top:8px"><div class="pf y" id="kpi-prom-bar" style="width:0%"></div></div><div class="ksub" id="kpi-prom-sub">Meta: 85 · 0 personas</div></div>
+    <div class="kcard"><div class="kh"><div class="kn">Eventos operativos</div><span class="badge g">Backend</span></div><div class="kv"><span id="kpi-eventos">0</span><span style="font-size:12px;color:var(--muted)"> ev.</span></div><div class="pb" style="margin-top:8px"><div class="pf b" id="kpi-ev-bar" style="width:0%"></div></div><div class="ksub">Actividad registrada por usuario</div></div>
+    <div class="kcard"><div class="kh"><div class="kn">Top score individual</div><span class="badge b">Ranking</span></div><div class="kv"><span id="kpi-top-score">0</span><span style="font-size:12px;color:var(--muted)">/100</span></div><div class="pb" style="margin-top:8px"><div class="pf g" id="kpi-top-bar" style="width:0%"></div></div><div class="ksub" id="kpi-top-user">Sin datos</div></div>
   </div>
-  <div class="tw"><div class="th"><h3>KPIs Individuales · Batia</h3></div>
+  <div class="tw"><div class="th"><h3>KPIs Individuales · Operación Real</h3></div>
     <table>
       <thead><tr><th>Persona</th><th>Área</th><th>KPI principal</th><th>Score</th><th>Tendencia</th></tr></thead>
-      <tbody>
-        <tr><td>M. González</td><td><span class="chip">Tesorería</span></td><td>Traspasos registrados &lt;24h</td><td><span style="font-family:var(--mono);font-size:16px;color:var(--yellow)">72</span></td><td style="color:var(--red)">↓ 3</td></tr>
-        <tr><td>L. Hernández</td><td><span class="chip">Tesorería</span></td><td>Folios conciliados sin diferencia</td><td><span style="font-family:var(--mono);font-size:16px;color:var(--green)">96</span></td><td style="color:var(--green)">↑ 4</td></tr>
-        <tr><td>R. Fuentes</td><td><span class="chip">Administración</span></td><td>Expedientes completados en plazo</td><td><span style="font-family:var(--mono);font-size:16px;color:var(--yellow)">79</span></td><td style="color:var(--muted)">→ 0</td></tr>
-        <tr><td>C. Morales</td><td><span class="chip">Supervisión</span></td><td>Bitácoras y asistencias capturadas</td><td><span style="font-family:var(--mono);font-size:16px;color:var(--green)">88</span></td><td style="color:var(--green)">↑ 2</td></tr>
-        <tr><td><strong>P. Ramírez</strong></td><td><span class="chip" style="background:rgba(79,132,255,.12);color:var(--accent)">Contabilidad</span></td><td>Opiniones SAT + EFOS gestionadas</td><td><span style="font-family:var(--mono);font-size:16px;color:var(--green)">100</span></td><td style="color:var(--green)">↑ 0</td></tr>
-      </tbody>
+      <tbody id="kpis-personal-tbody"><tr><td colspan="5" class="muted">Cargando KPIs...</td></tr></tbody>
     </table>
   </div>
 </div>
@@ -937,6 +951,68 @@ input[type=file]{display:none;}
   </div>
 </div>
 
+<!-- MENU INICIAL -->
+<div class="modal-overlay" id="modal-role" style="z-index:600;">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3>¿Cómo deseas ingresar?</h3>
+    <div class="cg cg2" style="margin-top:8px;">
+      <button class="btn btn-primary" style="height:52px;justify-content:center" onclick="enterAsProveedor()">Soy Proveedor</button>
+      <button class="btn btn-ghost" style="height:52px;justify-content:center" onclick="enterAsOperador()">Soy Operador</button>
+    </div>
+    <div style="margin-top:12px;font-size:12px;color:var(--muted2);">
+      Proveedor: auto-registro a empresa cliente. Operador: acceso interno por rol.
+    </div>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div class="modal-overlay" id="modal-login" style="z-index:500;">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3>Ingreso por Rol</h3>
+    <div class="field">
+      <label>Usuario</label>
+      <select id="login-email"></select>
+    </div>
+    <div class="field">
+      <label>Contraseña</label>
+      <input id="login-password" type="password" placeholder="servicia2026" />
+    </div>
+    <div class="modal-footer">
+      <button id="login-btn" class="btn btn-primary" style="flex:1">Entrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- AUTOREGISTRO PROVEEDOR -->
+<div class="modal-overlay" id="modal-proveedor-self" style="z-index:550;">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3>Registro de Proveedor</h3>
+    <div class="field">
+      <label>Empresa cliente</label>
+      <select id="self-empresa"></select>
+    </div>
+    <div class="field"><label>Razón social</label><input id="self-nombre" type="text" placeholder="Nombre del proveedor" /></div>
+    <div class="field-row">
+      <div class="field"><label>RFC</label><input id="self-rfc" type="text" placeholder="XAXX010101000" /></div>
+      <div class="field"><label>Tipo de servicio</label>
+        <select id="self-tipo">
+          <option value="">— Seleccionar —</option>
+          <option value="limpieza">Servicios generales</option>
+          <option value="materia">Materia prima / insumos</option>
+          <option value="outsourcing">Outsourcing especializado</option>
+          <option value="consultoria">Consultoría / software</option>
+          <option value="construccion">Construcción / maquinaria</option>
+        </select>
+      </div>
+    </div>
+    <div class="field"><label>Monto estimado</label><input id="self-monto" type="text" placeholder="$0.00" /></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" style="flex:1" onclick="enterAsOperador()">Soy Operador</button>
+      <button class="btn btn-primary" style="flex:2" onclick="registrarProveedorSelf()">Enviar registro</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ── DATA ─────────────────────────────────────────
 const TITLES = {dashboard:'Dashboard General',clasificador:'Clasificador de Nivel de Riesgo',expedientes:'Expedientes de Materialización',semaforo:'Semáforo Fiscal · Art. 69-B CFF',portal:'Portal de Autoservicio · Proveedor',trazabilidad:'Trazabilidad Bancaria',kpis:'KPIs del Personal',cierre:'Cierre Mensual · Contabilidad',auditoria:'Auditoría IA'};
@@ -945,6 +1021,7 @@ const FOLIO_CACHE = {};
 let CURRENT_EXPEDIENTE = null;
 let CURRENT_FOLIO_NUMERO = null;
 let EMPRESAS_CACHE = [];
+let AUTH_USER = null;
 
 function toMoney(value){
   const n = Number(value||0);
@@ -953,6 +1030,10 @@ function toMoney(value){
 
 function cleanNumber(value){
   return Number(String(value||'').replace(/[^0-9.-]/g,'')) || 0;
+}
+
+function getUsuarioActivo(){
+  return (AUTH_USER && AUTH_USER.rol) ? AUTH_USER.rol : 'frontend';
 }
 
 async function apiGet(path){
@@ -970,6 +1051,98 @@ async function apiSend(path, method, body){
   const data = await res.json().catch(()=>({}));
   if(!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
   return data;
+}
+
+function setAuthUser(user){
+  AUTH_USER = user || null;
+  const badge = document.getElementById('usuario-badge');
+  if(badge){
+    badge.textContent = AUTH_USER ? `${AUTH_USER.nombre} · ${AUTH_USER.rol}` : 'No autenticado';
+  }
+}
+
+function logout(){
+  setAuthUser(null);
+  const pass = document.getElementById('login-password');
+  if(pass) pass.value = '';
+  enterAsProveedor();
+}
+
+function closeRoleModals(){
+  closeModal('modal-role');
+  closeModal('modal-login');
+  closeModal('modal-proveedor-self');
+}
+
+function enterAsOperador(){
+  closeRoleModals();
+  const pass = document.getElementById('login-password');
+  if(pass && !pass.value) pass.value = 'servicia2026';
+  loadLoginUsers();
+  openModal('modal-login');
+}
+
+function enterAsProveedor(){
+  closeRoleModals();
+  const sel = document.getElementById('self-empresa');
+  if(sel){
+    sel.innerHTML = '<option value="">— Seleccionar empresa —</option>';
+    EMPRESAS_CACHE.filter(e=>e.activo).forEach(e=>{
+      const op = document.createElement('option');
+      op.value = String(e.id);
+      op.textContent = `${e.nombre} (${e.rfc})`;
+      sel.appendChild(op);
+    });
+  }
+  openModal('modal-proveedor-self');
+}
+
+function backToRoleMenu(){
+  closeRoleModals();
+  openModal('modal-role');
+}
+
+async function loadLoginUsers(){
+  const sel = document.getElementById('login-email');
+  if(!sel) return;
+  try{
+    const users = await apiGet('/auth/usuarios');
+    if(users && users.length){
+      sel.innerHTML = users.map(u=>`<option value="${u.email}">${u.nombre} (${u.rol})</option>`).join('');
+      return;
+    }
+  }catch(_err){
+    // fallback demo
+  }
+  sel.innerHTML = `
+    <option value="salo@batia.local">Salo (direccion)</option>
+    <option value="mgonzalez@batia.local">M. Gonzalez (tesoreria)</option>
+    <option value="lhernandez@batia.local">L. Hernandez (tesoreria)</option>
+    <option value="rfuentes@batia.local">R. Fuentes (administracion)</option>
+    <option value="cmorales@batia.local">C. Morales (administracion)</option>
+    <option value="pramirez@batia.local">P. Ramirez (contabilidad)</option>
+  `;
+}
+
+async function doLogin(){
+  try{
+    const email = (document.getElementById('login-email').value || '').trim();
+    const password = (document.getElementById('login-password').value || '').trim();
+    if(!email){
+      alert('Selecciona un usuario');
+      return;
+    }
+    if(!password){
+      alert('Escribe la contraseña');
+      return;
+    }
+    const data = await apiSend('/auth/login', 'POST', {email, password});
+    setAuthUser(data.usuario);
+    closeModal('modal-login');
+    await loadKpisPersonal();
+  }catch(err){
+    alert(`No se pudo iniciar sesión: ${err.message}`);
+  }
 }
 
 const NIVELES = {
@@ -1044,6 +1217,7 @@ function goNav(el, id) {
   if(id==='auditoria') loadAuditLog();
   if(id==='trazabilidad') loadTrazabilidad();
   if(id==='expedientes') loadReportesPorNivel();
+  if(id==='kpis') loadKpisPersonal();
 }
 
 function stab(el, id) {
@@ -1149,7 +1323,7 @@ async function subirDocumentoDetalle(){
     if(!file) return;
     const fd = new FormData();
     fd.append('archivo', file);
-    fd.append('subido_por', 'frontend');
+    fd.append('subido_por', getUsuarioActivo());
     try{
       const res = await fetch(`${API_BASE}/documentos/${select.value}/subir`, {method:'POST', body: fd});
       const data = await res.json().catch(()=>({}));
@@ -1218,55 +1392,53 @@ function autoClasificar(tipo) {
 }
 
 // ── PORTAL PROVEEDOR ─────────────────────────────
-const PORTAL_DOCS = {
-  n1:[
-    {icon:'📄',title:'CFDI (XML y PDF)',sub:'Factura del servicio',status:'done'},
-    {icon:'📸',title:'Foto de entrega en sitio',sub:'Foto del producto entregado',status:'pend'},
-    {icon:'✍️',title:'Nota de remisión firmada',sub:'Acuse con firma del responsable',status:'miss'},
-  ],
-  n2:[
-    {icon:'📄',title:'CFDI (XML y PDF)',sub:'Factura de la operación',status:'done'},
-    {icon:'✅',title:'Opinión 32-D SAT',sub:'Positiva y vigente',status:'done'},
-    {icon:'🚛',title:'Carta porte / guía de envío',sub:'Trazabilidad de la mercancía',status:'done'},
-    {icon:'📦',title:'Certificado de calidad',sub:'Ficha técnica del material',status:'done'},
-    {icon:'📋',title:'Registro entrada ERP',sub:'Sello de almacén',status:'pend'},
-  ],
-  n3:[
-    {icon:'📄',title:'CFDI + contrato con NOM-151',sub:'Fecha cierta + e.firma obligatoria',status:'done'},
-    {icon:'🏢',title:'Registro REPSE',sub:'Si el personal opera en tus instalaciones',status:'miss'},
-    {icon:'📅',title:'Bitácora de actividades',sub:'Cronograma con fechas inicio/fin',status:'miss'},
-    {icon:'🤝',title:'Minutas de trabajo',sub:'Capturas Zoom/Teams con fecha',status:'miss'},
-    {icon:'📧',title:'Hilos de correo electrónico',sub:'Avances y borradores enviados',status:'miss'},
-    {icon:'📝',title:'Entregable final con e.firma',sub:'Reporte / código / diagnóstico',status:'miss'},
-    {icon:'⚖️',title:'Manifiesto de materialidad',sub:'Carta bajo protesta de decir verdad',status:'miss'},
-  ],
-  n4:[
-    {icon:'📄',title:'CFDI + contrato NOM-151',sub:'Notarial + e.firma',status:'done'},
-    {icon:'🏛️',title:'Acta constitutiva',sub:'Del proveedor',status:'miss'},
-    {icon:'👤',title:'Cuestionario Beneficiario Controlador',sub:'¿Quién es el dueño real?',status:'miss'},
-    {icon:'📊',title:'Declaración anual ejercicio anterior',sub:'Solvencia del proveedor',status:'miss'},
-    {icon:'📸',title:'Fotos con geolocalización GPS',sub:'Metadatos y coordenadas',status:'miss'},
-    {icon:'👷',title:'Nómina IMSS del personal',sub:'Pago de cuotas del equipo asignado',status:'miss'},
-    {icon:'🛡️',title:'Seguro de responsabilidad civil',sub:'O fianza de vicios ocultos',status:'miss'},
-    {icon:'⚙️',title:'Cédula de activos fijos',sub:'Maquinaria disponible del proveedor',status:'miss'},
-    {icon:'⚖️',title:'Análisis razón de negocios 5-A CFF',sub:'Por qué se contrató este servicio',status:'miss'},
-  ],
-};
+let PORTAL_FOLIOS = [];
 
-function portalNivel(v) {
+function portalEmpresaChange(empresaId){
+  const sel = document.getElementById('portal-select');
+  if(!sel) return;
+  if(!empresaId){
+    sel.innerHTML = '<option value="">— Elegir proveedor para ver su portal —</option>';
+    portalNivel('');
+    return;
+  }
+  const items = PORTAL_FOLIOS.filter(f=>String(f.empresa_id)===String(empresaId));
+  sel.innerHTML = '<option value="">— Elegir proveedor para ver su portal —</option>';
+  items.forEach(f=>{
+    const op = document.createElement('option');
+    op.value = String(f.id);
+    op.textContent = `${f.proveedor_nombre} (#${f.numero} · N${f.nivel} · ${f.periodo})`;
+    sel.appendChild(op);
+  });
+  portalNivel('');
+}
+
+async function portalNivel(v) {
   const el = document.getElementById('portal-contenido');
   if(!v){el.innerHTML='<div style="padding:32px;text-align:center;color:var(--muted);font-size:12px;">Selecciona un proveedor para ver su portal personalizado</div>';return;}
-  const docs = PORTAL_DOCS[v];
-  const done = docs.filter(d=>d.status==='done').length, total = docs.length;
-  const pct = Math.round(done/total*100);
+  let detalle = null;
+  try{
+    detalle = await apiGet(`/folios/${Number(v)}`);
+  }catch(err){
+    el.innerHTML = `<div class="bloqueo"><h4>Error al cargar portal</h4><p>${err.message}</p></div>`;
+    return;
+  }
+  const docs = (detalle.documentos || []).map(d=>({
+    title: d.tipo,
+    sub: d.subido ? 'Documento cargado' : 'Documento pendiente',
+    status: d.subido ? 'done' : 'miss'
+  }));
+  const done = docs.filter(d=>d.status==='done').length;
+  const total = Math.max(1, docs.length);
+  const pct = Math.round((done/total)*100);
   const locked = pct < 100;
   let html = `
     <div style="background:${locked?'rgba(255,77,106,.06)':'rgba(32,214,138,.06)'};border:1px solid ${locked?'rgba(255,77,106,.2)':'rgba(32,214,138,.2)'};border-radius:10px;padding:14px;margin-bottom:14px;">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
         <span style="font-size:20px">${locked?'🔒':'✅'}</span>
         <div style="flex:1">
-          <div style="font-size:13px;font-weight:600;color:${locked?'var(--red)':'var(--green)'}">Factura ${locked?'bloqueada — completa tu materialidad primero':'desbloqueada'}</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:1px">${done}/${total} documentos completados</div>
+          <div style="font-size:13px;font-weight:600;color:${locked?'var(--red)':'var(--green)'}">${detalle.proveedor_nombre} · ${detalle.empresa_nombre||'Sin empresa'} · Folio #${detalle.numero}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:1px">${done}/${total} documentos completados · Periodo ${detalle.periodo}</div>
         </div>
         <div style="font-family:var(--mono);font-size:18px;font-weight:500;color:${pct===100?'var(--green)':pct>50?'var(--yellow)':'var(--red)'}">${pct}%</div>
       </div>
@@ -1277,7 +1449,7 @@ function portalNivel(v) {
     const sc = d.status==='done'?'done':d.status==='pend'?'pend':'miss';
     const si = d.status==='done'?'✓':d.status==='pend'?'⏳':'✕';
     const sc2 = d.status==='done'?'var(--green)':d.status==='pend'?'var(--yellow)':'var(--red)';
-    html+=`<div class="doc-req ${sc}"><div class="dr-icon">${d.icon}</div><div class="dr-info"><div class="dr-title">${d.title}</div><div class="dr-sub">${d.sub}</div></div><div class="dr-status" style="color:${sc2}">${si} ${d.status==='done'?'OK':d.status==='pend'?'Pendiente':'Falta'}</div></div>`;
+    html+=`<div class="doc-req ${sc}"><div class="dr-icon">${d.status==='done'?'✅':'📄'}</div><div class="dr-info"><div class="dr-title">${d.title}</div><div class="dr-sub">${d.sub}</div></div><div class="dr-status" style="color:${sc2}">${si} ${d.status==='done'?'OK':d.status==='pend'?'Pendiente':'Falta'}</div></div>`;
   });
   if(locked) html+=`<button class="btn btn-ghost" style="width:100%;margin-top:12px;opacity:.4;cursor:not-allowed">📤 Subir factura (bloqueado)</button>`;
   else html+=`<button class="btn btn-primary" style="width:100%;margin-top:12px">📤 Subir factura XML + PDF</button>`;
@@ -1319,7 +1491,7 @@ async function runConciliacionIA(input){
   try{
     const fd = new FormData();
     fd.append('archivo', file);
-    fd.append('usuario', 'IA');
+    fd.append('usuario', getUsuarioActivo());
     const res = await fetch(`${API_BASE}/conciliacion/estado_cuenta`, {method:'POST', body:fd});
     const data = await res.json().catch(()=>({}));
     if(!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
@@ -1389,22 +1561,51 @@ function mostrarDetalleSemaforo(key){
 
 async function loadTrazabilidad(){
   try{
-    const tr = await apiGet('/reportes/trazabilidad');
+    const empresaFilter = document.getElementById('tr-empresa-filter');
+    const proveedorFilter = document.getElementById('tr-proveedor-filter');
+    const empresaId = empresaFilter ? empresaFilter.value : '';
+    const proveedorNombre = proveedorFilter ? proveedorFilter.value : '';
+    const query = empresaId ? `?empresa_id=${encodeURIComponent(empresaId)}` : '';
+    const tr = await apiGet(`/reportes/trazabilidad${query}`);
+    const items = (tr.items || []).filter(i => !proveedorNombre || i.proveedor === proveedorNombre);
+
+    if(empresaFilter && empresaFilter.options.length <= 1){
+      const empresas = await apiGet('/empresas');
+      empresas.filter(e=>e.activo).forEach(e=>{
+        const op = document.createElement('option');
+        op.value = String(e.id);
+        op.textContent = e.nombre;
+        empresaFilter.appendChild(op);
+      });
+    }
+    if(proveedorFilter){
+      const current = proveedorFilter.value;
+      const proveedores = Array.from(new Set((tr.items || []).map(i=>i.proveedor))).sort();
+      proveedorFilter.innerHTML = '<option value="">Todos los proveedores</option>';
+      proveedores.forEach(p=>{
+        const op = document.createElement('option');
+        op.value = p;
+        op.textContent = p;
+        proveedorFilter.appendChild(op);
+      });
+      if(proveedores.includes(current)) proveedorFilter.value = current;
+    }
+
     const tbody = document.getElementById('trazabilidad-tbody');
     if(tbody){
-      tbody.innerHTML = tr.items.map(t=>{
+      tbody.innerHTML = items.map(t=>{
         const matClass = t.materialidad>=100?'g':t.materialidad>=70?'y':'r';
         const dentroClass = t.excede_presup?'r':'g';
         const dentroTxt = t.excede_presup?'⚠ Excede':'Dentro';
         const pagoTxt = t.pago_bloqueado?'🔒 Bloqueado':'✓ Pagado';
         const pagoColor = t.pago_bloqueado?'var(--red)':'var(--green)';
-        return `<tr onclick="openExp('${t.folio}')"><td class="mono">#${t.folio}</td><td>${t.proveedor}</td><td><span class="nlvl n${t.nivel}">N${t.nivel}</span></td><td><span class="badge ${matClass}">${Math.round(t.materialidad)}%</span></td><td class="mono" style="color:var(--accent)">${t.folio_bancario||'Pendiente'}</td><td class="mono">${toMoney(t.monto)}</td><td><span class="badge ${dentroClass}">${dentroTxt}</span></td><td style="color:${pagoColor};font-family:var(--mono)">${pagoTxt}</td></tr>`;
-      }).join('') || '<tr><td colspan="8" class="muted">Sin traspasos</td></tr>';
+        return `<tr onclick="openExp('${t.folio}')"><td class="mono">#${t.folio}</td><td><span class="chip">${t.empresa||'Sin empresa'}</span></td><td>${t.proveedor}</td><td><span class="nlvl n${t.nivel}">N${t.nivel}</span></td><td><span class="badge ${matClass}">${Math.round(t.materialidad)}%</span></td><td class="mono" style="color:var(--accent)">${t.folio_bancario||'Pendiente'}</td><td class="mono">${toMoney(t.monto)}</td><td><span class="badge ${dentroClass}">${dentroTxt}</span></td><td style="color:${pagoColor};font-family:var(--mono)">${pagoTxt}</td></tr>`;
+      }).join('') || '<tr><td colspan="9" class="muted">Sin traspasos</td></tr>';
     }
-    const total = tr.items.length;
-    const conciliados = tr.items.filter(i=>!i.pago_bloqueado && !i.excede_presup).length;
-    const sinFolio = tr.items.filter(i=>!i.folio_bancario).length;
-    const criticos = tr.items.filter(i=>i.pago_bloqueado || i.excede_presup).length;
+    const total = items.length;
+    const conciliados = items.filter(i=>!i.pago_bloqueado && !i.excede_presup).length;
+    const sinFolio = items.filter(i=>!i.folio_bancario).length;
+    const criticos = items.filter(i=>i.pago_bloqueado || i.excede_presup).length;
     const setTxt = (id,val)=>{ const el=document.getElementById(id); if(el) el.textContent=String(val); };
     setTxt('tr-kpi-total', total);
     setTxt('tr-kpi-conciliados', conciliados);
@@ -1412,6 +1613,66 @@ async function loadTrazabilidad(){
     setTxt('tr-kpi-criticos', criticos);
   }catch(err){
     console.error(err);
+  }
+}
+
+async function loadKpisPersonal(){
+  try{
+    const periodo = new Date().toISOString().slice(0,7);
+    let data = await apiGet(`/kpis/personal?periodo=${periodo}`);
+    let personas = data.personas || [];
+    if(!personas.length){
+      data = await apiGet('/kpis/personal');
+      personas = data.personas || [];
+    }
+    const promedio = Number(data.promedio || 0);
+    const totalEventos = personas.reduce((acc, p)=>acc + Number(p.eventos || 0), 0);
+    const top = personas[0] || null;
+
+    const promEl = document.getElementById('kpi-promedio');
+    const promBar = document.getElementById('kpi-prom-bar');
+    const promSub = document.getElementById('kpi-prom-sub');
+    const promBadge = document.getElementById('kpi-badge-prom');
+    if(promEl) promEl.textContent = String(Math.round(promedio));
+    if(promBar){
+      promBar.style.width = `${Math.max(0, Math.min(100, promedio))}%`;
+      promBar.className = `pf ${promedio>=85?'g':promedio>=70?'y':'r'}`;
+    }
+    if(promSub) promSub.textContent = `Meta: 85 · ${personas.length} personas`;
+    if(promBadge){
+      promBadge.className = `badge ${promedio>=85?'g':promedio>=70?'y':'r'}`;
+      promBadge.textContent = promedio>=85 ? 'OK' : (promedio>=70 ? 'Seguimiento' : 'Bajo meta');
+    }
+
+    const evEl = document.getElementById('kpi-eventos');
+    const evBar = document.getElementById('kpi-ev-bar');
+    if(evEl) evEl.textContent = String(totalEventos);
+    if(evBar) evBar.style.width = `${Math.min(100, totalEventos)}%`;
+
+    const topScore = document.getElementById('kpi-top-score');
+    const topBar = document.getElementById('kpi-top-bar');
+    const topUser = document.getElementById('kpi-top-user');
+    if(top){
+      if(topScore) topScore.textContent = String(top.score);
+      if(topBar) topBar.style.width = `${Math.max(0, Math.min(100, top.score))}%`;
+      if(topUser) topUser.textContent = `${top.usuario} · ${top.area}`;
+    }else{
+      if(topScore) topScore.textContent = '0';
+      if(topBar) topBar.style.width = '0%';
+      if(topUser) topUser.textContent = 'Sin datos';
+    }
+
+    const tbody = document.getElementById('kpis-personal-tbody');
+    if(tbody){
+      tbody.innerHTML = personas.map(p=>{
+        const color = p.score>=85 ? 'var(--green)' : (p.score>=70 ? 'var(--yellow)' : 'var(--red)');
+        const trendColor = p.trend==='↑' ? 'var(--green)' : (p.trend==='→' ? 'var(--muted2)' : 'var(--red)');
+        return `<tr><td>${p.usuario}</td><td><span class="chip">${p.area}</span></td><td>${p.kpi}</td><td><span style="font-family:var(--mono);font-size:16px;color:${color}">${p.score}</span></td><td style="color:${trendColor}">${p.trend}</td></tr>`;
+      }).join('') || '<tr><td colspan="5" class="muted">Sin actividad humana registrada aún</td></tr>';
+    }
+  }catch(err){
+    const tbody = document.getElementById('kpis-personal-tbody');
+    if(tbody) tbody.innerHTML = `<tr><td colspan="5" class="muted">No se pudo cargar KPIs: ${err.message}</td></tr>`;
   }
 }
 
@@ -1564,14 +1825,25 @@ async function loadEmpresas(){
   try{
     EMPRESAS_CACHE = await apiGet('/empresas');
     const sel = document.getElementById('prov-empresa');
-    if(!sel) return;
-    sel.innerHTML = '<option value="">— Seleccionar empresa —</option>';
-    EMPRESAS_CACHE.forEach(e=>{
-      const op = document.createElement('option');
-      op.value = String(e.id);
-      op.textContent = `${e.nombre} (${e.rfc})`;
-      sel.appendChild(op);
-    });
+    if(sel){
+      sel.innerHTML = '<option value="">— Seleccionar empresa —</option>';
+      EMPRESAS_CACHE.forEach(e=>{
+        const op = document.createElement('option');
+        op.value = String(e.id);
+        op.textContent = `${e.nombre} (${e.rfc})`;
+        sel.appendChild(op);
+      });
+    }
+    const portalSel = document.getElementById('portal-empresa-select');
+    if(portalSel){
+      portalSel.innerHTML = '<option value="">— Elegir empresa —</option>';
+      EMPRESAS_CACHE.filter(e=>e.activo).forEach(e=>{
+        const op = document.createElement('option');
+        op.value = String(e.id);
+        op.textContent = `${e.nombre} (${e.rfc})`;
+        portalSel.appendChild(op);
+      });
+    }
     const active = EMPRESAS_CACHE.filter(e=>e.activo);
     const countEl = document.getElementById('dashboard-empresas-count');
     const listEl = document.getElementById('dashboard-empresas-list');
@@ -1612,6 +1884,7 @@ async function loadAlertasActivas(){
 async function loadFoliosForFrontend(){
   try{
     const folios = await apiGet('/folios');
+    PORTAL_FOLIOS = folios.slice();
     const proveedores = await apiGet('/proveedores');
     const proveedorById = Object.fromEntries(proveedores.map(p=>[p.id,p]));
     const select = document.getElementById('traspaso-prov');
@@ -1657,6 +1930,20 @@ async function loadFoliosForFrontend(){
     }
     if(tbodyDash) tbodyDash.innerHTML = dashHtml || '<tr><td colspan="4" class="muted">Sin folios</td></tr>';
     if(tbodyClasif) tbodyClasif.innerHTML = clasifHtml || '<tr><td colspan="8" class="muted">Sin proveedores</td></tr>';
+    const portalEmpresaSel = document.getElementById('portal-empresa-select');
+    if(portalEmpresaSel){
+      portalEmpresaSel.innerHTML = '<option value="">— Elegir empresa —</option>';
+      EMPRESAS_CACHE.filter(e=>e.activo).forEach(e=>{
+        const op = document.createElement('option');
+        op.value = String(e.id);
+        op.textContent = `${e.nombre} (${e.rfc})`;
+        portalEmpresaSel.appendChild(op);
+      });
+    }
+    const portalSel = document.getElementById('portal-select');
+    if(portalSel){
+      portalSel.innerHTML = '<option value="">— Elegir proveedor para ver su portal —</option>';
+    }
   }catch(err){
     console.error(err);
   }
@@ -1686,7 +1973,7 @@ async function registrarProveedor(){
       monto,
       repse: tipo === 'outsourcing' || tipo === 'consultoria',
       tiene_fisico: tipo === 'materia' || tipo === 'construccion',
-      usuario: 'frontend',
+      usuario: getUsuarioActivo(),
       crear_folio: true,
       empresa_id: empresaId,
       folio_periodo: periodo,
@@ -1700,6 +1987,45 @@ async function registrarProveedor(){
     await loadFoliosForFrontend();
     await loadReportesPorNivel();
     await loadAlertasActivas();
+  }catch(err){
+    alert(`No se pudo registrar proveedor: ${err.message}`);
+  }
+}
+
+async function registrarProveedorSelf(){
+  const empresaId = Number(document.getElementById('self-empresa').value || 0);
+  const nombre = document.getElementById('self-nombre').value.trim();
+  const rfc = document.getElementById('self-rfc').value.trim();
+  const tipo = document.getElementById('self-tipo').value;
+  const monto = cleanNumber(document.getElementById('self-monto').value);
+  if(!empresaId || !nombre || !rfc || !tipo){
+    alert('Completa empresa, nombre, RFC y tipo');
+    return;
+  }
+  try{
+    const efos = await apiGet(`/efos/consultar?rfc=${encodeURIComponent(rfc)}`);
+    if(efos.en_efos){
+      alert(`Registro bloqueado: RFC ${efos.rfc} aparece en EFOS.`);
+      return;
+    }
+    const periodo = new Date().toISOString().slice(0,7);
+    await apiSend('/proveedores','POST',{
+      nombre,
+      rfc,
+      tipo,
+      monto,
+      repse: tipo === 'outsourcing' || tipo === 'consultoria',
+      tiene_fisico: tipo === 'materia' || tipo === 'construccion',
+      usuario: 'proveedor_autoregistro',
+      crear_folio: true,
+      empresa_id: empresaId,
+      folio_periodo: periodo,
+      folio_presupuesto: monto
+    });
+    alert('Registro enviado. El equipo interno validará tu expediente.');
+    await loadFoliosForFrontend();
+    await loadDashboard();
+    backToRoleMenu();
   }catch(err){
     alert(`No se pudo registrar proveedor: ${err.message}`);
   }
@@ -1721,7 +2047,7 @@ async function confirmarTraspaso(){
       monto,
       banco_origen: 'Banorte',
       fecha: new Date().toISOString().slice(0,10),
-      registrado_por: 'frontend'
+      registrado_por: getUsuarioActivo()
     });
     closeModal('modal-traspaso');
     await loadDashboard();
@@ -1732,6 +2058,7 @@ async function confirmarTraspaso(){
 
 document.getElementById('prov-registrar-btn').addEventListener('click', registrarProveedor);
 document.getElementById('traspaso-confirm-btn').addEventListener('click', confirmarTraspaso);
+document.getElementById('login-btn').addEventListener('click', doLogin);
 loadDashboard();
 loadEmpresas();
 loadFoliosForFrontend();
@@ -1740,7 +2067,9 @@ loadAlertasActivas();
 loadAuditLog();
 loadTrazabilidad();
 loadReportesPorNivel();
+loadKpisPersonal();
 setTimeout(renderTimeline,100);
+loadLoginUsers();
 </script>
 </body>
 </html>

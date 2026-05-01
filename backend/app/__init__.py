@@ -3,6 +3,8 @@ from flask_cors import CORS
 
 from .blueprints.audit_log import audit_log_bp
 from .blueprints.alertas import alertas_bp
+from .blueprints.automation import automation_bp
+from .blueprints.auth import auth_bp
 from .blueprints.clasificador import clasificador_bp
 from .blueprints.conciliacion import conciliacion_bp
 from .blueprints.dashboard import dashboard_bp
@@ -12,6 +14,7 @@ from .blueprints.efos import efos_bp
 from .blueprints.expedientes import expedientes_bp
 from .blueprints.export import export_bp
 from .blueprints.folios import folios_bp
+from .blueprints.kpis import kpis_bp
 from .blueprints.proveedores import proveedores_bp
 from .blueprints.reportes import reportes_bp
 from .blueprints.semaforo import semaforo_bp
@@ -28,6 +31,7 @@ def create_app(config_object=Config) -> Flask:
     CORS(app, resources={r"/api/*": {"origins": "*"}})
 
     app.register_blueprint(proveedores_bp, url_prefix="/api")
+    app.register_blueprint(auth_bp, url_prefix="/api")
     app.register_blueprint(efos_bp, url_prefix="/api")
     app.register_blueprint(clasificador_bp, url_prefix="/api")
     app.register_blueprint(folios_bp, url_prefix="/api")
@@ -39,7 +43,9 @@ def create_app(config_object=Config) -> Flask:
     app.register_blueprint(dashboard_bp, url_prefix="/api")
     app.register_blueprint(audit_log_bp, url_prefix="/api")
     app.register_blueprint(alertas_bp, url_prefix="/api")
+    app.register_blueprint(automation_bp, url_prefix="/api")
     app.register_blueprint(reportes_bp, url_prefix="/api")
+    app.register_blueprint(kpis_bp, url_prefix="/api")
     app.register_blueprint(conciliacion_bp, url_prefix="/api")
     app.register_blueprint(export_bp, url_prefix="/api")
 

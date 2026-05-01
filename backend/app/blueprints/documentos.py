@@ -8,6 +8,7 @@ from ..extensions import db
 from ..models import Documento, Expediente
 from ..services.auditoria import log_event
 from ..services.bloqueo import calcular_completitud
+from ..services.document_review import aplicar_validacion_documento
 from ..services.serializers import doc_to_dict
 
 documentos_bp = Blueprint("documentos", __name__)
@@ -45,7 +46,16 @@ def subir_documento(documento_id: int):
     if doc.tipo == "manifiesto_materialidad":
         doc.expediente.manifiesto = True
 
+    validacion = aplicar_validacion_documento(doc)
+
     log_event("documentos", doc.id, "actualizar", {"tipo": doc.tipo, "subido": True}, body.get("subido_por"))
+    log_event(
+        "documentos",
+        doc.id,
+        "validacion_automatica",
+        {"tipo": doc.tipo, "estado": validacion["estado"], "detalle": validacion["detalle"]},
+        "motor_validacion",
+    )
     db.session.commit()
 
     completitud = calcular_completitud(doc.expediente_id)

@@ -7,9 +7,13 @@ def doc_to_dict(doc):
         "tipo": doc.tipo,
         "label": DOC_LABELS.get(doc.tipo, doc.tipo),
         "subido": doc.subido,
+        "validacion_estado": doc.validacion_estado,
+        "validacion_detalle": doc.validacion_detalle,
         "nombre_archivo": doc.nombre_archivo,
         "url": doc.url,
         "subido_en": doc.subido_en.isoformat() if doc.subido_en else None,
+        "validado_en": doc.validado_en.isoformat() if doc.validado_en else None,
+        "validado_por": doc.validado_por,
         "subido_por": doc.subido_por,
     }
 

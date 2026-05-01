@@ -23,6 +23,18 @@ class Proveedor(db.Model):
     folios = db.relationship("Folio", back_populates="proveedor", cascade="all, delete-orphan")
 
 
+class Usuario(db.Model):
+    __tablename__ = "usuarios"
+
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String, nullable=False, unique=True)
+    nombre = db.Column(db.String, nullable=False)
+    rol = db.Column(db.String, nullable=False)
+    password = db.Column(db.String, nullable=False)
+    activo = db.Column(db.Boolean, default=True)
+    creado_en = db.Column(db.DateTime, default=datetime.utcnow)
+
+
 class Empresa(db.Model):
     __tablename__ = "empresas"
 
@@ -82,6 +94,10 @@ class Documento(db.Model):
     subido = db.Column(db.Boolean, default=False)
     subido_en = db.Column(db.DateTime)
     subido_por = db.Column(db.String)
+    validacion_estado = db.Column(db.String, default="pendiente")
+    validacion_detalle = db.Column(db.Text)
+    validado_en = db.Column(db.DateTime)
+    validado_por = db.Column(db.String)
 
     expediente = db.relationship("Expediente", back_populates="documentos")
 

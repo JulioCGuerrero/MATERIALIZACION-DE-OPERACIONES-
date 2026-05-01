@@ -82,9 +82,10 @@ def test_subir_documentos_libera_pago_al_100(client):
     detalle = client.get(f"/api/folios/{folio['id']}").get_json()
 
     for doc in detalle["documentos"]:
+        ext = "xml" if doc["tipo"] == "cfdi_xml" else "pdf"
         res = client.post(
             f"/api/documentos/{doc['id']}/subir",
-            json={"nombre_archivo": f"{doc['tipo']}.pdf", "url": f"/tmp/{doc['tipo']}.pdf", "subido_por": "pytest"},
+            json={"nombre_archivo": f"{doc['tipo']}.{ext}", "url": f"/tmp/{doc['tipo']}.{ext}", "subido_por": "pytest"},
         )
         assert res.status_code == 200
 

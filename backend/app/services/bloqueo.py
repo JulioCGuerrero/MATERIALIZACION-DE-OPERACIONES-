@@ -8,7 +8,7 @@ def calcular_completitud(expediente_id: int) -> float:
     if not expediente:
         raise ValueError(f"Expediente {expediente_id} no existe")
     total = len(expediente.documentos)
-    subidos = sum(1 for d in expediente.documentos if d.subido)
+    subidos = sum(1 for d in expediente.documentos if d.subido and d.validacion_estado == "valido")
 
     completitud = 0.0 if total == 0 else round((subidos / total) * 100, 2)
     was_blocked = expediente.pago_bloqueado
@@ -37,9 +37,11 @@ def puede_pagar(expediente_id: int) -> dict:
     calcular_completitud(expediente_id)
     expediente = Expediente.query.get(expediente_id)
 
-    faltantes = [d.tipo for d in expediente.documentos if not d.subido]
+    faltantes = [d.tipo for d in expediente.documentos if not (d.subido and d.validacion_estado == "valido")]
+    observados = [d.tipo for d in expediente.documentos if d.subido and d.validacion_estado in ("observado", "rechazado")]
     return {
         "puede_pagar": not expediente.pago_bloqueado,
         "completitud": expediente.completitud,
         "documentos_faltantes": faltantes,
+        "documentos_observados": observados,
     }

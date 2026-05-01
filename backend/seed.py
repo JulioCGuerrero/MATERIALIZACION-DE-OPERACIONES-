@@ -4,9 +4,10 @@ from datetime import date
 
 from app import create_app
 from app.extensions import db
-from app.models import Documento, Empresa, Expediente, Folio, Proveedor, Traspaso
+from app.models import Documento, Empresa, Expediente, Folio, Proveedor, Traspaso, Usuario
 from app.services.bloqueo import calcular_completitud
 from app.services.catalogo import DOCS_BY_LEVEL
+from app.services.document_review import aplicar_validacion_documento
 
 app = create_app()
 
@@ -58,6 +59,15 @@ EMPRESAS = [
     {"nombre": "Grupo Norte", "rfc": "GRN010101BBB"},
 ]
 
+USUARIOS = [
+    {"email": "salo@batia.local", "nombre": "Salo", "rol": "direccion", "password": "servicia2026"},
+    {"email": "mgonzalez@batia.local", "nombre": "M. Gonzalez", "rol": "tesoreria", "password": "servicia2026"},
+    {"email": "lhernandez@batia.local", "nombre": "L. Hernandez", "rol": "tesoreria", "password": "servicia2026"},
+    {"email": "rfuentes@batia.local", "nombre": "R. Fuentes", "rol": "administracion", "password": "servicia2026"},
+    {"email": "cmorales@batia.local", "nombre": "C. Morales", "rol": "administracion", "password": "servicia2026"},
+    {"email": "pramirez@batia.local", "nombre": "P. Ramirez", "rol": "contabilidad", "password": "servicia2026"},
+]
+
 FOLIOS = [
     {"numero": "17172", "proveedor": "Limpiadores SA", "empresa": "Batia", "presupuesto": 150_000, "periodo": "2026-03"},
     {"numero": "17165", "proveedor": "Insumos Alfa", "empresa": "Batia", "presupuesto": 90_000, "periodo": "2026-03"},
@@ -94,6 +104,19 @@ with app.app_context():
     db.create_all()
 
     by_name = {}
+    for u in USUARIOS:
+        db.session.add(
+            Usuario(
+                email=u["email"].lower(),
+                nombre=u["nombre"],
+                rol=u["rol"],
+                password=u["password"],
+                activo=True,
+            )
+        )
+
+    db.session.flush()
+
     empresas = {}
     for e in EMPRESAS:
         empresa = Empresa(nombre=e["nombre"], rfc=e["rfc"], activo=True)
@@ -158,6 +181,7 @@ with app.app_context():
             d.nombre_archivo = f"{d.tipo}.pdf"
             d.url = f"/uploads/{folio.numero}/{d.tipo}.pdf"
             d.subido_por = "seed"
+            aplicar_validacion_documento(d, motor="seed")
 
         if f["numero"] == "17172":
             expediente.razon_negocio = "Servicio recurrente con beneficio operativo"
