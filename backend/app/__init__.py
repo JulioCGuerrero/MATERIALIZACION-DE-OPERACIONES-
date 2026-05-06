@@ -1,5 +1,6 @@
 from flask import Flask, send_from_directory
 from flask_cors import CORS
+from sqlalchemy import text
 
 from .blueprints.audit_log import audit_log_bp
 from .blueprints.alertas import alertas_bp
@@ -21,6 +22,31 @@ from .blueprints.semaforo import semaforo_bp
 from .blueprints.traspasos import traspasos_bp
 from .config import Config
 from .extensions import db
+
+
+def _create_schema(app: Flask) -> None:
+    with app.app_context():
+        from . import models  # noqa: F401
+
+        engine = db.engine
+        if engine.dialect.name == "postgresql":
+            with engine.begin() as connection:
+                connection.execute(text("SELECT pg_advisory_lock(4393188)"))
+                try:
+                    for table_name in db.metadata.tables:
+                        sequence_name = f"{table_name}_id_seq"
+                        row = connection.execute(
+                            text("SELECT to_regclass(:table_name), to_regclass(:sequence_name)"),
+                            {"table_name": table_name, "sequence_name": sequence_name},
+                        ).one()
+                        if row[0] is None and row[1] is not None:
+                            connection.execute(text(f'DROP SEQUENCE IF EXISTS "{sequence_name}" CASCADE'))
+                    db.metadata.create_all(bind=connection)
+                finally:
+                    connection.execute(text("SELECT pg_advisory_unlock(4393188)"))
+            return
+
+        db.create_all()
 
 
 def create_app(config_object=Config) -> Flask:
@@ -48,6 +74,9 @@ def create_app(config_object=Config) -> Flask:
     app.register_blueprint(kpis_bp, url_prefix="/api")
     app.register_blueprint(conciliacion_bp, url_prefix="/api")
     app.register_blueprint(export_bp, url_prefix="/api")
+
+    if app.config.get("AUTO_CREATE_SCHEMA"):
+        _create_schema(app)
 
     @app.get("/api/health")
     def health() -> dict:

@@ -1,0 +1,15 @@
+venv-backend/
+backend/.venv/
+backend/__pycache__/
+backend/app/__pycache__/
+backend/app/**/__pycache__/
+backend/tests/
+backend/.pytest-tmp/
+backend/pytest-cache-files-*/
+database.db
+uploads/
+.git/
+.pytest_cache/
+*.pyc
+*.pyo
+*.pyd
