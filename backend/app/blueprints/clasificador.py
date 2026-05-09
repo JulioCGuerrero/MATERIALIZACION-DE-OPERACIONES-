@@ -18,5 +18,6 @@ def clasificar():
         monto=float(body["monto"]),
         repse=bool(body["repse"]),
         tiene_fisico=bool(body["tiene_fisico"]),
+        tipo_empresa=(body.get("tipo_empresa") or "servicios"),
     )
     return jsonify(result)

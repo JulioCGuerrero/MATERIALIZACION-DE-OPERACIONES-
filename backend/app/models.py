@@ -41,6 +41,7 @@ class Empresa(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String, nullable=False, unique=True)
     rfc = db.Column(db.String, nullable=False, unique=True)
+    tipo_empresa = db.Column(db.String, nullable=False, default="servicios")
     activo = db.Column(db.Boolean, default=True)
     creado_en = db.Column(db.DateTime, default=datetime.utcnow)
 

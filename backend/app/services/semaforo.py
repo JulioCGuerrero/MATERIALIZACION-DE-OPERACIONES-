@@ -1,4 +1,4 @@
-from ..models import Documento, Expediente, Proveedor
+from ..models import Expediente, Folio, Proveedor
 
 
 def _estado_ratio(cumplen: int, total: int, critico: bool = False) -> str:
@@ -21,13 +21,31 @@ def _metric(valor_ok: int, total: int, ley: str, etiqueta_ok: str, critico: bool
     }
 
 
-def calcular_semaforo() -> dict:
-    proveedores = Proveedor.query.filter_by(activo=True).all()
+def calcular_semaforo(
+    empresa_id: int | None = None,
+    proveedor_id: int | None = None,
+    nivel: int | None = None,
+) -> dict:
+    proveedores_q = Proveedor.query.filter_by(activo=True)
+    if proveedor_id:
+        proveedores_q = proveedores_q.filter(Proveedor.id == proveedor_id)
+    if nivel:
+        proveedores_q = proveedores_q.filter(Proveedor.nivel == nivel)
+    if empresa_id:
+        proveedores_q = proveedores_q.join(Proveedor.folios).filter(Folio.empresa_id == empresa_id).distinct()
+    proveedores = proveedores_q.all()
     total_prov = len(proveedores)
     efos_ok = sum(1 for p in proveedores if p.efos_ok)
     efos_critico = efos_ok < total_prov
 
-    expedientes = Expediente.query.all()
+    expedientes_q = Expediente.query.join(Expediente.folio).join(Folio.proveedor)
+    if empresa_id:
+        expedientes_q = expedientes_q.filter(Folio.empresa_id == empresa_id)
+    if proveedor_id:
+        expedientes_q = expedientes_q.filter(Folio.proveedor_id == proveedor_id)
+    if nivel:
+        expedientes_q = expedientes_q.filter(Proveedor.nivel == nivel)
+    expedientes = expedientes_q.all()
     total_exp = len(expedientes)
 
     cfdi_ok = 0

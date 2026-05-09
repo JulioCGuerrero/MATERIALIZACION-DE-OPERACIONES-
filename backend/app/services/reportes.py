@@ -2,13 +2,19 @@ from ..models import Folio, Proveedor, Traspaso
 from .semaforo import calcular_semaforo
 
 
-def reporte_por_nivel_data(nivel: int | None = None, empresa_id: int | None = None) -> dict:
+def reporte_por_nivel_data(
+    nivel: int | None = None,
+    empresa_id: int | None = None,
+    proveedor_id: int | None = None,
+) -> dict:
     # LEFT JOIN a expediente para no excluir folios/empresas si aún no tienen expediente ligado.
     q = Folio.query.join(Folio.proveedor).outerjoin(Folio.expediente)
     if nivel:
         q = q.filter(Proveedor.nivel == nivel)
     if empresa_id:
         q = q.filter(Folio.empresa_id == empresa_id)
+    if proveedor_id:
+        q = q.filter(Folio.proveedor_id == proveedor_id)
 
     folios = q.order_by(Folio.numero.asc()).all()
 
@@ -45,14 +51,27 @@ def reporte_por_nivel_data(nivel: int | None = None, empresa_id: int | None = No
     return {"resumen": resumen, "items": data}
 
 
-def reporte_semaforo_data() -> dict:
-    return calcular_semaforo()
+def reporte_semaforo_data(
+    empresa_id: int | None = None,
+    proveedor_id: int | None = None,
+    nivel: int | None = None,
+) -> dict:
+    return calcular_semaforo(empresa_id=empresa_id, proveedor_id=proveedor_id, nivel=nivel)
 
 
-def reporte_trazabilidad_data(empresa_id: int | None = None) -> dict:
-    traspasos = Traspaso.query.join(Traspaso.folio).join(Folio.proveedor).order_by(Traspaso.creado_en.desc()).all()
+def reporte_trazabilidad_data(
+    empresa_id: int | None = None,
+    proveedor_id: int | None = None,
+    nivel: int | None = None,
+) -> dict:
+    q = Traspaso.query.join(Traspaso.folio).join(Folio.proveedor)
     if empresa_id:
-        traspasos = [t for t in traspasos if t.folio.empresa_id == empresa_id]
+        q = q.filter(Folio.empresa_id == empresa_id)
+    if proveedor_id:
+        q = q.filter(Folio.proveedor_id == proveedor_id)
+    if nivel:
+        q = q.filter(Proveedor.nivel == nivel)
+    traspasos = q.order_by(Traspaso.creado_en.desc()).all()
 
     items = []
     for t in traspasos:

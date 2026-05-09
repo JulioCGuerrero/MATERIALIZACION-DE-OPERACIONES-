@@ -5,6 +5,16 @@ from ..models import Empresa
 from ..services.auditoria import log_event
 
 empresas_bp = Blueprint("empresas", __name__)
+TIPOS_EMPRESA = {
+    "servicios",
+    "comercializadora",
+    "industrial",
+    "constructora",
+    "logistica",
+    "tecnologia",
+    "financiera",
+    "otra",
+}
 
 
 def _empresa_dict(e: Empresa) -> dict:
@@ -12,6 +22,7 @@ def _empresa_dict(e: Empresa) -> dict:
         "id": e.id,
         "nombre": e.nombre,
         "rfc": e.rfc,
+        "tipo_empresa": e.tipo_empresa,
         "activo": e.activo,
         "creado_en": e.creado_en.isoformat() if e.creado_en else None,
     }
@@ -31,9 +42,14 @@ def crear_empresa():
     if faltantes:
         return jsonify({"error": f"Campos faltantes: {', '.join(faltantes)}"}), 400
 
+    tipo_empresa = (body.get("tipo_empresa") or "servicios").strip().lower()
+    if tipo_empresa not in TIPOS_EMPRESA:
+        return jsonify({"error": f"tipo_empresa inválido. Valores permitidos: {', '.join(sorted(TIPOS_EMPRESA))}"}), 400
+
     empresa = Empresa(
         nombre=body["nombre"].strip(),
         rfc=body["rfc"].strip().upper(),
+        tipo_empresa=tipo_empresa,
         activo=bool(body.get("activo", True)),
     )
     db.session.add(empresa)

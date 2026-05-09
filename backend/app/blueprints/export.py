@@ -5,7 +5,7 @@ import zipfile
 
 from flask import Blueprint, jsonify, make_response, request
 
-from ..models import AuditLog
+from ..models import AuditLog, Empresa, Proveedor
 from ..services.pdf_reports import PdfEngineMissing, render_pdf
 from ..services.reportes import (
     reporte_por_nivel_data,
@@ -27,7 +27,8 @@ def _pdf_response(content: bytes, filename: str):
 def export_nivel_pdf():
     nivel = request.args.get("nivel", type=int)
     empresa_id = request.args.get("empresa_id", type=int)
-    data = reporte_por_nivel_data(nivel, empresa_id)
+    proveedor_id = request.args.get("proveedor_id", type=int)
+    data = reporte_por_nivel_data(nivel, empresa_id, proveedor_id)
     try:
         pdf = render_pdf("reports/niveles.html", report=data, nivel=nivel)
     except PdfEngineMissing as exc:
@@ -40,9 +41,19 @@ def export_nivel_pdf():
 
 @export_bp.get("/export/reportes/semaforo.pdf")
 def export_semaforo_pdf():
-    data = reporte_semaforo_data()
+    empresa_id = request.args.get("empresa_id", type=int)
+    proveedor_id = request.args.get("proveedor_id", type=int)
+    nivel = request.args.get("nivel", type=int)
+    data = reporte_semaforo_data(empresa_id, proveedor_id, nivel)
+    empresa = Empresa.query.get(empresa_id) if empresa_id else None
+    proveedor = Proveedor.query.get(proveedor_id) if proveedor_id else None
+    contexto = {
+        "empresa": empresa.nombre if empresa else "Todas las empresas",
+        "proveedor": proveedor.nombre if proveedor else "Todos los proveedores",
+        "nivel": f"Nivel {nivel}" if nivel else "Todos los niveles",
+    }
     try:
-        pdf = render_pdf("reports/semaforo.html", semaforo=data)
+        pdf = render_pdf("reports/semaforo.html", semaforo=data, contexto=contexto)
     except PdfEngineMissing as exc:
         return jsonify({"error": str(exc)}), 500
     except Exception as exc:  # pragma: no cover
@@ -53,7 +64,9 @@ def export_semaforo_pdf():
 @export_bp.get("/export/reportes/trazabilidad.pdf")
 def export_trazabilidad_pdf():
     empresa_id = request.args.get("empresa_id", type=int)
-    data = reporte_trazabilidad_data(empresa_id)
+    proveedor_id = request.args.get("proveedor_id", type=int)
+    nivel = request.args.get("nivel", type=int)
+    data = reporte_trazabilidad_data(empresa_id, proveedor_id, nivel)
     try:
         pdf = render_pdf("reports/trazabilidad.html", report=data)
     except PdfEngineMissing as exc:
@@ -89,9 +102,18 @@ def export_auditoria_pdf():
 @export_bp.get("/export/paquete_sat.zip")
 def export_paquete_sat_zip():
     empresa_id = request.args.get("empresa_id", type=int)
-    nivel = reporte_por_nivel_data(empresa_id=empresa_id)
-    semaforo = reporte_semaforo_data()
-    trazabilidad = reporte_trazabilidad_data(empresa_id)
+    proveedor_id = request.args.get("proveedor_id", type=int)
+    nivel_id = request.args.get("nivel", type=int)
+    nivel = reporte_por_nivel_data(nivel=nivel_id, empresa_id=empresa_id, proveedor_id=proveedor_id)
+    semaforo = reporte_semaforo_data(empresa_id, proveedor_id, nivel_id)
+    empresa = Empresa.query.get(empresa_id) if empresa_id else None
+    proveedor = Proveedor.query.get(proveedor_id) if proveedor_id else None
+    contexto = {
+        "empresa": empresa.nombre if empresa else "Todas las empresas",
+        "proveedor": proveedor.nombre if proveedor else "Todos los proveedores",
+        "nivel": f"Nivel {nivel_id}" if nivel_id else "Todos los niveles",
+    }
+    trazabilidad = reporte_trazabilidad_data(empresa_id, proveedor_id, nivel_id)
     rows = AuditLog.query.order_by(AuditLog.creado_en.desc()).limit(400).all()
     audit_items = [
         {
@@ -107,7 +129,7 @@ def export_paquete_sat_zip():
 
     try:
         pdf_niveles = render_pdf("reports/niveles.html", report=nivel, nivel=None)
-        pdf_semaforo = render_pdf("reports/semaforo.html", semaforo=semaforo)
+        pdf_semaforo = render_pdf("reports/semaforo.html", semaforo=semaforo, contexto=contexto)
         pdf_trazabilidad = render_pdf("reports/trazabilidad.html", report=trazabilidad)
         pdf_auditoria = render_pdf("reports/auditoria.html", items=audit_items)
     except PdfEngineMissing as exc:
@@ -117,6 +139,12 @@ def export_paquete_sat_zip():
 
     payload = {
         "generado_en": datetime.now().isoformat(),
+        "filtros": {
+            "empresa_id": empresa_id,
+            "proveedor_id": proveedor_id,
+            "nivel": nivel_id,
+        },
+        "contexto": contexto,
         "semaforo": semaforo,
         "niveles": nivel,
         "trazabilidad": trazabilidad,

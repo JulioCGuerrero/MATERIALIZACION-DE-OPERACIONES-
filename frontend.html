@@ -396,7 +396,7 @@ input[type=file]{display:none;}
       <div class="smrow"><div class="smlight" style="background:var(--green)"></div><div class="smlabel">Contratos con fecha cierta (NOM-151)</div><div class="smval">83%</div><div class="smlaw">NOM-151</div></div>
       <div class="smrow"><div class="smlight" style="background:var(--yellow)"></div><div class="smlabel">Nivel 3 con manifiesto de materialidad</div><div class="smval">67%</div><div class="smlaw">Art. 69-B</div></div>
       <div class="smrow" style="border-color:rgba(255,77,106,.3)"><div class="smlight" style="background:var(--red)"></div><div class="smlabel">⚠ Pagos sin materialidad completa</div><div class="smval" style="color:var(--red)">3 folios</div><div class="smlaw">CFF</div></div>
-      <div class="smrow" style="border-color:rgba(255,77,106,.3)"><div class="smlight" style="background:var(--red)"></div><div class="smlabel">⚠ Nivel 3/4 sin e.firma en contrato</div><div class="smval" style="color:var(--red)">2 folios</div><div class="smlaw">NOM-151</div></div>
+      <div class="smrow" style="border-color:rgba(255,77,106,.3)"><div class="smlight" style="background:var(--red)"></div><div class="smlabel">⚠ Nivel 3/4 sin fecha cierta en contrato</div><div class="smval" style="color:var(--red)">2 folios</div><div class="smlaw">NOM-151</div></div>
     </div>
 
     <!-- Proveedores por nivel -->
@@ -463,6 +463,20 @@ input[type=file]{display:none;}
         </select>
       </div>
       <div class="field">
+        <label>Tipo de empresa cliente</label>
+        <select id="cl-empresa-tipo" onchange="clasificar()">
+          <option value="">— Seleccionar tipo —</option>
+          <option value="servicios">Servicios</option>
+          <option value="comercializadora">Comercializadora</option>
+          <option value="industrial">Industrial</option>
+          <option value="constructora">Constructora</option>
+          <option value="logistica">Logística</option>
+          <option value="tecnologia">Tecnología</option>
+          <option value="financiera">Financiera</option>
+          <option value="otra">Otra</option>
+        </select>
+      </div>
+      <div class="field">
         <label>Monto estimado de la operación</label>
         <select id="cl-monto" onchange="clasificar()">
           <option value="">— Seleccionar rango —</option>
@@ -506,7 +520,7 @@ input[type=file]{display:none;}
       <div class="nivel-card n3">
         <div class="nc-head"><div class="nc-icon">🟡</div><div><div class="nc-title" style="color:var(--n3-c)">Nivel 3 · Servicios Intangibles</div><div style="font-size:10px;color:var(--muted);font-family:var(--mono)">Alto Riesgo · Siempre auditado</div></div></div>
         <div class="nc-sub">Donde el SAT siempre ataca. Sin algo físico que tocar, la carga probatoria es máxima.</div>
-        <div class="nc-docs">📄 + REPSE · Bitácoras · Minutas · e.firma · NOM-151 · Manifiesto materialidad</div>
+        <div class="nc-docs">📄 + REPSE · Bitácoras · Minutas · NOM-151 · Manifiesto materialidad</div>
       </div>
       <div class="nivel-card n4">
         <div class="nc-head"><div class="nc-icon">🔴</div><div><div class="nc-title" style="color:var(--n4-c)">Nivel 4 · Estratégico</div><div style="font-size:10px;color:var(--muted);font-family:var(--mono)">Alto Capital / Riesgo Estructural</div></div></div>
@@ -546,7 +560,7 @@ input[type=file]{display:none;}
   <div id="etab-bloq" style="display:none">
     <div class="bloqueo"><h4>🔒 3 pagos bloqueados por materialidad incompleta</h4><p>Los siguientes proveedores no pueden recibir pago hasta completar su expediente de materialización conforme al Art. 69-B CFF. El sistema bloquea automáticamente el botón de traspaso bancario.</p></div>
     <div class="astrip late"><div class="astrip-ico">🔒</div><div class="astrip-txt"><strong>Limpiadores SA · #17172 · $148,500</strong>Faltan: REPSE, lista de asistencia, manifiesto de materialidad, razón de negocios</div><button class="btn btn-warn" style="flex-shrink:0" onclick="openExp('17172')">Ver expediente</button></div>
-    <div class="astrip late"><div class="astrip-ico">🔒</div><div class="astrip-txt"><strong>TechServ · #17160 · $210,000</strong>Faltan: bitácoras, minutas, e.firma en contrato (NOM-151), manifiesto materialidad</div><button class="btn btn-warn" style="flex-shrink:0" onclick="openExp('17160')">Ver expediente</button></div>
+    <div class="astrip late"><div class="astrip-ico">🔒</div><div class="astrip-txt"><strong>TechServ · #17160 · $210,000</strong>Faltan: bitácoras, minutas, contrato con fecha cierta (NOM-151), manifiesto materialidad</div><button class="btn btn-warn" style="flex-shrink:0" onclick="openExp('17160')">Ver expediente</button></div>
     <div class="astrip late"><div class="astrip-ico">🔒</div><div class="astrip-txt"><strong>Mant. Delta · #17148 · $320,000</strong>Expediente prácticamente vacío. Riesgo 69-B crítico. Acción urgente requerida.</div><button class="btn btn-danger" style="flex-shrink:0" onclick="openExp('17148')">Ver expediente</button></div>
   </div>
   <div id="etab-n3" style="display:none"><div class="card" style="padding:28px;text-align:center;color:var(--muted)">7 proveedores Nivel 3 · Carga probatoria máxima requerida por SAT</div></div>
@@ -614,7 +628,7 @@ input[type=file]{display:none;}
         <div class="field"><label>¿Por qué este proveedor y no otro?</label><textarea placeholder="Ej: Fue el único con certificación ISO 27001 requerida para manejar datos fiscales..."></textarea></div>
         <div style="display:flex;gap:8px">
           <button class="btn btn-ghost" style="flex:1">Guardar borrador</button>
-          <button class="btn btn-primary" style="flex:1">Firmar con e.firma</button>
+          <button class="btn btn-primary" style="flex:1">Guardar cuestionario</button>
         </div>
       </div>
 
@@ -808,6 +822,20 @@ input[type=file]{display:none;}
       <p style="font-size:13px;color:var(--muted2)">Subir estado de cuenta bancario</p>
       <span style="font-size:11px;color:var(--muted);display:block;margin-top:3px;font-family:var(--mono)">PDF · Banorte, BBVA, Santander, HSBC</span>
     </div>
+    <div class="field-row">
+      <div class="field" style="margin-bottom:8px">
+        <label>Empresa (conciliación)</label>
+        <select id="ai-empresa-filter" onchange="syncConciliacionProveedorFilter()">
+          <option value="">Todas las empresas</option>
+        </select>
+      </div>
+      <div class="field" style="margin-bottom:8px">
+        <label>Proveedor (conciliación)</label>
+        <select id="ai-proveedor-filter">
+          <option value="">Todos los proveedores</option>
+        </select>
+      </div>
+    </div>
     <input type="file" id="pdf-upload" accept=".pdf" onchange="runConciliacionIA(this)">
     <div id="ai-proc" style="display:none"><div class="thinking"><span>🤖</span><span>Analizando · cruzando EFOS · revisando expedientes</span><span class="thinking-dots"><span>·</span><span>·</span><span>·</span></span></div></div>
     <div id="ai-res" style="display:none">
@@ -826,6 +854,28 @@ input[type=file]{display:none;}
     </div>
     <div class="card">
       <div class="clabel" style="margin-bottom:12px">Exportar para auditoría SAT</div>
+      <div class="field" style="margin-bottom:8px">
+        <label>Empresa (filtro paquete)</label>
+        <select id="sat-empresa-filter" onchange="syncSatProveedorFilter()">
+          <option value="">Todas las empresas</option>
+        </select>
+      </div>
+      <div class="field" style="margin-bottom:8px">
+        <label>Proveedor (filtro paquete)</label>
+        <select id="sat-proveedor-filter">
+          <option value="">Todos los proveedores</option>
+        </select>
+      </div>
+      <div class="field" style="margin-bottom:12px">
+        <label>Nivel (filtro paquete)</label>
+        <select id="sat-nivel-filter">
+          <option value="">Todos los niveles</option>
+          <option value="1">Nivel 1</option>
+          <option value="2">Nivel 2</option>
+          <option value="3">Nivel 3</option>
+          <option value="4">Nivel 4</option>
+        </select>
+      </div>
       <div style="display:flex;flex-direction:column;gap:6px">
         <button class="btn btn-ghost" style="text-align:left;width:100%" onclick="descargarReporteNiveles()">📄 Expedientes por nivel (JSON)</button>
         <button class="btn btn-ghost" style="text-align:left;width:100%" onclick="descargarReporteSemaforo()">📊 Reporte semáforo fiscal</button>
@@ -891,6 +941,20 @@ input[type=file]{display:none;}
 <div class="modal-overlay" id="modal-proveedor">
   <div class="modal" onclick="event.stopPropagation()">
     <h3>Registrar Proveedor</h3>
+    <div class="field">
+      <label>Tipo de empresa cliente</label>
+      <select id="prov-empresa-tipo" onchange="filtrarEmpresasRegistro('prov')">
+        <option value="">— Seleccionar tipo —</option>
+        <option value="servicios">Servicios</option>
+        <option value="comercializadora">Comercializadora</option>
+        <option value="industrial">Industrial</option>
+        <option value="constructora">Constructora</option>
+        <option value="logistica">Logística</option>
+        <option value="tecnologia">Tecnología</option>
+        <option value="financiera">Financiera</option>
+        <option value="otra">Otra</option>
+      </select>
+    </div>
     <div class="field">
       <label>Empresa (cliente)</label>
       <select id="prov-empresa">
@@ -988,6 +1052,20 @@ input[type=file]{display:none;}
   <div class="modal" onclick="event.stopPropagation()">
     <h3>Registro de Proveedor</h3>
     <div class="field">
+      <label>Tipo de empresa cliente</label>
+      <select id="self-empresa-tipo" onchange="filtrarEmpresasRegistro('self')">
+        <option value="">— Seleccionar tipo —</option>
+        <option value="servicios">Servicios</option>
+        <option value="comercializadora">Comercializadora</option>
+        <option value="industrial">Industrial</option>
+        <option value="constructora">Constructora</option>
+        <option value="logistica">Logística</option>
+        <option value="tecnologia">Tecnología</option>
+        <option value="financiera">Financiera</option>
+        <option value="otra">Otra</option>
+      </select>
+    </div>
+    <div class="field">
       <label>Empresa cliente</label>
       <select id="self-empresa"></select>
     </div>
@@ -1022,6 +1100,16 @@ let CURRENT_EXPEDIENTE = null;
 let CURRENT_FOLIO_NUMERO = null;
 let EMPRESAS_CACHE = [];
 let AUTH_USER = null;
+const TIPO_EMPRESA_LABEL = {
+  servicios: 'Servicios',
+  comercializadora: 'Comercializadora',
+  industrial: 'Industrial',
+  constructora: 'Constructora',
+  logistica: 'Logística',
+  tecnologia: 'Tecnología',
+  financiera: 'Financiera',
+  otra: 'Otra',
+};
 
 function toMoney(value){
   const n = Number(value||0);
@@ -1034,6 +1122,29 @@ function cleanNumber(value){
 
 function getUsuarioActivo(){
   return (AUTH_USER && AUTH_USER.rol) ? AUTH_USER.rol : 'frontend';
+}
+
+function empresaLabel(e){
+  const tipo = TIPO_EMPRESA_LABEL[e.tipo_empresa] || (e.tipo_empresa || 'Sin tipo');
+  return `${e.nombre} (${e.rfc}) · ${tipo}`;
+}
+
+function filtrarEmpresasRegistro(scope){
+  const tipoSelId = scope === 'self' ? 'self-empresa-tipo' : 'prov-empresa-tipo';
+  const empresaSelId = scope === 'self' ? 'self-empresa' : 'prov-empresa';
+  const tipo = (document.getElementById(tipoSelId)?.value || '').trim();
+  const sel = document.getElementById(empresaSelId);
+  if(!sel) return;
+  sel.innerHTML = '<option value="">— Seleccionar empresa —</option>';
+  if(!tipo) return;
+  EMPRESAS_CACHE
+    .filter(e=>e.activo && e.tipo_empresa === tipo)
+    .forEach(e=>{
+      const op = document.createElement('option');
+      op.value = String(e.id);
+      op.textContent = empresaLabel(e);
+      sel.appendChild(op);
+    });
 }
 
 async function apiGet(path){
@@ -1084,15 +1195,11 @@ function enterAsOperador(){
 
 function enterAsProveedor(){
   closeRoleModals();
+  const tipoSel = document.getElementById('self-empresa-tipo');
+  if(tipoSel) tipoSel.value = '';
   const sel = document.getElementById('self-empresa');
   if(sel){
     sel.innerHTML = '<option value="">— Seleccionar empresa —</option>';
-    EMPRESAS_CACHE.filter(e=>e.activo).forEach(e=>{
-      const op = document.createElement('option');
-      op.value = String(e.id);
-      op.textContent = `${e.nombre} (${e.rfc})`;
-      sel.appendChild(op);
-    });
   }
   openModal('modal-proveedor-self');
 }
@@ -1167,7 +1274,7 @@ const NIVELES = {
   ]},
   n3:{label:'N3 · Servicios Intangibles',cls:'n3',docs:[
     {done:true,label:'CFDI (XML y PDF) con código correcto',tag:'legal',tip:'trinidad'},
-    {done:true,label:'Contrato con Fecha Cierta (NOM-151 + e.firma)',tag:'legal',tip:'trinidad'},
+    {done:true,label:'Contrato con Fecha Cierta (NOM-151)',tag:'legal',tip:'trinidad'},
     {done:true,label:'Estado de cuenta bancario (salida)',tag:'legal',tip:'trinidad'},
     {done:true,label:'Opinión 32-D positiva',tag:'fiscal',tip:'trinidad'},
     {done:true,label:'RFC validado — fuera de EFOS',tag:'fiscal',tip:'trinity'},
@@ -1176,13 +1283,13 @@ const NIVELES = {
     {done:false,label:'Bitácora de actividades con fechas inicio/fin',tag:'campo',tip:'ejecución'},
     {done:false,label:'Minutas de trabajo / capturas Zoom/Teams',tag:'campo',tip:'ejecución'},
     {done:false,label:'Correos electrónicos de avances (hilos)',tag:'campo',tip:'comunicación'},
-    {done:false,label:'Entregable final con e.firma',tag:'legal',tip:'materialidad'},
+    {done:false,label:'Entregable final',tag:'legal',tip:'materialidad'},
     {done:false,label:'Manifiesto de materialidad bajo protesta',tag:'legal',tip:'materialidad'},
     {done:false,label:'Análisis de razón de negocios (Art. 5-A CFF)',tag:'fiscal',tip:'razón'},
   ]},
   n4:{label:'N4 · Estratégico',cls:'n4',docs:[
     {done:true,label:'CFDI con código correcto',tag:'legal',tip:'trinidad'},
-    {done:false,label:'Contrato NOM-151 + e.firma + notario',tag:'legal',tip:'trinidad'},
+    {done:false,label:'Contrato NOM-151 + notario',tag:'legal',tip:'trinidad'},
     {done:false,label:'Acta constitutiva del proveedor',tag:'legal',tip:'due-diligence'},
     {done:false,label:'Poderes del representante legal',tag:'legal',tip:'due-diligence'},
     {done:false,label:'Comprobante domicilio fiscal (no virtual)',tag:'legal',tip:'due-diligence'},
@@ -1343,16 +1450,18 @@ function maybeClose(e){if(e.target===document.getElementById('detail-overlay'))c
 // ── CLASIFICADOR ─────────────────────────────────
 async function clasificar() {
   const tipo = document.getElementById('cl-tipo').value;
+  const tipoEmpresa = document.getElementById('cl-empresa-tipo').value;
   const monto = document.getElementById('cl-monto').value;
   const repse = document.getElementById('cl-repse').value;
   const fisico = document.getElementById('cl-fisico').value;
-  if(!tipo||!monto) return;
+  if(!tipo||!monto||!tipoEmpresa) return;
   const el = document.getElementById('clasificador-result');
   const montoNumero = monto === 'alto' ? 600000 : (monto === 'medio' ? 100000 : 30000);
 
   try{
     const data = await apiSend('/clasificar', 'POST', {
       tipo,
+      tipo_empresa: tipoEmpresa,
       monto: montoNumero,
       repse: repse === 'si',
       tiene_fisico: fisico === 'si',
@@ -1380,7 +1489,7 @@ async function clasificar() {
 function autoClasificar(tipo) {
   const map = {limpieza:'n1',materia:'n2',outsourcing:'n3',consultoria:'n3',construccion:'n4'};
   const labels = {n1:'🟢 Nivel 1 · Transaccional',n2:'🔵 Nivel 2 · Operativo',n3:'🟡 Nivel 3 · Servicios',n4:'🔴 Nivel 4 · Estratégico'};
-  const docs = {n1:'CFDI · Nota remisión · Foto · CRP',n2:'CFDI · 32-D · Carta porte · ERP · Calidad',n3:'CFDI · REPSE · NOM-151 · Bitácoras · e.firma · Manifiesto',n4:'CFDI · Acta constitutiva · Nómina IMSS · Activos · 5-A CFF'};
+  const docs = {n1:'CFDI · Nota remisión · Foto · CRP',n2:'CFDI · 32-D · Carta porte · ERP · Calidad',n3:'CFDI · REPSE · NOM-151 · Bitácoras · Manifiesto',n4:'CFDI · Acta constitutiva · Nómina IMSS · Activos · 5-A CFF'};
   const n = map[tipo]||'';
   const el = document.getElementById('nivel-result');
   const dd = document.getElementById('nivel-docs');
@@ -1489,9 +1598,13 @@ async function runConciliacionIA(input){
   proc.style.display='block';
   resWrap.style.display='none';
   try{
+    const empresaId = (document.getElementById('ai-empresa-filter')?.value || '').trim();
+    const proveedorId = (document.getElementById('ai-proveedor-filter')?.value || '').trim();
     const fd = new FormData();
     fd.append('archivo', file);
     fd.append('usuario', getUsuarioActivo());
+    if(empresaId) fd.append('empresa_id', empresaId);
+    if(proveedorId) fd.append('proveedor_id', proveedorId);
     const res = await fetch(`${API_BASE}/conciliacion/estado_cuenta`, {method:'POST', body:fd});
     const data = await res.json().catch(()=>({}));
     if(!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
@@ -1761,7 +1874,20 @@ async function descargarReporteNiveles(){
   try{ await descargarPdf(`${API_BASE}/export/reportes/nivel.pdf`); }catch(err){ alert(`No se pudo exportar PDF: ${err.message}`); }
 }
 async function descargarReporteSemaforo(){
-  try{ await descargarPdf(`${API_BASE}/export/reportes/semaforo.pdf`); }catch(err){ alert(`No se pudo exportar PDF: ${err.message}`); }
+  try{
+    const empresaId = (document.getElementById('sat-empresa-filter')?.value || '').trim();
+    const proveedorId = (document.getElementById('sat-proveedor-filter')?.value || '').trim();
+    const nivel = (document.getElementById('sat-nivel-filter')?.value || '').trim();
+    const params = new URLSearchParams();
+    if(empresaId) params.set('empresa_id', empresaId);
+    if(proveedorId) params.set('proveedor_id', proveedorId);
+    if(nivel) params.set('nivel', nivel);
+    const query = params.toString();
+    const url = `${API_BASE}/export/reportes/semaforo.pdf${query ? `?${query}` : ''}`;
+    await descargarPdf(url);
+  }catch(err){
+    alert(`No se pudo exportar PDF: ${err.message}`);
+  }
 }
 async function descargarReporteAudit(){
   try{ await descargarPdf(`${API_BASE}/export/reportes/auditoria.pdf`); }catch(err){ alert(`No se pudo exportar PDF: ${err.message}`); }
@@ -1770,7 +1896,60 @@ async function descargarReporteTrazabilidad(){
   try{ await descargarPdf(`${API_BASE}/export/reportes/trazabilidad.pdf`); }catch(err){ alert(`No se pudo exportar PDF: ${err.message}`); }
 }
 async function descargarPaqueteSAT(){
-  try{ await descargarArchivo(`${API_BASE}/export/paquete_sat.zip`); }catch(err){ alert(`No se pudo exportar paquete SAT: ${err.message}`); }
+  try{
+    const empresaId = (document.getElementById('sat-empresa-filter')?.value || '').trim();
+    const proveedorId = (document.getElementById('sat-proveedor-filter')?.value || '').trim();
+    const nivel = (document.getElementById('sat-nivel-filter')?.value || '').trim();
+    const params = new URLSearchParams();
+    if(empresaId) params.set('empresa_id', empresaId);
+    if(proveedorId) params.set('proveedor_id', proveedorId);
+    if(nivel) params.set('nivel', nivel);
+    const query = params.toString();
+    const url = `${API_BASE}/export/paquete_sat.zip${query ? `?${query}` : ''}`;
+    await descargarArchivo(url);
+  }catch(err){
+    alert(`No se pudo exportar paquete SAT: ${err.message}`);
+  }
+}
+
+function syncSatProveedorFilter(){
+  const empresaId = (document.getElementById('sat-empresa-filter')?.value || '').trim();
+  const sel = document.getElementById('sat-proveedor-filter');
+  if(!sel) return;
+  const current = sel.value;
+  const items = (PORTAL_FOLIOS || []).filter(f=>!empresaId || String(f.empresa_id) === empresaId);
+  const seen = new Set();
+  sel.innerHTML = '<option value="">Todos los proveedores</option>';
+  items.forEach(f=>{
+    if(seen.has(f.proveedor_id)) return;
+    seen.add(f.proveedor_id);
+    const op = document.createElement('option');
+    op.value = String(f.proveedor_id);
+    op.textContent = `${f.proveedor_nombre} (N${f.nivel})`;
+    sel.appendChild(op);
+  });
+  const stillExists = Array.from(sel.options).some(o=>o.value === current);
+  if(stillExists) sel.value = current;
+}
+
+function syncConciliacionProveedorFilter(){
+  const empresaId = (document.getElementById('ai-empresa-filter')?.value || '').trim();
+  const sel = document.getElementById('ai-proveedor-filter');
+  if(!sel) return;
+  const current = sel.value;
+  const items = (PORTAL_FOLIOS || []).filter(f=>!empresaId || String(f.empresa_id) === empresaId);
+  const seen = new Set();
+  sel.innerHTML = '<option value="">Todos los proveedores</option>';
+  items.forEach(f=>{
+    if(seen.has(f.proveedor_id)) return;
+    seen.add(f.proveedor_id);
+    const op = document.createElement('option');
+    op.value = String(f.proveedor_id);
+    op.textContent = `${f.proveedor_nombre} (N${f.nivel})`;
+    sel.appendChild(op);
+  });
+  const stillExists = Array.from(sel.options).some(o=>o.value === current);
+  if(stillExists) sel.value = current;
 }
 
 // ── CIERRE TIMELINE ──────────────────────────────
@@ -1827,12 +2006,10 @@ async function loadEmpresas(){
     const sel = document.getElementById('prov-empresa');
     if(sel){
       sel.innerHTML = '<option value="">— Seleccionar empresa —</option>';
-      EMPRESAS_CACHE.forEach(e=>{
-        const op = document.createElement('option');
-        op.value = String(e.id);
-        op.textContent = `${e.nombre} (${e.rfc})`;
-        sel.appendChild(op);
-      });
+      const tipoSel = document.getElementById('prov-empresa-tipo');
+      if(tipoSel && tipoSel.value){
+        filtrarEmpresasRegistro('prov');
+      }
     }
     const portalSel = document.getElementById('portal-empresa-select');
     if(portalSel){
@@ -1840,9 +2017,35 @@ async function loadEmpresas(){
       EMPRESAS_CACHE.filter(e=>e.activo).forEach(e=>{
         const op = document.createElement('option');
         op.value = String(e.id);
-        op.textContent = `${e.nombre} (${e.rfc})`;
+        op.textContent = empresaLabel(e);
         portalSel.appendChild(op);
       });
+    }
+    const aiSel = document.getElementById('ai-empresa-filter');
+    if(aiSel){
+      const current = aiSel.value;
+      aiSel.innerHTML = '<option value="">Todas las empresas</option>';
+      EMPRESAS_CACHE.filter(e=>e.activo).forEach(e=>{
+        const op = document.createElement('option');
+        op.value = String(e.id);
+        op.textContent = empresaLabel(e);
+        aiSel.appendChild(op);
+      });
+      const stillExists = Array.from(aiSel.options).some(o=>o.value === current);
+      if(stillExists) aiSel.value = current;
+    }
+    const satSel = document.getElementById('sat-empresa-filter');
+    if(satSel){
+      const current = satSel.value;
+      satSel.innerHTML = '<option value="">Todas las empresas</option>';
+      EMPRESAS_CACHE.filter(e=>e.activo).forEach(e=>{
+        const op = document.createElement('option');
+        op.value = String(e.id);
+        op.textContent = empresaLabel(e);
+        satSel.appendChild(op);
+      });
+      const stillExists = Array.from(satSel.options).some(o=>o.value === current);
+      if(stillExists) satSel.value = current;
     }
     const active = EMPRESAS_CACHE.filter(e=>e.activo);
     const countEl = document.getElementById('dashboard-empresas-count');
@@ -1850,7 +2053,7 @@ async function loadEmpresas(){
     if(countEl) countEl.textContent = String(active.length);
     if(listEl){
       listEl.innerHTML = active.length
-        ? active.map(e=>`<div class="chip" style="margin-right:6px;margin-bottom:6px;display:inline-block">${e.nombre} · ${e.rfc}</div>`).join('')
+        ? active.map(e=>`<div class="chip" style="margin-right:6px;margin-bottom:6px;display:inline-block">${e.nombre} · ${e.rfc} · ${TIPO_EMPRESA_LABEL[e.tipo_empresa] || (e.tipo_empresa || 'Sin tipo')}</div>`).join('')
         : 'Sin empresas activas';
     }
   }catch(err){
@@ -1858,6 +2061,8 @@ async function loadEmpresas(){
     const listEl = document.getElementById('dashboard-empresas-list');
     if(listEl) listEl.textContent = `No se pudieron cargar empresas: ${err.message}`;
   }
+  syncSatProveedorFilter();
+  syncConciliacionProveedorFilter();
 }
 
 async function loadAlertasActivas(){
@@ -1944,19 +2149,27 @@ async function loadFoliosForFrontend(){
     if(portalSel){
       portalSel.innerHTML = '<option value="">— Elegir proveedor para ver su portal —</option>';
     }
+    syncSatProveedorFilter();
+    syncConciliacionProveedorFilter();
   }catch(err){
     console.error(err);
   }
 }
 
 async function registrarProveedor(){
+  const tipoEmpresa = (document.getElementById('prov-empresa-tipo').value || '').trim();
   const empresaId = Number(document.getElementById('prov-empresa').value || 0);
   const nombre = document.getElementById('prov-nombre').value.trim();
   const rfc = document.getElementById('prov-rfc').value.trim();
   const tipo = document.getElementById('prov-tipo').value;
   const monto = cleanNumber(document.getElementById('prov-monto').value);
-  if(!empresaId || !nombre || !rfc || !tipo){
-    alert('Completa empresa, nombre, RFC y tipo');
+  if(!tipoEmpresa || !empresaId || !nombre || !rfc || !tipo){
+    alert('Completa tipo de empresa, empresa, nombre, RFC y tipo de servicio');
+    return;
+  }
+  const empresaSel = EMPRESAS_CACHE.find(e=>Number(e.id)===empresaId);
+  if(!empresaSel || empresaSel.tipo_empresa !== tipoEmpresa){
+    alert('La empresa seleccionada no coincide con el tipo de empresa elegido.');
     return;
   }
   try{
@@ -1971,6 +2184,7 @@ async function registrarProveedor(){
       rfc,
       tipo,
       monto,
+      tipo_empresa: empresaSel.tipo_empresa,
       repse: tipo === 'outsourcing' || tipo === 'consultoria',
       tiene_fisico: tipo === 'materia' || tipo === 'construccion',
       usuario: getUsuarioActivo(),
@@ -1993,13 +2207,19 @@ async function registrarProveedor(){
 }
 
 async function registrarProveedorSelf(){
+  const tipoEmpresa = (document.getElementById('self-empresa-tipo').value || '').trim();
   const empresaId = Number(document.getElementById('self-empresa').value || 0);
   const nombre = document.getElementById('self-nombre').value.trim();
   const rfc = document.getElementById('self-rfc').value.trim();
   const tipo = document.getElementById('self-tipo').value;
   const monto = cleanNumber(document.getElementById('self-monto').value);
-  if(!empresaId || !nombre || !rfc || !tipo){
-    alert('Completa empresa, nombre, RFC y tipo');
+  if(!tipoEmpresa || !empresaId || !nombre || !rfc || !tipo){
+    alert('Completa tipo de empresa, empresa, nombre, RFC y tipo de servicio');
+    return;
+  }
+  const empresaSel = EMPRESAS_CACHE.find(e=>Number(e.id)===empresaId);
+  if(!empresaSel || empresaSel.tipo_empresa !== tipoEmpresa){
+    alert('La empresa seleccionada no coincide con el tipo de empresa elegido.');
     return;
   }
   try{
@@ -2014,6 +2234,7 @@ async function registrarProveedorSelf(){
       rfc,
       tipo,
       monto,
+      tipo_empresa: empresaSel.tipo_empresa,
       repse: tipo === 'outsourcing' || tipo === 'consultoria',
       tiene_fisico: tipo === 'materia' || tipo === 'construccion',
       usuario: 'proveedor_autoregistro',

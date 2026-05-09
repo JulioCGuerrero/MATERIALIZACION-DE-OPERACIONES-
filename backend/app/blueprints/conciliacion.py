@@ -14,6 +14,8 @@ conciliacion_bp = Blueprint("conciliacion", __name__)
 def analizar_estado_cuenta():
     archivo = request.files.get("archivo")
     usuario = request.form.get("usuario", "IA")
+    empresa_id = request.form.get("empresa_id", type=int)
+    proveedor_id = request.form.get("proveedor_id", type=int)
 
     if not archivo:
         return jsonify({"error": "Debes enviar un archivo en el campo 'archivo'"}), 400
@@ -24,7 +26,12 @@ def analizar_estado_cuenta():
     file_path = upload_dir / filename
     archivo.save(file_path)
 
-    traspasos = Traspaso.query.join(Traspaso.folio).all()
+    q = Traspaso.query.join(Traspaso.folio)
+    if empresa_id:
+        q = q.filter(Traspaso.folio.has(empresa_id=empresa_id))
+    if proveedor_id:
+        q = q.filter(Traspaso.folio.has(proveedor_id=proveedor_id))
+    traspasos = q.all()
 
     conciliados = 0
     alertas = []
@@ -59,6 +66,8 @@ def analizar_estado_cuenta():
             "archivo": filename,
             "conciliados": conciliados,
             "alertas": len(alertas),
+            "empresa_id": empresa_id,
+            "proveedor_id": proveedor_id,
         },
         usuario,
     )
@@ -73,6 +82,7 @@ def analizar_estado_cuenta():
             "archivo": filename,
             "conciliados": conciliados,
             "total": len(traspasos),
+            "filtros": {"empresa_id": empresa_id, "proveedor_id": proveedor_id},
             "alertas": alertas,
         }
     )

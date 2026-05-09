@@ -55,8 +55,8 @@ PROVEEDORES = [
 ]
 
 EMPRESAS = [
-    {"nombre": "Batia", "rfc": "BAT010101AAA"},
-    {"nombre": "Grupo Norte", "rfc": "GRN010101BBB"},
+    {"nombre": "Batia", "rfc": "BAT010101AAA", "tipo_empresa": "servicios"},
+    {"nombre": "Grupo Norte", "rfc": "GRN010101BBB", "tipo_empresa": "industrial"},
 ]
 
 USUARIOS = [
@@ -119,7 +119,12 @@ with app.app_context():
 
     empresas = {}
     for e in EMPRESAS:
-        empresa = Empresa(nombre=e["nombre"], rfc=e["rfc"], activo=True)
+        empresa = Empresa(
+            nombre=e["nombre"],
+            rfc=e["rfc"],
+            tipo_empresa=e.get("tipo_empresa", "servicios"),
+            activo=True,
+        )
         empresas[e["nombre"]] = empresa
         db.session.add(empresa)
 

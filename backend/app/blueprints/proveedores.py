@@ -72,11 +72,18 @@ def crear_proveedor():
     if esta_en_efos(rfc):
         return jsonify({"error": "RFC encontrado en EFOS SAT. Registro bloqueado.", "rfc": rfc}), 409
 
+    empresa = None
+    tipo_empresa = (body.get("tipo_empresa") or "servicios").strip().lower()
+    if body.get("empresa_id") is not None:
+        empresa = Empresa.query.get_or_404(int(body["empresa_id"]))
+        tipo_empresa = (empresa.tipo_empresa or tipo_empresa).strip().lower()
+
     clasificado = clasificar_proveedor(
         tipo=body["tipo"],
         monto=float(body["monto"]),
         repse=bool(body["repse"]),
         tiene_fisico=bool(body["tiene_fisico"]),
+        tipo_empresa=tipo_empresa,
     )
 
     proveedor = Proveedor(
@@ -99,7 +106,8 @@ def crear_proveedor():
     if bool(body.get("crear_folio", False)):
         if "empresa_id" not in body:
             return jsonify({"error": "Para crear folio al registrar proveedor debes enviar empresa_id"}), 400
-        empresa = Empresa.query.get_or_404(int(body["empresa_id"]))
+        if empresa is None:
+            empresa = Empresa.query.get_or_404(int(body["empresa_id"]))
         folio = Folio(
             numero=str(body.get("folio_numero") or _next_folio_numero()),
             proveedor_id=proveedor.id,
@@ -170,7 +178,17 @@ def actualizar_proveedor(proveedor_id: int):
 
     if any(k in body for k in ["tipo", "monto", "repse", "tiene_fisico"]):
         monto = float(body.get("monto", 0))
-        clasificado = clasificar_proveedor(p.tipo, monto, p.repse, p.tiene_fisico)
+        empresa_tipo = None
+        if body.get("empresa_id") is not None:
+            emp = Empresa.query.get(int(body["empresa_id"]))
+            empresa_tipo = emp.tipo_empresa if emp else None
+        clasificado = clasificar_proveedor(
+            p.tipo,
+            monto,
+            p.repse,
+            p.tiene_fisico,
+            tipo_empresa=(empresa_tipo or body.get("tipo_empresa") or "servicios"),
+        )
         p.nivel = clasificado["nivel"]
 
     log_event("proveedores", p.id, "actualizar", body, body.get("usuario"))

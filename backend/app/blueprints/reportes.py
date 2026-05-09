@@ -13,15 +13,21 @@ reportes_bp = Blueprint("reportes", __name__)
 def reporte_por_nivel():
     nivel = request.args.get("nivel", type=int)
     empresa_id = request.args.get("empresa_id", type=int)
-    return jsonify(reporte_por_nivel_data(nivel, empresa_id))
+    proveedor_id = request.args.get("proveedor_id", type=int)
+    return jsonify(reporte_por_nivel_data(nivel, empresa_id, proveedor_id))
 
 
 @reportes_bp.get("/reportes/semaforo")
 def reporte_semaforo():
-    return jsonify(reporte_semaforo_data())
+    empresa_id = request.args.get("empresa_id", type=int)
+    proveedor_id = request.args.get("proveedor_id", type=int)
+    nivel = request.args.get("nivel", type=int)
+    return jsonify(reporte_semaforo_data(empresa_id, proveedor_id, nivel))
 
 
 @reportes_bp.get("/reportes/trazabilidad")
 def reporte_trazabilidad():
     empresa_id = request.args.get("empresa_id", type=int)
-    return jsonify(reporte_trazabilidad_data(empresa_id))
+    proveedor_id = request.args.get("proveedor_id", type=int)
+    nivel = request.args.get("nivel", type=int)
+    return jsonify(reporte_trazabilidad_data(empresa_id, proveedor_id, nivel))
