@@ -1135,16 +1135,21 @@ function filtrarEmpresasRegistro(scope){
   const tipo = (document.getElementById(tipoSelId)?.value || '').trim();
   const sel = document.getElementById(empresaSelId);
   if(!sel) return;
+  const current = sel.value;
   sel.innerHTML = '<option value="">— Seleccionar empresa —</option>';
-  if(!tipo) return;
-  EMPRESAS_CACHE
-    .filter(e=>e.activo && e.tipo_empresa === tipo)
-    .forEach(e=>{
-      const op = document.createElement('option');
-      op.value = String(e.id);
-      op.textContent = empresaLabel(e);
-      sel.appendChild(op);
-    });
+  const activas = EMPRESAS_CACHE.filter(e=>e.activo);
+  const filtradas = tipo
+    ? activas.filter(e=>e.tipo_empresa === tipo)
+    : activas;
+  const items = filtradas.length ? filtradas : activas;
+  items.forEach(e=>{
+    const op = document.createElement('option');
+    op.value = String(e.id);
+    op.textContent = empresaLabel(e);
+    sel.appendChild(op);
+  });
+  const stillExists = Array.from(sel.options).some(o=>o.value === current);
+  if(stillExists) sel.value = current;
 }
 
 async function apiGet(path){
@@ -2005,11 +2010,11 @@ async function loadEmpresas(){
     EMPRESAS_CACHE = await apiGet('/empresas');
     const sel = document.getElementById('prov-empresa');
     if(sel){
-      sel.innerHTML = '<option value="">— Seleccionar empresa —</option>';
-      const tipoSel = document.getElementById('prov-empresa-tipo');
-      if(tipoSel && tipoSel.value){
-        filtrarEmpresasRegistro('prov');
-      }
+      filtrarEmpresasRegistro('prov');
+    }
+    const selfSel = document.getElementById('self-empresa');
+    if(selfSel){
+      filtrarEmpresasRegistro('self');
     }
     const portalSel = document.getElementById('portal-empresa-select');
     if(portalSel){
