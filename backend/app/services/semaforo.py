@@ -1,19 +1,34 @@
 from ..models import Expediente, Folio, Proveedor
+from .policy_engine import get_active_policy
 
 
-def _estado_ratio(cumplen: int, total: int, critico: bool = False) -> str:
+def _estado_ratio(
+    cumplen: int,
+    total: int,
+    critico: bool = False,
+    amarillo_min: float = 70.0,
+    verde_min: float = 90.0,
+) -> str:
     if total == 0:
         return "verde"
     ratio = (cumplen / total) * 100
-    if critico or ratio < 70:
+    if critico or ratio < amarillo_min:
         return "rojo"
-    if ratio < 90:
+    if ratio < verde_min:
         return "amarillo"
     return "verde"
 
 
-def _metric(valor_ok: int, total: int, ley: str, etiqueta_ok: str, critico: bool = False) -> dict:
-    estado = _estado_ratio(valor_ok, total, critico=critico)
+def _metric(
+    valor_ok: int,
+    total: int,
+    ley: str,
+    etiqueta_ok: str,
+    critico: bool = False,
+    amarillo_min: float = 70.0,
+    verde_min: float = 90.0,
+) -> dict:
+    estado = _estado_ratio(valor_ok, total, critico=critico, amarillo_min=amarillo_min, verde_min=verde_min)
     return {
         "estado": estado,
         "valor": f"{valor_ok}/{total} {etiqueta_ok}",
@@ -26,6 +41,10 @@ def calcular_semaforo(
     proveedor_id: int | None = None,
     nivel: int | None = None,
 ) -> dict:
+    policy, active_version = get_active_policy(empresa_id)
+    yellow = float(policy["semaforo"].get("amarillo_min", 70.0))
+    green = float(policy["semaforo"].get("verde_min", 90.0))
+
     proveedores_q = Proveedor.query.filter_by(activo=True)
     if proveedor_id:
         proveedores_q = proveedores_q.filter(Proveedor.id == proveedor_id)
@@ -36,7 +55,7 @@ def calcular_semaforo(
     proveedores = proveedores_q.all()
     total_prov = len(proveedores)
     efos_ok = sum(1 for p in proveedores if p.efos_ok)
-    efos_critico = efos_ok < total_prov
+    efos_critico = (efos_ok < total_prov) if policy["semaforo"].get("efos_critico_si_no_ok", True) else False
 
     expedientes_q = Expediente.query.join(Expediente.folio).join(Folio.proveedor)
     if empresa_id:
@@ -79,10 +98,14 @@ def calcular_semaforo(
                 repse_ok += 1
 
     return {
-        "efos": _metric(efos_ok, total_prov, "Art. 69-B CFF", "proveedores OK", critico=efos_critico),
-        "cfdi_correcto": _metric(cfdi_ok, total_exp, "Art. 29-A CFF", "expedientes OK"),
-        "nom151": _metric(nom151_ok, max(1, sum(1 for e in expedientes if e.folio.proveedor.nivel in (3, 4))), "NOM-151", "contratos OK"),
-        "repse": _metric(repse_ok, max(1, repse_total), "LFT / REPSE", "proveedores REPSE OK"),
-        "manifiesto": _metric(manifiesto_ok, max(1, manifiesto_total), "Art. 69-B CFF", "manifiestos OK"),
-        "razon_negocios": _metric(razon_ok, max(1, razon_total), "Art. 5-A CFF", "análisis OK"),
+        "efos": _metric(efos_ok, total_prov, "Art. 69-B CFF", "proveedores OK", critico=efos_critico, amarillo_min=yellow, verde_min=green),
+        "cfdi_correcto": _metric(cfdi_ok, total_exp, "Art. 29-A CFF", "expedientes OK", amarillo_min=yellow, verde_min=green),
+        "nom151": _metric(nom151_ok, max(1, sum(1 for e in expedientes if e.folio.proveedor.nivel in (3, 4))), "NOM-151", "contratos OK", amarillo_min=yellow, verde_min=green),
+        "repse": _metric(repse_ok, max(1, repse_total), "LFT / REPSE", "proveedores REPSE OK", amarillo_min=yellow, verde_min=green),
+        "manifiesto": _metric(manifiesto_ok, max(1, manifiesto_total), "Art. 69-B CFF", "manifiestos OK", amarillo_min=yellow, verde_min=green),
+        "razon_negocios": _metric(razon_ok, max(1, razon_total), "Art. 5-A CFF", "análisis OK", amarillo_min=yellow, verde_min=green),
+        "policy": {
+            "policy_version_id": active_version.id if active_version else None,
+            "policy_version": active_version.version if active_version else None,
+        },
     }

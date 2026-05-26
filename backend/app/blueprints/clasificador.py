@@ -19,5 +19,8 @@ def clasificar():
         repse=bool(body["repse"]),
         tiene_fisico=bool(body["tiene_fisico"]),
         tipo_empresa=(body.get("tipo_empresa") or "servicios"),
+        empresa_id=body.get("empresa_id"),
+        usuario=body.get("usuario"),
+        save_evaluation=bool(body.get("guardar_evaluacion", False)),
     )
     return jsonify(result)

@@ -1,0 +1,93 @@
+{% extends 'reports/_base.html' %}
+{% block body %}
+<div class="header">
+  <div class="brand">SERVICIA</div>
+  <div class="sub">Política de Materialidad y Negocio</div>
+  <div class="meta">Generado: {{ generated_at }}</div>
+</div>
+
+<div class="title">Empresa: {{ empresa.nombre }}</div>
+<div class="meta">RFC: {{ empresa.rfc }} · Tipo: {{ empresa.tipo_empresa }} · ID: {{ empresa.id }}</div>
+
+<div class="kpis">
+  <div class="kpi">
+    <div class="l">Política Publicada</div>
+    <div class="v">{{ 'Sí' if status.has_active_published_policy else 'No' }}</div>
+  </div>
+  <div class="kpi">
+    <div class="l">Versión Activa</div>
+    <div class="v">{{ active.version if active else 'N/A' }}</div>
+  </div>
+  <div class="kpi">
+    <div class="l">Estado</div>
+    <div class="v">{{ active.estado if active else 'N/A' }}</div>
+  </div>
+  <div class="kpi">
+    <div class="l">Publicada En</div>
+    <div class="v" style="font-size:12px;">{{ status.publicado_en or 'N/A' }}</div>
+  </div>
+</div>
+
+<div class="grid2">
+  <div class="card">
+    <strong>Umbrales de Materialidad</strong>
+    <div style="margin-top:6px;">Min. completitud para pago: <strong>{{ policy.gates.min_completitud_para_pago }}</strong>%</div>
+    <div>Semáforo amarillo: &lt; <strong>{{ policy.semaforo.amarillo_min }}</strong>%</div>
+    <div>Semáforo verde: ≥ <strong>{{ policy.semaforo.verde_min }}</strong>%</div>
+    <div>EFOS crítico si no OK: <strong>{{ 'Sí' if policy.semaforo.efos_critico_si_no_ok else 'No' }}</strong></div>
+  </div>
+  <div class="card">
+    <strong>Reglas de Negocio (Clasificación)</strong>
+    <div style="margin-top:6px;">N4 si monto &gt; <strong>{{ policy.classification.level4_min_monto }}</strong></div>
+    <div>Tipos N3: <strong>{{ policy.classification.level3_tipos|join(', ') }}</strong></div>
+    <div>Tipos N2: <strong>{{ policy.classification.level2_tipos|join(', ') }}</strong></div>
+    <div>Escala por giro: <strong>{{ policy.classification.nivel_up_por_tipo_empresa|join(', ') }}</strong></div>
+  </div>
+</div>
+
+<div class="title" style="font-size:14px;margin-top:14px;">Texto Explícito de la Política Vigente</div>
+<div class="card" style="margin-bottom:10px;">
+  <div><strong>1.</strong> Para clasificar en <strong>N4</strong>, el monto de operación debe ser mayor a <strong>{{ policy.classification.level4_min_monto }}</strong> o aplicar criterio de tipo crítico.</div>
+  <div><strong>2.</strong> Los tipos definidos para <strong>N3</strong> son: <strong>{{ policy.classification.level3_tipos|join(', ') }}</strong>.</div>
+  <div><strong>3.</strong> Los tipos definidos para <strong>N2</strong> son: <strong>{{ policy.classification.level2_tipos|join(', ') }}</strong>.</div>
+  <div><strong>4.</strong> Se incrementa el nivel por giro de empresa cuando aplique a: <strong>{{ policy.classification.nivel_up_por_tipo_empresa|join(', ') }}</strong>.</div>
+  <div><strong>5.</strong> El pago se libera únicamente cuando la completitud del expediente sea mayor o igual a <strong>{{ policy.gates.min_completitud_para_pago }}%</strong>.</div>
+  <div><strong>6.</strong> En semáforo, el estado es rojo bajo el umbral amarillo (&lt; {{ policy.semaforo.amarillo_min }}), amarillo antes del umbral verde, y verde con cumplimiento ≥ {{ policy.semaforo.verde_min }}.</div>
+  <div><strong>7.</strong> El criterio EFOS crítico se evalúa como: <strong>{{ 'activo' if policy.semaforo.efos_critico_si_no_ok else 'inactivo' }}</strong>.</div>
+</div>
+
+<div class="title" style="font-size:14px;">Política Vigente (JSON)</div>
+<div class="card">
+  <pre class="mono" style="white-space:pre-wrap;font-size:10px;line-height:1.35;">{{ policy | tojson(indent=2) }}</pre>
+</div>
+
+<div class="title" style="font-size:14px;margin-top:14px;">Historial de Versiones</div>
+<table>
+  <thead>
+    <tr>
+      <th>Versión</th>
+      <th>Estado</th>
+      <th>Autor</th>
+      <th>Creado</th>
+      <th>Publicado</th>
+      <th>Nota</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for v in versions %}
+    <tr>
+      <td>{{ v.version }}</td>
+      <td>{{ v.estado }}</td>
+      <td>{{ v.creado_por or 'N/A' }}</td>
+      <td>{{ v.creado_en }}</td>
+      <td>{{ v.publicado_en or 'N/A' }}</td>
+      <td>{{ v.nota_cambio }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6">Sin versiones registradas</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="foot">Documento de control interno para evidencia de criterios de materialidad y negocio.</div>
+{% endblock %}

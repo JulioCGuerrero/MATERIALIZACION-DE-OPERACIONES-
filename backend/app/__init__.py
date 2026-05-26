@@ -16,6 +16,7 @@ from .blueprints.expedientes import expedientes_bp
 from .blueprints.export import export_bp
 from .blueprints.folios import folios_bp
 from .blueprints.kpis import kpis_bp
+from .blueprints.policies import policies_bp
 from .blueprints.proveedores import proveedores_bp
 from .blueprints.reportes import reportes_bp
 from .blueprints.semaforo import semaforo_bp
@@ -74,6 +75,7 @@ def create_app(config_object=Config) -> Flask:
     app.register_blueprint(kpis_bp, url_prefix="/api")
     app.register_blueprint(conciliacion_bp, url_prefix="/api")
     app.register_blueprint(export_bp, url_prefix="/api")
+    app.register_blueprint(policies_bp, url_prefix="/api")
 
     if app.config.get("AUTO_CREATE_SCHEMA"):
         _create_schema(app)

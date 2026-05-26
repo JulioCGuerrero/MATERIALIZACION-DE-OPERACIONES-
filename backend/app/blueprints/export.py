@@ -5,8 +5,9 @@ import zipfile
 
 from flask import Blueprint, jsonify, make_response, request
 
-from ..models import AuditLog, Empresa, Proveedor
+from ..models import AuditLog, Empresa, PolicySet, PolicyVersion, Proveedor
 from ..services.pdf_reports import PdfEngineMissing, render_pdf
+from ..services.policy_engine import get_active_policy, get_policy_status
 from ..services.reportes import (
     reporte_por_nivel_data,
     reporte_semaforo_data,
@@ -163,3 +164,52 @@ def export_paquete_sat_zip():
     response.headers["Content-Type"] = "application/zip"
     response.headers["Content-Disposition"] = 'attachment; filename="paquete_sat.zip"'
     return response
+
+
+@export_bp.get("/export/policy/empresa.pdf")
+def export_policy_empresa_pdf():
+    empresa_id = request.args.get("empresa_id", type=int)
+    if not empresa_id:
+        return jsonify({"error": "Debes enviar empresa_id"}), 400
+
+    empresa = Empresa.query.get_or_404(empresa_id)
+    policy, active = get_active_policy(empresa.id)
+    status = get_policy_status(empresa.id)
+    policy_set = PolicySet.query.filter_by(empresa_id=empresa.id).first()
+    versions = (
+        PolicyVersion.query.filter_by(policy_set_id=policy_set.id)
+        .order_by(PolicyVersion.version.desc())
+        .limit(12)
+        .all()
+        if policy_set
+        else []
+    )
+
+    payload_versions = [
+        {
+            "version": v.version,
+            "estado": v.estado,
+            "creado_por": v.creado_por,
+            "creado_en": v.creado_en.strftime("%Y-%m-%d %H:%M") if v.creado_en else "",
+            "publicado_en": v.publicado_en.strftime("%Y-%m-%d %H:%M") if v.publicado_en else "",
+            "nota_cambio": v.nota_cambio or "",
+        }
+        for v in versions
+    ]
+
+    try:
+        pdf = render_pdf(
+            "reports/policy_empresa.html",
+            empresa=empresa,
+            policy=policy,
+            active=active,
+            status=status,
+            versions=payload_versions,
+        )
+    except PdfEngineMissing as exc:
+        return jsonify({"error": str(exc)}), 500
+    except Exception as exc:  # pragma: no cover
+        return jsonify({"error": f"Error al generar PDF de política: {exc}"}), 500
+
+    filename = f"politica_empresa_{empresa.id}.pdf"
+    return _pdf_response(pdf, filename)

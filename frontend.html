@@ -343,6 +343,7 @@ input[type=file]{display:none;}
   <nav>
     <div class="ns">Principal</div>
     <div class="ni active" onclick="goNav(this,'dashboard')"><span class="ico">◈</span>Dashboard General</div>
+    <div class="ni" onclick="goNav(this,'politicas')"><span class="ico">⌘</span>Políticas por Empresa</div>
     <div class="ns">Materialización</div>
     <div class="ni" onclick="goNav(this,'clasificador')"><span class="ico">⬡</span>Clasificador de Nivel<span class="nb y">4</span></div>
     <div class="ni" onclick="goNav(this,'expedientes')"><span class="ico">▦</span>Expedientes<span class="nb r">3</span></div>
@@ -385,6 +386,24 @@ input[type=file]{display:none;}
     <div class="sh"><h3>Empresas Activas</h3><span>Clientes registrados</span></div>
     <div id="dashboard-empresas-count" class="cval">0</div>
     <div id="dashboard-empresas-list" class="muted" style="margin-top:8px;">Cargando empresas...</div>
+  </div>
+  <div id="dashboard-policy-wrap" class="card" style="margin-bottom:20px;">
+    <div class="sh"><h3>Parámetros de Materialidad y Negocio</h3><span>Por empresa y proveedor</span></div>
+    <div class="cg cg2" style="margin-bottom:12px;">
+      <div class="field" style="margin:0;">
+        <label>Empresa</label>
+        <select id="policy-empresa-select" onchange="policyEmpresaChange(this.value)">
+          <option value="">— Elegir empresa —</option>
+        </select>
+      </div>
+      <div class="field" style="margin:0;">
+        <label>Proveedor</label>
+        <select id="policy-proveedor-select" onchange="loadPolicyContext()">
+          <option value="">— Elegir proveedor —</option>
+        </select>
+      </div>
+    </div>
+    <div id="policy-context-view" class="muted">Selecciona empresa y proveedor para ver parámetros aplicados.</div>
   </div>
 
   <div class="cg cg2">
@@ -437,6 +456,23 @@ input[type=file]{display:none;}
         </table>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ═══ CLASIFICADOR ═══ -->
+<div class="view" id="view-politicas">
+  <div class="card" style="margin-bottom:20px;">
+    <div class="sh"><h3>Consulta de Política por Empresa</h3><span>Parámetros vigentes de materialidad y negocio</span></div>
+    <div class="field" style="max-width:520px;">
+      <label>Empresa</label>
+      <select id="policy-company-select" onchange="loadPolicyByEmpresa()">
+        <option value="">— Seleccionar empresa —</option>
+      </select>
+    </div>
+    <div style="margin:8px 0 12px 0;">
+      <button class="btn btn-ghost" onclick="descargarPoliticaEmpresaPDF()">Descargar política en PDF</button>
+    </div>
+    <div id="policy-company-view" class="muted">Selecciona una empresa para consultar su política activa.</div>
   </div>
 </div>
 
@@ -1093,12 +1129,14 @@ input[type=file]{display:none;}
 
 <script>
 // ── DATA ─────────────────────────────────────────
-const TITLES = {dashboard:'Dashboard General',clasificador:'Clasificador de Nivel de Riesgo',expedientes:'Expedientes de Materialización',semaforo:'Semáforo Fiscal · Art. 69-B CFF',portal:'Portal de Autoservicio · Proveedor',trazabilidad:'Trazabilidad Bancaria',kpis:'KPIs del Personal',cierre:'Cierre Mensual · Contabilidad',auditoria:'Auditoría IA'};
-const API_BASE = 'http://localhost:8000/api';
+const TITLES = {dashboard:'Dashboard General',politicas:'Políticas por Empresa',clasificador:'Clasificador de Nivel de Riesgo',expedientes:'Expedientes de Materialización',semaforo:'Semáforo Fiscal · Art. 69-B CFF',portal:'Portal de Autoservicio · Proveedor',trazabilidad:'Trazabilidad Bancaria',kpis:'KPIs del Personal',cierre:'Cierre Mensual · Contabilidad',auditoria:'Auditoría IA'};
+const API_BASE = `${window.location.origin}/api`;
 const FOLIO_CACHE = {};
 let CURRENT_EXPEDIENTE = null;
 let CURRENT_FOLIO_NUMERO = null;
 let EMPRESAS_CACHE = [];
+let PROVEEDORES_CACHE = [];
+let POLICY_STATUS_BY_EMPRESA = {};
 let AUTH_USER = null;
 const TIPO_EMPRESA_LABEL = {
   servicios: 'Servicios',
@@ -1126,7 +1164,9 @@ function getUsuarioActivo(){
 
 function empresaLabel(e){
   const tipo = TIPO_EMPRESA_LABEL[e.tipo_empresa] || (e.tipo_empresa || 'Sin tipo');
-  return `${e.nombre} (${e.rfc}) · ${tipo}`;
+  const st = POLICY_STATUS_BY_EMPRESA[String(e.id)];
+  const policyTag = st && st.has_active_published_policy ? ' · Política OK' : ' · Sin política publicada';
+  return `${e.nombre} (${e.rfc}) · ${tipo}${policyTag}`;
 }
 
 function filtrarEmpresasRegistro(scope){
@@ -1145,7 +1185,13 @@ function filtrarEmpresasRegistro(scope){
   items.forEach(e=>{
     const op = document.createElement('option');
     op.value = String(e.id);
+    const st = POLICY_STATUS_BY_EMPRESA[String(e.id)];
+    const policyOk = !!(st && st.has_active_published_policy);
     op.textContent = empresaLabel(e);
+    if(!policyOk){
+      op.disabled = true;
+      op.title = 'Requiere política activa publicada';
+    }
     sel.appendChild(op);
   });
   const stillExists = Array.from(sel.options).some(o=>o.value === current);
@@ -1330,6 +1376,7 @@ function goNav(el, id) {
   if(id==='trazabilidad') loadTrazabilidad();
   if(id==='expedientes') loadReportesPorNivel();
   if(id==='kpis') loadKpisPersonal();
+  if(id==='politicas') loadPolicyByEmpresa();
 }
 
 function stab(el, id) {
@@ -2008,6 +2055,17 @@ async function loadDashboard(){
 async function loadEmpresas(){
   try{
     EMPRESAS_CACHE = await apiGet('/empresas');
+    POLICY_STATUS_BY_EMPRESA = {};
+    await Promise.all(
+      EMPRESAS_CACHE.map(async (e)=>{
+        try{
+          const st = await apiGet(`/empresas/${e.id}/policy/status`);
+          POLICY_STATUS_BY_EMPRESA[String(e.id)] = st;
+        }catch(_err){
+          POLICY_STATUS_BY_EMPRESA[String(e.id)] = {has_active_published_policy:false, reason:'status_error'};
+        }
+      })
+    );
     const sel = document.getElementById('prov-empresa');
     if(sel){
       filtrarEmpresasRegistro('prov');
@@ -2052,13 +2110,32 @@ async function loadEmpresas(){
       const stillExists = Array.from(satSel.options).some(o=>o.value === current);
       if(stillExists) satSel.value = current;
     }
+    const policyCompanySel = document.getElementById('policy-company-select');
+    if(policyCompanySel){
+      const current = policyCompanySel.value;
+      policyCompanySel.innerHTML = '<option value="">— Seleccionar empresa —</option>';
+      EMPRESAS_CACHE.forEach(e=>{
+        const op = document.createElement('option');
+        op.value = String(e.id);
+        op.textContent = empresaLabel(e);
+        policyCompanySel.appendChild(op);
+      });
+      const stillExists = Array.from(policyCompanySel.options).some(o=>o.value === current);
+      if(stillExists) policyCompanySel.value = current;
+    }
     const active = EMPRESAS_CACHE.filter(e=>e.activo);
     const countEl = document.getElementById('dashboard-empresas-count');
     const listEl = document.getElementById('dashboard-empresas-list');
     if(countEl) countEl.textContent = String(active.length);
     if(listEl){
       listEl.innerHTML = active.length
-        ? active.map(e=>`<div class="chip" style="margin-right:6px;margin-bottom:6px;display:inline-block">${e.nombre} · ${e.rfc} · ${TIPO_EMPRESA_LABEL[e.tipo_empresa] || (e.tipo_empresa || 'Sin tipo')}</div>`).join('')
+        ? active.map(e=>{
+            const st = POLICY_STATUS_BY_EMPRESA[String(e.id)];
+            const policyBadge = st && st.has_active_published_policy
+              ? '<span class="badge g" style="margin-left:6px;">Política OK</span>'
+              : '<span class="badge r" style="margin-left:6px;">Sin política publicada</span>';
+            return `<div class="chip" style="margin-right:6px;margin-bottom:6px;display:inline-block">${e.nombre} · ${e.rfc} · ${TIPO_EMPRESA_LABEL[e.tipo_empresa] || (e.tipo_empresa || 'Sin tipo')} ${policyBadge}</div>`;
+          }).join('')
         : 'Sin empresas activas';
     }
   }catch(err){
@@ -2068,6 +2145,191 @@ async function loadEmpresas(){
   }
   syncSatProveedorFilter();
   syncConciliacionProveedorFilter();
+  syncPolicyEmpresas();
+}
+
+async function loadPolicyByEmpresa(){
+  const empresaId = (document.getElementById('policy-company-select')?.value || '').trim();
+  const view = document.getElementById('policy-company-view');
+  if(!view) return;
+  if(!empresaId){
+    view.textContent = 'Selecciona una empresa para consultar su política activa.';
+    return;
+  }
+  try{
+    const [policy, versions, status] = await Promise.all([
+      apiGet(`/empresas/${encodeURIComponent(empresaId)}/policy`),
+      apiGet(`/empresas/${encodeURIComponent(empresaId)}/policy/versions`),
+      apiGet(`/empresas/${encodeURIComponent(empresaId)}/policy/status`),
+    ]);
+    const clasif = policy.policy?.classification || {};
+    const gates = policy.policy?.gates || {};
+    const sem = policy.policy?.semaforo || {};
+    const versionsHtml = (versions || []).map(v=>`<tr><td>${v.version}</td><td>${v.estado}</td><td>${v.creado_por||'n/a'}</td><td>${v.publicado_en||'—'}</td><td>${v.nota_cambio||''}</td></tr>`).join('');
+    view.innerHTML = `
+      <div class="cg cg2" style="margin-bottom:10px;">
+        <div class="card" style="padding:12px;">
+          <div class="clabel">Estado de política</div>
+          <div class="csub">Activa publicada: <strong style="color:${status.has_active_published_policy?'var(--green)':'var(--red)'}">${status.has_active_published_policy?'Sí':'No'}</strong></div>
+          <div class="csub">Versión: <strong>${policy.active_version?.version || 'n/a'}</strong> · Estado: <strong>${policy.active_version?.estado || 'n/a'}</strong></div>
+          <div class="csub">Publicada en: <strong>${policy.active_version?.publicado_en || '—'}</strong></div>
+        </div>
+        <div class="card" style="padding:12px;">
+          <div class="clabel">Umbrales de materialidad</div>
+          <div class="csub">Min. completitud para pago: <strong>${Number(gates.min_completitud_para_pago || 100).toFixed(1)}%</strong></div>
+          <div class="csub">Semáforo amarillo: <strong>&lt; ${Number(sem.amarillo_min || 70)}</strong></div>
+          <div class="csub">Semáforo verde: <strong>≥ ${Number(sem.verde_min || 90)}</strong></div>
+        </div>
+      </div>
+      <div class="card" style="padding:12px;margin-bottom:10px;">
+        <div class="clabel">Reglas de negocio (clasificación)</div>
+        <div class="csub">N4 si monto > <strong>${toMoney(clasif.level4_min_monto || 500000)}</strong></div>
+        <div class="csub">Tipos para N3: <strong>${(clasif.level3_tipos || []).join(', ') || 'n/a'}</strong></div>
+        <div class="csub">Tipos para N2: <strong>${(clasif.level2_tipos || []).join(', ') || 'n/a'}</strong></div>
+        <div class="csub">Escala por giro empresa: <strong>${(clasif.nivel_up_por_tipo_empresa || []).join(', ') || 'n/a'}</strong></div>
+      </div>
+      <div class="card" style="padding:12px;margin-bottom:10px;">
+        <div class="clabel">Texto explícito de la política vigente</div>
+        <div class="csub">1. N4 si monto mayor a <strong>${toMoney(clasif.level4_min_monto || 500000)}</strong> o criterio crítico.</div>
+        <div class="csub">2. Tipos N3: <strong>${(clasif.level3_tipos || []).join(', ') || 'n/a'}</strong>.</div>
+        <div class="csub">3. Tipos N2: <strong>${(clasif.level2_tipos || []).join(', ') || 'n/a'}</strong>.</div>
+        <div class="csub">4. Ajuste por giro: <strong>${(clasif.nivel_up_por_tipo_empresa || []).join(', ') || 'n/a'}</strong>.</div>
+        <div class="csub">5. Liberación de pago con completitud mínima de <strong>${Number(gates.min_completitud_para_pago || 100).toFixed(1)}%</strong>.</div>
+        <div class="csub">6. Semáforo: rojo si &lt; <strong>${Number(sem.amarillo_min || 70)}</strong>, verde si ≥ <strong>${Number(sem.verde_min || 90)}</strong>.</div>
+        <div class="csub">7. EFOS crítico activo: <strong>${sem.efos_critico_si_no_ok ? 'Sí' : 'No'}</strong>.</div>
+      </div>
+      <div class="card" style="padding:12px;margin-bottom:10px;">
+        <div class="clabel">Política vigente (JSON literal)</div>
+        <pre class="mono" style="white-space:pre-wrap;font-size:11px;line-height:1.35;margin:0;">${JSON.stringify(policy.policy || {}, null, 2)}</pre>
+      </div>
+      <div class="tw" style="margin:0;">
+        <div class="th"><h3>Versiones de política</h3></div>
+        <table>
+          <thead><tr><th>Versión</th><th>Estado</th><th>Autor</th><th>Publicado</th><th>Nota</th></tr></thead>
+          <tbody>${versionsHtml || '<tr><td colspan="5" class="muted">Sin versiones</td></tr>'}</tbody>
+        </table>
+      </div>
+    `;
+  }catch(err){
+    view.textContent = `No se pudo cargar la política de empresa: ${err.message}`;
+  }
+}
+
+async function descargarPoliticaEmpresaPDF(){
+  const empresaId = (document.getElementById('policy-company-select')?.value || '').trim();
+  if(!empresaId){
+    alert('Selecciona una empresa para descargar su política.');
+    return;
+  }
+  try{
+    await descargarPdf(`${API_BASE}/export/policy/empresa.pdf?empresa_id=${encodeURIComponent(empresaId)}`);
+  }catch(err){
+    alert(`No se pudo descargar el PDF de política: ${err.message}`);
+  }
+}
+
+function syncPolicyEmpresas(){
+  const sel = document.getElementById('policy-empresa-select');
+  if(!sel) return;
+  const current = sel.value;
+  sel.innerHTML = '<option value="">— Elegir empresa —</option>';
+  EMPRESAS_CACHE.filter(e=>e.activo).forEach(e=>{
+    const op = document.createElement('option');
+    op.value = String(e.id);
+    op.textContent = empresaLabel(e);
+    sel.appendChild(op);
+  });
+  const stillExists = Array.from(sel.options).some(o=>o.value === current);
+  if(stillExists){
+    sel.value = current;
+    policyEmpresaChange(current);
+  }
+}
+
+function policyEmpresaChange(empresaId){
+  const provSel = document.getElementById('policy-proveedor-select');
+  const view = document.getElementById('policy-context-view');
+  if(!provSel) return;
+  provSel.innerHTML = '<option value="">— Elegir proveedor —</option>';
+  if(!empresaId){
+    if(view) view.textContent = 'Selecciona empresa y proveedor para ver parámetros aplicados.';
+    return;
+  }
+  const seen = new Set();
+  (PORTAL_FOLIOS || [])
+    .filter(f=>String(f.empresa_id)===String(empresaId))
+    .forEach(f=>{
+      if(seen.has(f.proveedor_id)) return;
+      seen.add(f.proveedor_id);
+      const op = document.createElement('option');
+      op.value = String(f.proveedor_id);
+      op.textContent = `${f.proveedor_nombre} (N${f.nivel})`;
+      provSel.appendChild(op);
+    });
+  if(view) view.textContent = 'Selecciona proveedor para cargar parámetros de materialidad y negocio.';
+}
+
+async function loadPolicyContext(){
+  const empresaId = (document.getElementById('policy-empresa-select')?.value || '').trim();
+  const proveedorId = (document.getElementById('policy-proveedor-select')?.value || '').trim();
+  const view = document.getElementById('policy-context-view');
+  if(!view) return;
+  if(!empresaId || !proveedorId){
+    view.textContent = 'Selecciona empresa y proveedor para ver parámetros aplicados.';
+    return;
+  }
+  try{
+    const data = await apiGet(`/policy/context?empresa_id=${encodeURIComponent(empresaId)}&proveedor_id=${encodeURIComponent(proveedorId)}`);
+    const docs = (data.aplicado?.documentos_requeridos || []).map(d=>`<span class="chip" style="margin-right:6px;margin-bottom:6px;display:inline-block">${d}</span>`).join('');
+    const docsPend = (data.aplicado?.documentos_pendientes || []).map(d=>`<span class="badge y" style="margin-right:6px;margin-bottom:6px;display:inline-block">${d}</span>`).join('');
+    const docsObs = (data.aplicado?.documentos_observados || []).map(d=>`<span class="badge r" style="margin-right:6px;margin-bottom:6px;display:inline-block">${d}</span>`).join('');
+    const reglas = (data.aplicado?.reglas_disparadas || []).map(r=>`<li>${r}</li>`).join('');
+    const versiones = (data.auditoria?.ultimas_versiones_policy || []).map(v=>`<tr><td>${v.version}</td><td>${v.estado}</td><td>${v.creado_por || 'n/a'}</td><td>${v.publicado_en || '—'}</td><td>${v.nota_cambio || ''}</td></tr>`).join('');
+    const clasif = data.policy?.classification || {};
+    const gates = data.policy?.gates || {};
+    const sem = data.policy?.semaforo || {};
+    const estPago = data.aplicado?.estado_pago === 'liberado' ? '✓ Liberado' : '🔒 Bloqueado';
+    const estColor = data.aplicado?.estado_pago === 'liberado' ? 'var(--green)' : 'var(--red)';
+    view.innerHTML = `
+      <div style="font-size:12px;color:var(--muted2);margin-bottom:8px;">
+        <strong>${data.empresa.nombre}</strong> · ${data.proveedor.nombre} · N${data.proveedor.nivel}
+      </div>
+      <div class="cg cg2" style="margin-bottom:8px;">
+        <div class="card" style="padding:12px;">
+          <div class="clabel">Política activa</div>
+          <div class="csub">Fuente: ${data.policy.source} · versión: ${data.policy.version || 'default'}</div>
+          <div class="csub">min_completitud_para_pago: <strong>${Number(gates.min_completitud_para_pago || 100).toFixed(1)}%</strong></div>
+          <div class="csub">Semáforo: amarillo &lt; ${Number(sem.amarillo_min || 70)} · verde ≥ ${Number(sem.verde_min || 90)}</div>
+          <div class="csub">Pago actual: <strong style="color:${estColor}">${estPago}</strong></div>
+          <div class="csub">Completitud actual: <strong>${Number(data.aplicado?.completitud_actual || 0).toFixed(1)}%</strong> · Brecha: <strong>${Number(data.aplicado?.brecha_completitud || 0).toFixed(1)}%</strong></div>
+        </div>
+        <div class="card" style="padding:12px;">
+          <div class="clabel">Reglas de clasificación</div>
+          <div class="csub">N4 por monto mayor a: <strong>${toMoney(clasif.level4_min_monto || 500000)}</strong></div>
+          <div class="csub">Tipos N3: ${(clasif.level3_tipos || []).join(', ') || 'n/a'}</div>
+          <div class="csub">Tipos N2: ${(clasif.level2_tipos || []).join(', ') || 'n/a'}</div>
+          <div class="csub">Nivel calculado: <strong>N${data.aplicado?.clasificacion_calculada?.nivel || data.proveedor.nivel}</strong> · Riesgo: <strong>${data.aplicado?.clasificacion_calculada?.riesgo || data.proveedor.riesgo}</strong></div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--muted2);margin-bottom:6px;"><strong>Documentos requeridos para este proveedor:</strong></div>
+      <div>${docs || '<span class="muted">Sin documentos definidos</span>'}</div>
+      <div style="font-size:12px;color:var(--muted2);margin:10px 0 6px 0;"><strong>Pendientes:</strong></div>
+      <div>${docsPend || '<span class="muted">Sin pendientes</span>'}</div>
+      <div style="font-size:12px;color:var(--muted2);margin:10px 0 6px 0;"><strong>Observados/Rechazados:</strong></div>
+      <div>${docsObs || '<span class="muted">Sin observados</span>'}</div>
+      <div style="font-size:12px;color:var(--muted2);margin:10px 0 6px 0;"><strong>Reglas disparadas:</strong></div>
+      <ul style="margin:0 0 10px 18px;">${reglas || '<li>Sin trazas</li>'}</ul>
+      <div class="tw" style="margin-top:8px;">
+        <div class="th"><h3>Historial reciente de políticas</h3></div>
+        <table>
+          <thead><tr><th>Versión</th><th>Estado</th><th>Autor</th><th>Publicado</th><th>Nota</th></tr></thead>
+          <tbody>${versiones || '<tr><td colspan="5" class="muted">Sin historial</td></tr>'}</tbody>
+        </table>
+      </div>
+    `;
+  }catch(err){
+    view.textContent = `No se pudo cargar el contexto de política: ${err.message}`;
+  }
 }
 
 async function loadAlertasActivas(){
@@ -2096,6 +2358,7 @@ async function loadFoliosForFrontend(){
     const folios = await apiGet('/folios');
     PORTAL_FOLIOS = folios.slice();
     const proveedores = await apiGet('/proveedores');
+    PROVEEDORES_CACHE = proveedores.slice();
     const proveedorById = Object.fromEntries(proveedores.map(p=>[p.id,p]));
     const select = document.getElementById('traspaso-prov');
     const tbodyDash = document.getElementById('dashboard-expedientes-tbody');
@@ -2156,6 +2419,10 @@ async function loadFoliosForFrontend(){
     }
     syncSatProveedorFilter();
     syncConciliacionProveedorFilter();
+    const policyEmpresa = document.getElementById('policy-empresa-select');
+    if(policyEmpresa && policyEmpresa.value){
+      policyEmpresaChange(policyEmpresa.value);
+    }
   }catch(err){
     console.error(err);
   }
@@ -2175,6 +2442,11 @@ async function registrarProveedor(){
   const empresaSel = EMPRESAS_CACHE.find(e=>Number(e.id)===empresaId);
   if(!empresaSel || empresaSel.tipo_empresa !== tipoEmpresa){
     alert('La empresa seleccionada no coincide con el tipo de empresa elegido.');
+    return;
+  }
+  const policyStatus = POLICY_STATUS_BY_EMPRESA[String(empresaId)];
+  if(!policyStatus || !policyStatus.has_active_published_policy){
+    alert('No puedes registrar proveedor: la empresa no tiene política activa publicada. Configúrala y publícala primero.');
     return;
   }
   try{
@@ -2225,6 +2497,11 @@ async function registrarProveedorSelf(){
   const empresaSel = EMPRESAS_CACHE.find(e=>Number(e.id)===empresaId);
   if(!empresaSel || empresaSel.tipo_empresa !== tipoEmpresa){
     alert('La empresa seleccionada no coincide con el tipo de empresa elegido.');
+    return;
+  }
+  const policyStatus = POLICY_STATUS_BY_EMPRESA[String(empresaId)];
+  if(!policyStatus || !policyStatus.has_active_published_policy){
+    alert('No puedes registrarte aún: la empresa no tiene política activa publicada. Contacta al operador.');
     return;
   }
   try{

@@ -1,6 +1,7 @@
 from ..extensions import db
 from ..models import Expediente
 from .auditoria import log_event
+from .policy_engine import evaluate_payment_gate
 
 
 def calcular_completitud(expediente_id: int) -> float:
@@ -13,7 +14,8 @@ def calcular_completitud(expediente_id: int) -> float:
     completitud = 0.0 if total == 0 else round((subidos / total) * 100, 2)
     was_blocked = expediente.pago_bloqueado
     expediente.completitud = completitud
-    expediente.pago_bloqueado = completitud < 100.0
+    gate = evaluate_payment_gate(expediente)
+    expediente.pago_bloqueado = not gate["puede_pagar"]
 
     if was_blocked != expediente.pago_bloqueado:
         log_event(
@@ -42,6 +44,7 @@ def puede_pagar(expediente_id: int) -> dict:
     return {
         "puede_pagar": not expediente.pago_bloqueado,
         "completitud": expediente.completitud,
+        "min_completitud_requerida": evaluate_payment_gate(expediente)["min_completitud"],
         "documentos_faltantes": faltantes,
         "documentos_observados": observados,
     }

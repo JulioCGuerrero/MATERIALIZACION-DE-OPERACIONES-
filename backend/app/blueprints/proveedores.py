@@ -10,6 +10,7 @@ from ..services.bloqueo import calcular_completitud
 from ..services.catalogo import DOCS_BY_LEVEL
 from ..services.clasificador import clasificar_proveedor
 from ..services.efos import esta_en_efos, normalizar_rfc
+from ..services.policy_engine import get_policy_status
 from ..services.serializers import expediente_to_dict
 
 proveedores_bp = Blueprint("proveedores", __name__)
@@ -77,6 +78,18 @@ def crear_proveedor():
     if body.get("empresa_id") is not None:
         empresa = Empresa.query.get_or_404(int(body["empresa_id"]))
         tipo_empresa = (empresa.tipo_empresa or tipo_empresa).strip().lower()
+        policy_status = get_policy_status(empresa.id)
+        if not policy_status.get("has_active_published_policy"):
+            return (
+                jsonify(
+                    {
+                        "error": "La empresa no tiene una política activa publicada. Publica la política antes de registrar proveedores.",
+                        "empresa_id": empresa.id,
+                        "policy_status": policy_status,
+                    }
+                ),
+                409,
+            )
 
     clasificado = clasificar_proveedor(
         tipo=body["tipo"],
@@ -84,6 +97,9 @@ def crear_proveedor():
         repse=bool(body["repse"]),
         tiene_fisico=bool(body["tiene_fisico"]),
         tipo_empresa=tipo_empresa,
+        empresa_id=empresa.id if empresa else None,
+        usuario=body.get("usuario"),
+        save_evaluation=True,
     )
 
     proveedor = Proveedor(
@@ -183,11 +199,15 @@ def actualizar_proveedor(proveedor_id: int):
             emp = Empresa.query.get(int(body["empresa_id"]))
             empresa_tipo = emp.tipo_empresa if emp else None
         clasificado = clasificar_proveedor(
-            p.tipo,
-            monto,
-            p.repse,
-            p.tiene_fisico,
+            tipo=p.tipo,
+            monto=monto,
+            repse=p.repse,
+            tiene_fisico=p.tiene_fisico,
             tipo_empresa=(empresa_tipo or body.get("tipo_empresa") or "servicios"),
+            empresa_id=int(body["empresa_id"]) if body.get("empresa_id") is not None else None,
+            proveedor_id=p.id,
+            usuario=body.get("usuario"),
+            save_evaluation=True,
         )
         p.nivel = clasificado["nivel"]
 

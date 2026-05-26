@@ -166,3 +166,61 @@ class Alerta(db.Model):
     empresa = db.relationship("Empresa")
     folio = db.relationship("Folio")
     expediente = db.relationship("Expediente")
+
+
+class PolicySet(db.Model):
+    __tablename__ = "policy_sets"
+
+    id = db.Column(db.Integer, primary_key=True)
+    empresa_id = db.Column(db.Integer, db.ForeignKey("empresas.id"), nullable=False, unique=True)
+    nombre = db.Column(db.String, nullable=False, default="Politica Operativa")
+    activa_version_id = db.Column(db.Integer, db.ForeignKey("policy_versions.id"), nullable=True)
+    creado_en = db.Column(db.DateTime, default=datetime.utcnow)
+    actualizado_en = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    empresa = db.relationship("Empresa")
+    versiones = db.relationship(
+        "PolicyVersion",
+        back_populates="policy_set",
+        cascade="all, delete-orphan",
+        foreign_keys="PolicyVersion.policy_set_id",
+    )
+
+
+class PolicyVersion(db.Model):
+    __tablename__ = "policy_versions"
+
+    id = db.Column(db.Integer, primary_key=True)
+    policy_set_id = db.Column(db.Integer, db.ForeignKey("policy_sets.id"), nullable=False)
+    version = db.Column(db.Integer, nullable=False)
+    estado = db.Column(db.String, nullable=False, default="draft")
+    parametros = db.Column(db.JSON, nullable=False, default=dict)
+    creado_por = db.Column(db.String)
+    nota_cambio = db.Column(db.Text)
+    creado_en = db.Column(db.DateTime, default=datetime.utcnow)
+    publicado_en = db.Column(db.DateTime)
+
+    policy_set = db.relationship("PolicySet", back_populates="versiones", foreign_keys=[policy_set_id])
+
+    __table_args__ = (
+        db.UniqueConstraint("policy_set_id", "version", name="uq_policy_version"),
+    )
+
+
+class PolicyEvaluation(db.Model):
+    __tablename__ = "policy_evaluations"
+
+    id = db.Column(db.Integer, primary_key=True)
+    policy_version_id = db.Column(db.Integer, db.ForeignKey("policy_versions.id"), nullable=True)
+    empresa_id = db.Column(db.Integer, db.ForeignKey("empresas.id"), nullable=True)
+    proveedor_id = db.Column(db.Integer, db.ForeignKey("proveedores.id"), nullable=True)
+    expediente_id = db.Column(db.Integer, db.ForeignKey("expedientes.id"), nullable=True)
+    tipo = db.Column(db.String, nullable=False, default="clasificacion")
+    input_payload = db.Column(db.JSON, nullable=False, default=dict)
+    output_payload = db.Column(db.JSON, nullable=False, default=dict)
+    creado_en = db.Column(db.DateTime, default=datetime.utcnow)
+
+    policy_version = db.relationship("PolicyVersion")
+    empresa = db.relationship("Empresa")
+    proveedor = db.relationship("Proveedor")
+    expediente = db.relationship("Expediente")

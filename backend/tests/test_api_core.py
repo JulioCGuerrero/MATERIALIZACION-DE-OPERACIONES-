@@ -162,3 +162,68 @@ def test_generador_alertas_detecta_vencimiento(client):
     assert lst.status_code == 200
     items = lst.get_json()
     assert len(items) >= 1
+
+
+def test_policy_simulation_and_publish_changes_gate_threshold(client):
+    empresa = _crear_empresa(client, nombre="Empresa Policy", rfc="EPO010101AAA")
+    proveedor = _crear_proveedor(client, nombre="Policy SA", rfc="PLY010101AAA", tipo="limpieza", monto=10000, repse=False, fisico=False)
+    _crear_folio(client, proveedor["id"], empresa["id"], numero="90100", presupuesto=30000, periodo="2026-04")
+
+    res_sim = client.post(
+        f"/api/empresas/{empresa['id']}/policy/simulate",
+        json={"parametros": {"gates": {"min_completitud_para_pago": 80.0}}},
+    )
+    assert res_sim.status_code == 200
+    sim = res_sim.get_json()
+    assert sim["expedientes_evaluados"] >= 1
+
+    draft = client.post(
+        f"/api/empresas/{empresa['id']}/policy/draft",
+        json={"parametros": {"gates": {"min_completitud_para_pago": 80.0}}, "usuario": "pytest"},
+    )
+    assert draft.status_code == 201
+    version_id = draft.get_json()["draft_version_id"]
+
+    pub = client.post(f"/api/empresas/{empresa['id']}/policy/publish/{version_id}")
+    assert pub.status_code == 200
+
+    folios = client.get("/api/folios").get_json()
+    folio = next(x for x in folios if x["numero"] == "90100")
+    detalle = client.get(f"/api/folios/{folio['id']}").get_json()
+    doc = detalle["documentos"][0]
+    ext = "xml" if doc["tipo"] == "cfdi_xml" else "pdf"
+    up = client.post(
+        f"/api/documentos/{doc['id']}/subir",
+        json={"nombre_archivo": f"{doc['tipo']}.{ext}", "url": f"/tmp/{doc['tipo']}.{ext}", "subido_por": "pytest"},
+    )
+    assert up.status_code == 200
+
+    comp = client.get(f"/api/expedientes/{detalle['expediente_id']}/completitud")
+    assert comp.status_code == 200
+    data = comp.get_json()
+    assert data["min_completitud_requerida"] == 80.0
+
+
+def test_proveedor_con_empresa_requiere_policy_publicada(client):
+    empresa = _crear_empresa(client, nombre="Empresa Sin Policy", rfc="ESP010101AAA")
+    res = client.post(
+        "/api/proveedores",
+        json={
+            "nombre": "Proveedor Bloq",
+            "rfc": "PBL010101AAA",
+            "tipo": "limpieza",
+            "monto": 12000,
+            "repse": False,
+            "tiene_fisico": False,
+            "empresa_id": empresa["id"],
+            "tipo_empresa": "servicios",
+        },
+    )
+    assert res.status_code == 409
+    data = res.get_json()
+    assert "política activa publicada" in data["error"]
+
+    status = client.get(f"/api/empresas/{empresa['id']}/policy/status")
+    assert status.status_code == 200
+    st = status.get_json()
+    assert st["has_active_published_policy"] is False
