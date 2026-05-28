@@ -89,7 +89,7 @@ def calcular_semaforo(
             if docs.get("manifiesto_materialidad") or exp.manifiesto:
                 manifiesto_ok += 1
             razon_total += 1
-            if (exp.razon_negocio and exp.razon_negocio.strip()) or docs.get("cuestionario_5a"):
+            if exp.razon_negocio and exp.razon_negocio.strip():
                 razon_ok += 1
 
         if exp.folio.proveedor.repse:

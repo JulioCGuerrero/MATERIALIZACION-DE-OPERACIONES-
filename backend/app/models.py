@@ -224,3 +224,22 @@ class PolicyEvaluation(db.Model):
     empresa = db.relationship("Empresa")
     proveedor = db.relationship("Proveedor")
     expediente = db.relationship("Expediente")
+
+
+class ProveedorCredencial(db.Model):
+    __tablename__ = "proveedor_credenciales"
+
+    id = db.Column(db.Integer, primary_key=True)
+    proveedor_id = db.Column(db.Integer, db.ForeignKey("proveedores.id"), nullable=False)
+    empresa_id = db.Column(db.Integer, db.ForeignKey("empresas.id"), nullable=False)
+    username = db.Column(db.String, nullable=False, unique=True)
+    password = db.Column(db.String, nullable=False)
+    activo = db.Column(db.Boolean, default=True)
+    creado_en = db.Column(db.DateTime, default=datetime.utcnow)
+
+    proveedor = db.relationship("Proveedor")
+    empresa = db.relationship("Empresa")
+
+    __table_args__ = (
+        db.UniqueConstraint("proveedor_id", "empresa_id", name="uq_proveedor_empresa_credencial"),
+    )

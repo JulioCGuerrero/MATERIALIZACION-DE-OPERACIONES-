@@ -1,0 +1,157 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+from flask import current_app, g, request
+
+from .models import ProveedorCredencial, Usuario
+
+INTERNAL_ROLES = {"direccion", "tesoreria", "administracion", "contabilidad"}
+
+
+@dataclass
+class AuthActor:
+    actor_type: str
+    role: str
+    email: str | None = None
+    user_id: int | None = None
+    nombre: str | None = None
+    proveedor_id: int | None = None
+    empresa_id: int | None = None
+    username: str | None = None
+
+    @property
+    def is_internal(self) -> bool:
+        return self.actor_type == "internal"
+
+    @property
+    def is_proveedor(self) -> bool:
+        return self.actor_type == "proveedor"
+
+
+def _path() -> str:
+    return request.path or ""
+
+
+def _is_public_request() -> bool:
+    path = _path()
+    method = request.method.upper()
+    if not path.startswith("/api/"):
+        return True
+    if path in {"/api/health", "/api/auth/login", "/api/auth/proveedor/login", "/api/auth/usuarios"}:
+        return True
+    if method == "GET" and path == "/api/empresas":
+        return True
+    if method == "GET" and path.startswith("/api/empresas/") and path.endswith("/policy/status"):
+        return True
+    if method == "GET" and path.startswith("/api/efos/consultar"):
+        return True
+    if method == "POST" and path == "/api/proveedores/self-register":
+        return True
+    return False
+
+
+def _load_internal_actor() -> AuthActor | None:
+    email = (request.headers.get("X-Auth-Email") or "").strip().lower()
+    role = (request.headers.get("X-Auth-Role") or "").strip().lower()
+    if not email or role not in INTERNAL_ROLES:
+        return None
+    user = Usuario.query.filter_by(email=email, activo=True).first()
+    if not user or (user.rol or "").strip().lower() != role:
+        return None
+    return AuthActor(
+        actor_type="internal",
+        role=role,
+        email=user.email,
+        user_id=user.id,
+        nombre=user.nombre,
+    )
+
+
+def _load_proveedor_actor() -> AuthActor | None:
+    username = (request.headers.get("X-Proveedor-Username") or "").strip()
+    if not username:
+        return None
+    cred = ProveedorCredencial.query.filter_by(username=username, activo=True).first()
+    if not cred:
+        return None
+    return AuthActor(
+        actor_type="proveedor",
+        role="proveedor",
+        proveedor_id=cred.proveedor_id,
+        empresa_id=cred.empresa_id,
+        username=cred.username,
+        nombre=cred.proveedor.nombre if cred.proveedor else cred.username,
+    )
+
+
+def get_actor() -> AuthActor | None:
+    actor = getattr(g, "auth_actor", None)
+    if actor is not None:
+        return actor
+    actor = _load_internal_actor() or _load_proveedor_actor()
+    g.auth_actor = actor
+    return actor
+
+
+def is_allowed(actor: AuthActor, method: str, path: str) -> bool:
+    method = method.upper()
+
+    if actor.is_proveedor:
+        if method == "GET" and path in {"/api/auth/me"}:
+            return True
+        if method == "GET" and (path == "/api/folios" or path.startswith("/api/folios/")):
+            return True
+        if method == "GET" and (path == "/api/expedientes" or path.startswith("/api/expedientes/")):
+            return True
+        if (method == "GET" and path.startswith("/api/documentos/")) or (
+            method == "POST" and path.startswith("/api/documentos/") and path.endswith("/subir")
+        ):
+            return True
+        return False
+
+    role = actor.role
+    if role == "direccion":
+        if method == "GET":
+            return True
+        if path.startswith("/api/empresas/") and "/policy/" in path and method == "POST":
+            return True
+        return False
+
+    if role == "tesoreria":
+        if method == "GET":
+            return True
+        if method == "POST" and (path == "/api/traspasos" or path == "/api/conciliacion/estado_cuenta"):
+            return True
+        if method == "PATCH" and path.startswith("/api/alertas/") and path.endswith("/resolver"):
+            return True
+        return False
+
+    if role == "administracion":
+        if method == "GET":
+            return True
+        if method == "POST" and path in {"/api/documentos", "/api/proveedores", "/api/folios"}:
+            return True
+        if method == "POST" and path.startswith("/api/documentos/") and path.endswith("/subir"):
+            return True
+        if method == "PATCH" and (path.startswith("/api/proveedores/") or path.startswith("/api/folios/")):
+            return True
+        return False
+
+    if role == "contabilidad":
+        return True
+
+    return False
+
+
+def check_request_access() -> tuple[bool, str, int]:
+    if current_app.config.get("TESTING"):
+        return True, "", 200
+    if _is_public_request():
+        return True, "", 200
+    actor = get_actor()
+    if not actor:
+        return False, "Debes autenticarte para usar este endpoint", 401
+    if not is_allowed(actor, request.method, _path()):
+        return False, f"Rol '{actor.role}' sin permiso para esta operación", 403
+    return True, "", 200

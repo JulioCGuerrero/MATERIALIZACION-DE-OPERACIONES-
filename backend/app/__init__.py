@@ -1,4 +1,4 @@
-from flask import Flask, send_from_directory
+from flask import Flask, jsonify, send_from_directory
 from flask_cors import CORS
 from sqlalchemy import text
 
@@ -23,6 +23,7 @@ from .blueprints.semaforo import semaforo_bp
 from .blueprints.traspasos import traspasos_bp
 from .config import Config
 from .extensions import db
+from .security import check_request_access
 
 
 def _create_schema(app: Flask) -> None:
@@ -79,6 +80,12 @@ def create_app(config_object=Config) -> Flask:
 
     if app.config.get("AUTO_CREATE_SCHEMA"):
         _create_schema(app)
+
+    @app.before_request
+    def _authz_guard():
+        allowed, message, status = check_request_access()
+        if not allowed:
+            return jsonify({"error": message}), status
 
     @app.get("/api/health")
     def health() -> dict:

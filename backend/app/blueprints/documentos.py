@@ -6,6 +6,7 @@ from werkzeug.utils import secure_filename
 
 from ..extensions import db
 from ..models import Documento, Expediente
+from ..security import get_actor
 from ..services.auditoria import log_event
 from ..services.bloqueo import calcular_completitud
 from ..services.document_review import aplicar_validacion_documento
@@ -17,12 +18,22 @@ documentos_bp = Blueprint("documentos", __name__)
 @documentos_bp.get("/documentos/<int:expediente_id>")
 def documentos_expediente(expediente_id: int):
     expediente = Expediente.query.get_or_404(expediente_id)
+    actor = get_actor()
+    if actor and actor.is_proveedor:
+        folio = expediente.folio
+        if folio.proveedor_id != actor.proveedor_id or folio.empresa_id != actor.empresa_id:
+            return jsonify({"error": "No tienes acceso a este expediente"}), 403
     return jsonify([doc_to_dict(d) for d in expediente.documentos])
 
 
 @documentos_bp.post("/documentos/<int:documento_id>/subir")
 def subir_documento(documento_id: int):
     doc = Documento.query.get_or_404(documento_id)
+    actor = get_actor()
+    if actor and actor.is_proveedor:
+        folio = doc.expediente.folio
+        if folio.proveedor_id != actor.proveedor_id or folio.empresa_id != actor.empresa_id:
+            return jsonify({"error": "No puedes subir documentos para este expediente"}), 403
     body = request.get_json(silent=True) or {}
     uploaded = request.files.get("archivo")
 

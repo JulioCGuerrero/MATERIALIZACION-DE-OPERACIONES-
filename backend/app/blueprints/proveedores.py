@@ -1,14 +1,16 @@
 from calendar import monthrange
 from datetime import date, datetime
+import secrets
 
 from flask import Blueprint, jsonify, request
 
 from ..extensions import db
-from ..models import Documento, Empresa, Expediente, Folio, Proveedor
+from ..models import Documento, Empresa, Expediente, Folio, Proveedor, ProveedorCredencial
 from ..services.auditoria import log_event
 from ..services.bloqueo import calcular_completitud
 from ..services.catalogo import DOCS_BY_LEVEL
 from ..services.clasificador import clasificar_proveedor
+from ..services.document_review import aplicar_validacion_documento
 from ..services.efos import esta_en_efos, normalizar_rfc
 from ..services.policy_engine import get_policy_status
 from ..services.serializers import expediente_to_dict
@@ -47,6 +49,44 @@ def _proveedor_dict(p: Proveedor) -> dict:
         "activo": p.activo,
         "creado_en": p.creado_en.isoformat() if p.creado_en else None,
     }
+
+
+def _ensure_proveedor_credencial(proveedor: Proveedor, empresa: Empresa) -> tuple[ProveedorCredencial, bool]:
+    cred = ProveedorCredencial.query.filter_by(proveedor_id=proveedor.id, empresa_id=empresa.id).first()
+    if cred:
+        return cred, False
+
+    username = f"prov_{proveedor.id}_emp_{empresa.id}"
+    password = secrets.token_urlsafe(8)
+    cred = ProveedorCredencial(
+        proveedor_id=proveedor.id,
+        empresa_id=empresa.id,
+        username=username,
+        password=password,
+        activo=True,
+    )
+    db.session.add(cred)
+    db.session.flush()
+    return cred, True
+
+
+def _requires_cuestionario_5a(nivel: int) -> bool:
+    return nivel in (3, 4)
+
+
+def _anexar_cuestionario_5a(expediente: Expediente, contenido: str, subido_por: str) -> None:
+    doc = next((d for d in expediente.documentos if d.tipo == "cuestionario_5a"), None)
+    if not doc:
+        doc = Documento(expediente_id=expediente.id, tipo="cuestionario_5a", subido=False)
+        db.session.add(doc)
+        db.session.flush()
+
+    doc.subido = True
+    doc.nombre_archivo = "cuestionario_5a_formulario.txt"
+    doc.url = "inline://cuestionario_5a"
+    doc.subido_por = subido_por
+    doc.validacion_detalle = (contenido or "").strip()
+    aplicar_validacion_documento(doc, motor="cuestionario_5a")
 
 
 @proveedores_bp.get("/proveedores")
@@ -101,6 +141,17 @@ def crear_proveedor():
         usuario=body.get("usuario"),
         save_evaluation=True,
     )
+    cuestionario_5a = (body.get("cuestionario_5a") or "").strip()
+    if _requires_cuestionario_5a(clasificado["nivel"]) and not cuestionario_5a:
+        return (
+            jsonify(
+                {
+                    "error": "Para proveedores nivel 3 o 4 debes capturar el cuestionario 5-A CFF al registrarlo.",
+                    "nivel": clasificado["nivel"],
+                }
+            ),
+            400,
+        )
 
     proveedor = Proveedor(
         nombre=body["nombre"],
@@ -146,6 +197,8 @@ def crear_proveedor():
 
         for tipo_doc in DOCS_BY_LEVEL[proveedor.nivel]:
             db.session.add(Documento(expediente_id=expediente.id, tipo=tipo_doc, subido=False))
+        if _requires_cuestionario_5a(proveedor.nivel):
+            _anexar_cuestionario_5a(expediente, cuestionario_5a, body.get("usuario") or "sistema")
 
         folio_creado = {
             "id": folio.id,
@@ -209,6 +262,17 @@ def actualizar_proveedor(proveedor_id: int):
             usuario=body.get("usuario"),
             save_evaluation=True,
         )
+    cuestionario_5a = (body.get("cuestionario_5a") or "").strip()
+    if _requires_cuestionario_5a(clasificado["nivel"]) and not cuestionario_5a:
+        return (
+            jsonify(
+                {
+                    "error": "Para proveedores nivel 3 o 4 debes capturar el cuestionario 5-A CFF al registrarte.",
+                    "nivel": clasificado["nivel"],
+                }
+            ),
+            400,
+        )
         p.nivel = clasificado["nivel"]
 
     log_event("proveedores", p.id, "actualizar", body, body.get("usuario"))
@@ -226,3 +290,139 @@ def expedientes_proveedor(proveedor_id: int):
         .all()
     )
     return jsonify([expediente_to_dict(e) for e in expedientes])
+
+
+@proveedores_bp.post("/proveedores/self-register")
+def self_register_proveedor():
+    body = request.get_json(silent=True) or {}
+    required = ["nombre", "rfc", "tipo", "monto", "repse", "tiene_fisico", "empresa_id"]
+    faltantes = [f for f in required if f not in body]
+    if faltantes:
+        return jsonify({"error": f"Campos faltantes: {', '.join(faltantes)}"}), 400
+
+    rfc = normalizar_rfc(body["rfc"])
+    if esta_en_efos(rfc):
+        return jsonify({"error": "RFC encontrado en EFOS SAT. Registro bloqueado.", "rfc": rfc}), 409
+
+    empresa = Empresa.query.get_or_404(int(body["empresa_id"]))
+    policy_status = get_policy_status(empresa.id)
+    if not policy_status.get("has_active_published_policy"):
+        return (
+            jsonify(
+                {
+                    "error": "La empresa no tiene política activa publicada para recibir auto-registro.",
+                    "empresa_id": empresa.id,
+                    "policy_status": policy_status,
+                }
+            ),
+            409,
+        )
+
+    proveedor = Proveedor.query.filter_by(rfc=rfc).first()
+    if not proveedor:
+        clasificado = clasificar_proveedor(
+            tipo=body["tipo"],
+            monto=float(body["monto"]),
+            repse=bool(body["repse"]),
+            tiene_fisico=bool(body["tiene_fisico"]),
+            tipo_empresa=(empresa.tipo_empresa or "servicios"),
+            empresa_id=empresa.id,
+            usuario="proveedor_autoregistro",
+            save_evaluation=True,
+        )
+        proveedor = Proveedor(
+            nombre=body["nombre"],
+            rfc=rfc,
+            tipo=body["tipo"],
+            nivel=clasificado["nivel"],
+            banco=body.get("banco"),
+            cuenta=body.get("cuenta"),
+            clabe=body.get("clabe"),
+            repse=bool(body["repse"]),
+            tiene_fisico=bool(body["tiene_fisico"]),
+            efos_ok=True,
+            activo=True,
+        )
+        db.session.add(proveedor)
+        db.session.flush()
+        log_event("proveedores", proveedor.id, "self_register_crear", {"empresa_id": empresa.id}, "proveedor_autoregistro")
+    else:
+        clasificado = clasificar_proveedor(
+            tipo=proveedor.tipo,
+            monto=float(body["monto"]),
+            repse=bool(body.get("repse", proveedor.repse)),
+            tiene_fisico=bool(body.get("tiene_fisico", proveedor.tiene_fisico)),
+            tipo_empresa=(empresa.tipo_empresa or "servicios"),
+            empresa_id=empresa.id,
+            proveedor_id=proveedor.id,
+            usuario="proveedor_autoregistro",
+            save_evaluation=True,
+        )
+
+    periodo = body.get("folio_periodo", datetime.utcnow().strftime("%Y-%m"))
+    folio = Folio.query.filter_by(proveedor_id=proveedor.id, empresa_id=empresa.id, periodo=periodo).first()
+    if not folio:
+        folio = Folio(
+            numero=str(body.get("folio_numero") or _next_folio_numero()),
+            proveedor_id=proveedor.id,
+            empresa_id=empresa.id,
+            presupuesto=float(body.get("folio_presupuesto", body.get("monto", 0))),
+            periodo=periodo,
+            fecha_limite_entrega=(
+                datetime.strptime(body["fecha_limite_entrega"], "%Y-%m-%d").date()
+                if body.get("fecha_limite_entrega")
+                else _fecha_limite_por_periodo(periodo)
+            ),
+            estado="activo",
+        )
+        db.session.add(folio)
+        db.session.flush()
+        expediente = Expediente(folio_id=folio.id, completitud=0.0, pago_bloqueado=True)
+        db.session.add(expediente)
+        db.session.flush()
+        for tipo_doc in DOCS_BY_LEVEL[proveedor.nivel]:
+            db.session.add(Documento(expediente_id=expediente.id, tipo=tipo_doc, subido=False))
+        if _requires_cuestionario_5a(proveedor.nivel):
+            _anexar_cuestionario_5a(expediente, cuestionario_5a, "proveedor_autoregistro")
+        log_event(
+            "folios",
+            folio.id,
+            "self_register_crear",
+            {"proveedor_id": proveedor.id, "empresa_id": empresa.id, "periodo": folio.periodo},
+            "proveedor_autoregistro",
+        )
+    elif folio and folio.expediente and _requires_cuestionario_5a(proveedor.nivel):
+        _anexar_cuestionario_5a(folio.expediente, cuestionario_5a, "proveedor_autoregistro")
+
+    cred, is_new_cred = _ensure_proveedor_credencial(proveedor, empresa)
+    db.session.commit()
+    if folio and folio.expediente:
+        calcular_completitud(folio.expediente.id)
+
+    return (
+        jsonify(
+            {
+                "ok": True,
+                "proveedor": _proveedor_dict(proveedor),
+                "folio": {
+                    "id": folio.id,
+                    "numero": folio.numero,
+                    "empresa_id": empresa.id,
+                    "empresa_nombre": empresa.nombre,
+                    "periodo": folio.periodo,
+                    "expediente_id": folio.expediente.id if folio.expediente else None,
+                },
+                "credenciales": {
+                    "username": cred.username,
+                    "password": cred.password,
+                    "empresa_id": empresa.id,
+                    "empresa_nombre": empresa.nombre,
+                    "proveedor_id": proveedor.id,
+                    "proveedor_nombre": proveedor.nombre,
+                    "es_nueva": is_new_cred,
+                },
+                "clasificacion": clasificado,
+            }
+        ),
+        201,
+    )

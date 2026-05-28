@@ -366,7 +366,7 @@ input[type=file]{display:none;}
   <div id="usuario-badge" class="chip">No autenticado</div>
   <button class="btn btn-ghost" onclick="logout()">Cerrar sesión</button>
   <button class="btn btn-ghost">Exportar</button>
-  <button class="btn btn-primary" onclick="openModal('modal-proveedor')">＋ Nuevo Proveedor</button>
+  <button id="btn-nuevo-proveedor" class="btn btn-primary" onclick="openModal('modal-proveedor')">＋ Nuevo Proveedor</button>
 </div>
 <div class="content">
 
@@ -567,7 +567,7 @@ input[type=file]{display:none;}
   </div>
 
   <!-- Proveedores clasificados -->
-  <div class="sh" style="margin-top:4px"><h3>Proveedores Clasificados</h3><span>Batia · Marzo 2026</span><a onclick="openModal('modal-proveedor')">＋ Agregar proveedor →</a></div>
+  <div class="sh" style="margin-top:4px"><h3>Proveedores Clasificados</h3><span>Batia · Marzo 2026</span><a id="link-agregar-proveedor" onclick="openModal('modal-proveedor')">＋ Agregar proveedor →</a></div>
   <div class="tw" style="margin:0">
     <table>
       <thead><tr><th>Proveedor</th><th>Nivel</th><th>Tipo</th><th>Monto op.</th><th>REPSE</th><th>Físico</th><th>EFOS</th><th>Materialidad</th></tr></thead>
@@ -655,19 +655,6 @@ input[type=file]{display:none;}
       <div id="semaforo-detalle" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:16px;font-size:12px;color:var(--muted2)">
         Selecciona un indicador de la izquierda para ver detalle real.
       </div>
-      <div class="sh"><h3>Cuestionario 5-A CFF</h3><span>Razón de negocios</span></div>
-      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px;">
-        <div style="font-size:12px;color:var(--muted2);margin-bottom:14px;">Responde estas preguntas para cada proveedor Nivel 3/4. El SAT puede pedirlas en auditoría.</div>
-        <div class="field"><label>Proveedor</label><select><option>TechServ (N3 · Pendiente)</option><option>Mant. Delta (N4 · Pendiente)</option><option>Limpiadores SA (N3 · Pendiente)</option></select></div>
-        <div class="field"><label>¿Para qué se contrató este servicio?</label><textarea placeholder="Ej: Para automatizar el proceso de facturación y reducir errores humanos en 40%..."></textarea></div>
-        <div class="field"><label>¿Cómo contribuye a generar ingresos o reducir costos?</label><textarea placeholder="Ej: Estimamos un ahorro de $X mensuales en horas-hombre al eliminar el proceso manual..."></textarea></div>
-        <div class="field"><label>¿Por qué este proveedor y no otro?</label><textarea placeholder="Ej: Fue el único con certificación ISO 27001 requerida para manejar datos fiscales..."></textarea></div>
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-ghost" style="flex:1">Guardar borrador</button>
-          <button class="btn btn-primary" style="flex:1">Guardar cuestionario</button>
-        </div>
-      </div>
-
       <div class="sh"><h3>Cuestionario Beneficiario Controlador</h3><span>Obligatorio N4</span></div>
       <div style="background:rgba(255,77,106,.04);border:1px solid rgba(255,77,106,.15);border-radius:10px;padding:14px;">
         <div style="font-size:12px;color:var(--muted2);margin-bottom:10px;">El SAT quiere saber quién es el dueño real y beneficiario directo del proveedor. Aplica a Nivel 4.</div>
@@ -993,7 +980,7 @@ input[type=file]{display:none;}
     </div>
     <div class="field">
       <label>Empresa (cliente)</label>
-      <select id="prov-empresa">
+      <select id="prov-empresa" onchange="syncTipoEmpresaFromSelected('prov')">
         <option value="">— Seleccionar empresa —</option>
       </select>
     </div>
@@ -1001,7 +988,7 @@ input[type=file]{display:none;}
     <div class="field-row">
       <div class="field"><label>RFC</label><input id="prov-rfc" type="text" placeholder="XAXX010101000" /></div>
       <div class="field"><label>Tipo de servicio</label>
-        <select id="prov-tipo" onchange="autoClasificar(this.value)">
+        <select id="prov-tipo" onchange="autoClasificar(this.value);toggleCuestionario5A('prov', this.value)">
           <option value="">— Seleccionar —</option>
           <option value="limpieza">Servicios generales</option>
           <option value="materia">Materia prima / insumos</option>
@@ -1018,6 +1005,17 @@ input[type=file]{display:none;}
       </div>
     </div>
     <div id="nivel-docs" style="display:none;background:rgba(79,132,255,.05);border:1px solid rgba(79,132,255,.15);border-radius:8px;padding:12px;font-size:11px;color:var(--muted2);margin-top:4px;"></div>
+    <div id="prov-c5a-wrap" class="field" style="display:none;">
+      <label>Cuestionario 5-A CFF (obligatorio N3/N4)</label>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;">
+        <div style="font-size:12px;color:var(--muted2);margin-bottom:10px;">Responde cada apartado para sustentar razón de negocios (Art. 5-A CFF).</div>
+        <div class="field"><label>1) Objeto y alcance del servicio</label><textarea id="prov-c5a-objetivo" rows="3" placeholder="Describe exactamente qué servicio prestarás, para qué proceso y durante qué periodo."></textarea></div>
+        <div class="field"><label>2) Capacidad operativa para prestar el servicio</label><textarea id="prov-c5a-impacto" rows="3" placeholder="Indica personal, experiencia, herramientas, infraestructura y/o registros (ej. REPSE) con los que cuentas."></textarea></div>
+        <div class="field"><label>3) Metodología y plan de ejecución</label><textarea id="prov-c5a-seleccion" rows="3" placeholder="Explica cómo ejecutarás el servicio (etapas, tiempos, responsables y entregas parciales)."></textarea></div>
+        <div class="field"><label>4) Entregables y evidencia documental</label><textarea id="prov-c5a-entregables" rows="3" placeholder="Detalla entregables y evidencia: bitácoras, minutas, reportes, correos, actas, fotos, etc."></textarea></div>
+        <div class="field"><label>5) Trazabilidad comercial y de pago</label><textarea id="prov-c5a-riesgos" rows="3" placeholder="Señala cómo se relacionarán contrato, CFDI, órdenes/folios, cuenta bancaria receptora y comprobantes de pago."></textarea></div>
+      </div>
+    </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" style="flex:1" onclick="closeModal('modal-proveedor')">Cancelar</button>
       <button id="prov-registrar-btn" class="btn btn-primary" style="flex:2">Registrar y generar checklist</button>
@@ -1052,11 +1050,12 @@ input[type=file]{display:none;}
 </div>
 
 <!-- MENU INICIAL -->
-<div class="modal-overlay" id="modal-role" style="z-index:600;">
+<div class="modal-overlay" id="modal-role" style="z-index:600;" data-backdrop-close="false">
   <div class="modal" onclick="event.stopPropagation()">
     <h3>¿Cómo deseas ingresar?</h3>
     <div class="cg cg2" style="margin-top:8px;">
-      <button class="btn btn-primary" style="height:52px;justify-content:center" onclick="enterAsProveedor()">Soy Proveedor</button>
+      <button class="btn btn-primary" style="height:52px;justify-content:center" onclick="enterAsProveedor()">Soy Proveedor (nuevo)</button>
+      <button class="btn btn-ghost" style="height:52px;justify-content:center" onclick="enterAsProveedorRegistrado()">Proveedor ya registrado</button>
       <button class="btn btn-ghost" style="height:52px;justify-content:center" onclick="enterAsOperador()">Soy Operador</button>
     </div>
     <div style="margin-top:12px;font-size:12px;color:var(--muted2);">
@@ -1066,7 +1065,7 @@ input[type=file]{display:none;}
 </div>
 
 <!-- LOGIN -->
-<div class="modal-overlay" id="modal-login" style="z-index:500;">
+<div class="modal-overlay" id="modal-login" style="z-index:500;" data-backdrop-close="false">
   <div class="modal" onclick="event.stopPropagation()">
     <h3>Ingreso por Rol</h3>
     <div class="field">
@@ -1083,8 +1082,27 @@ input[type=file]{display:none;}
   </div>
 </div>
 
+<!-- LOGIN PROVEEDOR -->
+<div class="modal-overlay" id="modal-login-proveedor" style="z-index:525;" data-backdrop-close="false">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3>Ingreso Proveedor Registrado</h3>
+    <div class="field">
+      <label>Usuario proveedor</label>
+      <input id="prov-login-username" type="text" placeholder="prov_12_emp_1" />
+    </div>
+    <div class="field">
+      <label>Contraseña</label>
+      <input id="prov-login-password" type="password" placeholder="••••••••" />
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" style="flex:1" onclick="backToRoleMenu()">Volver</button>
+      <button id="prov-login-btn" class="btn btn-primary" style="flex:1">Entrar</button>
+    </div>
+  </div>
+</div>
+
 <!-- AUTOREGISTRO PROVEEDOR -->
-<div class="modal-overlay" id="modal-proveedor-self" style="z-index:550;">
+<div class="modal-overlay" id="modal-proveedor-self" style="z-index:550;" data-backdrop-close="false">
   <div class="modal" onclick="event.stopPropagation()">
     <h3>Registro de Proveedor</h3>
     <div class="field">
@@ -1103,13 +1121,13 @@ input[type=file]{display:none;}
     </div>
     <div class="field">
       <label>Empresa cliente</label>
-      <select id="self-empresa"></select>
+      <select id="self-empresa" onchange="syncTipoEmpresaFromSelected('self')"></select>
     </div>
     <div class="field"><label>Razón social</label><input id="self-nombre" type="text" placeholder="Nombre del proveedor" /></div>
     <div class="field-row">
       <div class="field"><label>RFC</label><input id="self-rfc" type="text" placeholder="XAXX010101000" /></div>
       <div class="field"><label>Tipo de servicio</label>
-        <select id="self-tipo">
+        <select id="self-tipo" onchange="autoClasificarSelf(this.value);toggleCuestionario5A('self', this.value)">
           <option value="">— Seleccionar —</option>
           <option value="limpieza">Servicios generales</option>
           <option value="materia">Materia prima / insumos</option>
@@ -1120,6 +1138,23 @@ input[type=file]{display:none;}
       </div>
     </div>
     <div class="field"><label>Monto estimado</label><input id="self-monto" type="text" placeholder="$0.00" /></div>
+    <div class="field-row">
+      <div class="field"><label>¿Nivel asignado?</label>
+        <div id="self-nivel-result" style="background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:8px 11px;font-size:13px;color:var(--muted);font-family:var(--mono);">Completar campos →</div>
+      </div>
+    </div>
+    <div id="self-nivel-docs" style="display:none;background:rgba(79,132,255,.05);border:1px solid rgba(79,132,255,.15);border-radius:8px;padding:12px;font-size:11px;color:var(--muted2);margin-top:4px;"></div>
+    <div id="self-c5a-wrap" class="field" style="display:none;">
+      <label>Cuestionario 5-A CFF (obligatorio N3/N4)</label>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;">
+        <div style="font-size:12px;color:var(--muted2);margin-bottom:10px;">Responde cada apartado para sustentar razón de negocios (Art. 5-A CFF).</div>
+        <div class="field"><label>1) Objeto y alcance del servicio</label><textarea id="self-c5a-objetivo" rows="3" placeholder="Describe exactamente qué servicio prestarás, para qué proceso y durante qué periodo."></textarea></div>
+        <div class="field"><label>2) Capacidad operativa para prestar el servicio</label><textarea id="self-c5a-impacto" rows="3" placeholder="Indica personal, experiencia, herramientas, infraestructura y/o registros (ej. REPSE) con los que cuentas."></textarea></div>
+        <div class="field"><label>3) Metodología y plan de ejecución</label><textarea id="self-c5a-seleccion" rows="3" placeholder="Explica cómo ejecutarás el servicio (etapas, tiempos, responsables y entregas parciales)."></textarea></div>
+        <div class="field"><label>4) Entregables y evidencia documental</label><textarea id="self-c5a-entregables" rows="3" placeholder="Detalla entregables y evidencia: bitácoras, minutas, reportes, correos, actas, fotos, etc."></textarea></div>
+        <div class="field"><label>5) Trazabilidad comercial y de pago</label><textarea id="self-c5a-riesgos" rows="3" placeholder="Señala cómo se relacionarán contrato, CFDI, órdenes/folios, cuenta bancaria receptora y comprobantes de pago."></textarea></div>
+      </div>
+    </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" style="flex:1" onclick="enterAsOperador()">Soy Operador</button>
       <button class="btn btn-primary" style="flex:2" onclick="registrarProveedorSelf()">Enviar registro</button>
@@ -1138,6 +1173,7 @@ let EMPRESAS_CACHE = [];
 let PROVEEDORES_CACHE = [];
 let POLICY_STATUS_BY_EMPRESA = {};
 let AUTH_USER = null;
+let PORTAL_DOCS_CACHE = [];
 const TIPO_EMPRESA_LABEL = {
   servicios: 'Servicios',
   comercializadora: 'Comercializadora',
@@ -1159,47 +1195,109 @@ function cleanNumber(value){
 }
 
 function getUsuarioActivo(){
-  return (AUTH_USER && AUTH_USER.rol) ? AUTH_USER.rol : 'frontend';
+  if(!AUTH_USER) return 'frontend';
+  if(AUTH_USER.tipo === 'proveedor') return AUTH_USER.username || 'proveedor';
+  return AUTH_USER.rol || 'frontend';
+}
+
+function authHeaders(extra){
+  const headers = Object.assign({}, extra || {});
+  if(AUTH_USER){
+    if(AUTH_USER.tipo === 'proveedor'){
+      if(AUTH_USER.username) headers['X-Proveedor-Username'] = AUTH_USER.username;
+    } else {
+      if(AUTH_USER.email) headers['X-Auth-Email'] = AUTH_USER.email;
+      if(AUTH_USER.rol) headers['X-Auth-Role'] = AUTH_USER.rol;
+    }
+  }
+  return headers;
 }
 
 function empresaLabel(e){
   const tipo = TIPO_EMPRESA_LABEL[e.tipo_empresa] || (e.tipo_empresa || 'Sin tipo');
   const st = POLICY_STATUS_BY_EMPRESA[String(e.id)];
-  const policyTag = st && st.has_active_published_policy ? ' · Política OK' : ' · Sin política publicada';
+  const policyTag = !st
+    ? ' · Política: validando...'
+    : (st.has_active_published_policy ? ' · Política OK' : ' · Sin política publicada');
   return `${e.nombre} (${e.rfc}) · ${tipo}${policyTag}`;
 }
+
 
 function filtrarEmpresasRegistro(scope){
   const tipoSelId = scope === 'self' ? 'self-empresa-tipo' : 'prov-empresa-tipo';
   const empresaSelId = scope === 'self' ? 'self-empresa' : 'prov-empresa';
-  const tipo = (document.getElementById(tipoSelId)?.value || '').trim();
   const sel = document.getElementById(empresaSelId);
   if(!sel) return;
   const current = sel.value;
   sel.innerHTML = '<option value="">— Seleccionar empresa —</option>';
   const activas = EMPRESAS_CACHE.filter(e=>e.activo);
-  const filtradas = tipo
-    ? activas.filter(e=>e.tipo_empresa === tipo)
-    : activas;
-  const items = filtradas.length ? filtradas : activas;
-  items.forEach(e=>{
+  const base = activas;
+  const habilitadas = [];
+  const bloqueadas = [];
+  base.forEach(e=>{
+    const st = POLICY_STATUS_BY_EMPRESA[String(e.id)];
+    const policyOk = st ? !!st.has_active_published_policy : true;
+    if(policyOk) habilitadas.push(e);
+    else bloqueadas.push(e);
+  });
+
+  if(!base.length){
+    const op = document.createElement('option');
+    op.value = '';
+    op.textContent = '— No hay empresas registradas —';
+    op.disabled = true;
+    sel.appendChild(op);
+  }
+
+  habilitadas.forEach(e=>{
     const op = document.createElement('option');
     op.value = String(e.id);
-    const st = POLICY_STATUS_BY_EMPRESA[String(e.id)];
-    const policyOk = !!(st && st.has_active_published_policy);
     op.textContent = empresaLabel(e);
-    if(!policyOk){
-      op.disabled = true;
-      op.title = 'Requiere política activa publicada';
-    }
     sel.appendChild(op);
   });
+
+  bloqueadas.forEach(e=>{
+    const op = document.createElement('option');
+    op.value = String(e.id);
+    op.textContent = empresaLabel(e);
+    op.disabled = true;
+    op.title = 'Requiere política activa publicada';
+    sel.appendChild(op);
+  });
+
+  if(base.length && !habilitadas.length){
+    const op = document.createElement('option');
+    op.value = '';
+    op.textContent = '— Sin empresas habilitadas con política activa —';
+    op.disabled = true;
+    sel.appendChild(op);
+  }
+
   const stillExists = Array.from(sel.options).some(o=>o.value === current);
   if(stillExists) sel.value = current;
+  else{
+    const firstEnabled = Array.from(sel.options).find(o => o.value && !o.disabled);
+    sel.value = firstEnabled ? firstEnabled.value : '';
+  }
+}
+
+function syncTipoEmpresaFromSelected(scope){
+  const tipoSelId = scope === 'self' ? 'self-empresa-tipo' : 'prov-empresa-tipo';
+  const empresaSelId = scope === 'self' ? 'self-empresa' : 'prov-empresa';
+  const empresaId = Number(document.getElementById(empresaSelId)?.value || 0);
+  if(!empresaId) return;
+  const emp = EMPRESAS_CACHE.find(e=>Number(e.id)===empresaId);
+  if(!emp) return;
+  const tipoSel = document.getElementById(tipoSelId);
+  if(!tipoSel) return;
+  tipoSel.value = emp.tipo_empresa || '';
+  filtrarEmpresasRegistro(scope);
+  const empresaSel = document.getElementById(empresaSelId);
+  if(empresaSel) empresaSel.value = String(empresaId);
 }
 
 async function apiGet(path){
-  const res = await fetch(`${API_BASE}${path}`);
+  const res = await fetch(`${API_BASE}${path}`, {headers: authHeaders()});
   if(!res.ok) throw new Error(`GET ${path} -> ${res.status}`);
   return res.json();
 }
@@ -1207,7 +1305,7 @@ async function apiGet(path){
 async function apiSend(path, method, body){
   const res = await fetch(`${API_BASE}${path}`, {
     method,
-    headers:{'Content-Type':'application/json'},
+    headers: authHeaders({'Content-Type':'application/json'}),
     body: JSON.stringify(body||{})
   });
   const data = await res.json().catch(()=>({}));
@@ -1217,10 +1315,25 @@ async function apiSend(path, method, body){
 
 function setAuthUser(user){
   AUTH_USER = user || null;
+  applyRoleUI();
   const badge = document.getElementById('usuario-badge');
   if(badge){
-    badge.textContent = AUTH_USER ? `${AUTH_USER.nombre} · ${AUTH_USER.rol}` : 'No autenticado';
+    if(!AUTH_USER){
+      badge.textContent = 'No autenticado';
+    }else if(AUTH_USER.tipo === 'proveedor'){
+      badge.textContent = `${AUTH_USER.nombre || AUTH_USER.username} · proveedor`;
+    }else{
+      badge.textContent = `${AUTH_USER.nombre} · ${AUTH_USER.rol}`;
+    }
   }
+}
+
+function applyRoleUI(){
+  const isProveedor = !!(AUTH_USER && AUTH_USER.tipo === 'proveedor');
+  const btnNuevo = document.getElementById('btn-nuevo-proveedor');
+  if(btnNuevo) btnNuevo.style.display = isProveedor ? 'none' : '';
+  const linkNuevo = document.getElementById('link-agregar-proveedor');
+  if(linkNuevo) linkNuevo.style.display = isProveedor ? 'none' : '';
 }
 
 function logout(){
@@ -1233,6 +1346,7 @@ function logout(){
 function closeRoleModals(){
   closeModal('modal-role');
   closeModal('modal-login');
+  closeModal('modal-login-proveedor');
   closeModal('modal-proveedor-self');
 }
 
@@ -1244,8 +1358,9 @@ function enterAsOperador(){
   openModal('modal-login');
 }
 
-function enterAsProveedor(){
+async function enterAsProveedor(){
   closeRoleModals();
+  await loadEmpresas();
   const tipoSel = document.getElementById('self-empresa-tipo');
   if(tipoSel) tipoSel.value = '';
   const sel = document.getElementById('self-empresa');
@@ -1253,6 +1368,11 @@ function enterAsProveedor(){
     sel.innerHTML = '<option value="">— Seleccionar empresa —</option>';
   }
   openModal('modal-proveedor-self');
+}
+
+function enterAsProveedorRegistrado(){
+  closeRoleModals();
+  openModal('modal-login-proveedor');
 }
 
 function backToRoleMenu(){
@@ -1300,6 +1420,33 @@ async function doLogin(){
     await loadKpisPersonal();
   }catch(err){
     alert(`No se pudo iniciar sesión: ${err.message}`);
+  }
+}
+
+async function doProveedorLogin(){
+  try{
+    const username = (document.getElementById('prov-login-username').value || '').trim();
+    const password = (document.getElementById('prov-login-password').value || '').trim();
+    if(!username || !password){
+      alert('Escribe usuario y contraseña');
+      return;
+    }
+    const data = await apiSend('/auth/proveedor/login', 'POST', {username, password});
+    const u = data.usuario || {};
+    setAuthUser({
+      tipo: 'proveedor',
+      username: u.username,
+      rol: 'proveedor',
+      proveedor_id: u.proveedor_id,
+      empresa_id: u.empresa_id,
+      nombre: u.proveedor_nombre || u.username,
+    });
+    closeRoleModals();
+    goNav(document.querySelector('.ni[onclick*="portal"]'), 'portal');
+    await loadFoliosForFrontend();
+    await portalEmpresaChange(String(u.empresa_id || ''));
+  }catch(err){
+    alert(`No se pudo iniciar sesión de proveedor: ${err.message}`);
   }
 }
 
@@ -1394,7 +1541,11 @@ function stab(el, id) {
 // ── MODAL ────────────────────────────────────────
 function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
-document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');}));
+document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',function(e){
+  if(e.target!==this) return;
+  if(this.dataset.backdropClose === 'false') return;
+  this.classList.remove('open');
+}));
 
 // ── EXPEDIENTE DETAIL ────────────────────────────
 async function openExp(numeroFolio) {
@@ -1484,7 +1635,7 @@ async function subirDocumentoDetalle(){
     fd.append('archivo', file);
     fd.append('subido_por', getUsuarioActivo());
     try{
-      const res = await fetch(`${API_BASE}/documentos/${select.value}/subir`, {method:'POST', body: fd});
+      const res = await fetch(`${API_BASE}/documentos/${select.value}/subir`, {method:'POST', headers: authHeaders(), body: fd});
       const data = await res.json().catch(()=>({}));
       if(!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
       await openExp(CURRENT_FOLIO_NUMERO);
@@ -1574,25 +1725,86 @@ function portalEmpresaChange(empresaId){
   portalNivel('');
 }
 
+function autoClasificarSelf(tipo) {
+  const map = {limpieza:'n1',materia:'n2',outsourcing:'n3',consultoria:'n3',construccion:'n4'};
+  const labels = {n1:'🟢 Nivel 1 · Transaccional',n2:'🔵 Nivel 2 · Operativo',n3:'🟡 Nivel 3 · Servicios',n4:'🔴 Nivel 4 · Estratégico'};
+  const docs = {n1:'CFDI · Nota remisión · Foto · CRP',n2:'CFDI · 32-D · Carta porte · ERP · Calidad',n3:'CFDI · REPSE · NOM-151 · Bitácoras · Manifiesto',n4:'CFDI · Acta constitutiva · Nómina IMSS · Activos · 5-A CFF'};
+  const n = map[tipo] || '';
+  const el = document.getElementById('self-nivel-result');
+  const dd = document.getElementById('self-nivel-docs');
+  if(!el || !dd) return;
+  if(n){
+    el.textContent = labels[n];
+    el.style.color = 'var(--text)';
+    dd.style.display = 'block';
+    dd.innerHTML = `<strong style="color:var(--accent)">Documentos que se solicitarán:</strong><br>${docs[n]}`;
+  }else{
+    el.textContent = 'Completar campos →';
+    el.style.color = 'var(--muted)';
+    dd.style.display = 'none';
+    dd.innerHTML = '';
+  }
+}
+
+function requiereCuestionario5A(tipo){
+  return ['outsourcing','consultoria','construccion'].includes((tipo||'').trim());
+}
+
+function toggleCuestionario5A(scope, tipo){
+  const wrapId = scope === 'self' ? 'self-c5a-wrap' : 'prov-c5a-wrap';
+  const wrap = document.getElementById(wrapId);
+  const show = requiereCuestionario5A(tipo);
+  if(wrap) wrap.style.display = show ? '' : 'none';
+  if(!show){
+    ['objetivo','impacto','seleccion','entregables','riesgos'].forEach(k=>{
+      const el = document.getElementById(`${scope}-c5a-${k}`);
+      if(el) el.value = '';
+    });
+  }
+}
+
+function buildCuestionario5A(scope){
+  const get = (k)=> (document.getElementById(`${scope}-c5a-${k}`)?.value || '').trim();
+  const payload = {
+    objetivo_servicio: get('objetivo'),
+    impacto_economico: get('impacto'),
+    criterio_seleccion: get('seleccion'),
+    entregables_evidencia: get('entregables'),
+    riesgos_controles: get('riesgos'),
+  };
+  const faltantes = Object.entries(payload).filter(([,v])=>!v).map(([k])=>k);
+  return {payload, faltantes};
+}
+
 async function portalNivel(v) {
   const el = document.getElementById('portal-contenido');
   if(!v){el.innerHTML='<div style="padding:32px;text-align:center;color:var(--muted);font-size:12px;">Selecciona un proveedor para ver su portal personalizado</div>';return;}
   let detalle = null;
+  let docsDetail = [];
   try{
     detalle = await apiGet(`/folios/${Number(v)}`);
+    docsDetail = await apiGet(`/documentos/${detalle.expediente_id}`);
+    PORTAL_DOCS_CACHE = docsDetail.slice();
   }catch(err){
     el.innerHTML = `<div class="bloqueo"><h4>Error al cargar portal</h4><p>${err.message}</p></div>`;
     return;
   }
-  const docs = (detalle.documentos || []).map(d=>({
-    title: d.tipo,
+  const docs = (docsDetail || []).map(d=>({
+    id: d.id,
+    title: d.label || d.tipo,
+    tipo: d.tipo,
     sub: d.subido ? 'Documento cargado' : 'Documento pendiente',
-    status: d.subido ? 'done' : 'miss'
+    status: d.subido ? 'done' : 'miss',
+    nombre_archivo: d.nombre_archivo,
+    url: d.url,
+    subido_en: d.subido_en,
   }));
   const done = docs.filter(d=>d.status==='done').length;
   const total = Math.max(1, docs.length);
   const pct = Math.round((done/total)*100);
   const locked = pct < 100;
+  const pendientes = docs.filter(d=>d.status!=='done');
+  const cargados = docs.filter(d=>d.status==='done');
   let html = `
     <div style="background:${locked?'rgba(255,77,106,.06)':'rgba(32,214,138,.06)'};border:1px solid ${locked?'rgba(255,77,106,.2)':'rgba(32,214,138,.2)'};border-radius:10px;padding:14px;margin-bottom:14px;">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
@@ -1612,9 +1824,65 @@ async function portalNivel(v) {
     const sc2 = d.status==='done'?'var(--green)':d.status==='pend'?'var(--yellow)':'var(--red)';
     html+=`<div class="doc-req ${sc}"><div class="dr-icon">${d.status==='done'?'✅':'📄'}</div><div class="dr-info"><div class="dr-title">${d.title}</div><div class="dr-sub">${d.sub}</div></div><div class="dr-status" style="color:${sc2}">${si} ${d.status==='done'?'OK':d.status==='pend'?'Pendiente':'Falta'}</div></div>`;
   });
+  const canUpload = AUTH_USER && AUTH_USER.tipo === 'proveedor';
+  html += `<div style="margin-top:14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;">
+    <div style="font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">Subir documentación</div>`;
+  if(!canUpload){
+    html += `<div class="muted">Inicia sesión como proveedor registrado para subir documentos.</div>`;
+  }else if(!pendientes.length){
+    html += `<div class="muted">No hay documentos pendientes por subir.</div>`;
+  }else{
+    html += `<div class="field" style="margin-bottom:8px"><label>Documento pendiente</label><select id="portal-doc-pendiente">` +
+      pendientes.map(d=>`<option value="${d.id}">${d.title}</option>`).join('') +
+      `</select></div>
+      <div class="modal-footer" style="margin-top:0"><button class="btn btn-primary" style="width:100%" onclick="portalSubirDocumento(${detalle.expediente_id}, ${detalle.id})">Subir documento seleccionado</button></div>`;
+  }
+  html += `</div>`;
+
+  html += `<div style="margin-top:12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;">
+    <div style="font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">Documentación subida</div>`;
+  if(!cargados.length){
+    html += `<div class="muted">Aún no hay documentación subida.</div>`;
+  }else{
+    html += cargados.map(d=>{
+      const when = d.subido_en ? new Date(d.subido_en).toLocaleString('es-MX') : '—';
+      const link = d.url ? `<a href="${d.url}" target="_blank" rel="noopener">Ver archivo</a>` : 'Sin URL';
+      return `<div class="doc-req done"><div class="dr-icon">✅</div><div class="dr-info"><div class="dr-title">${d.title}</div><div class="dr-sub">${d.nombre_archivo || 'Archivo'} · ${when}</div></div><div class="dr-status">${link}</div></div>`;
+    }).join('');
+  }
+  html += `</div>`;
+
   if(locked) html+=`<button class="btn btn-ghost" style="width:100%;margin-top:12px;opacity:.4;cursor:not-allowed">📤 Subir factura (bloqueado)</button>`;
   else html+=`<button class="btn btn-primary" style="width:100%;margin-top:12px">📤 Subir factura XML + PDF</button>`;
   el.innerHTML = html;
+}
+
+async function portalSubirDocumento(expedienteId, folioId){
+  const sel = document.getElementById('portal-doc-pendiente');
+  if(!sel || !sel.value){
+    alert('Selecciona un documento pendiente');
+    return;
+  }
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.onchange = async () => {
+    const file = input.files && input.files[0];
+    if(!file) return;
+    const fd = new FormData();
+    fd.append('archivo', file);
+    fd.append('subido_por', getUsuarioActivo());
+    try{
+      const res = await fetch(`${API_BASE}/documentos/${sel.value}/subir`, {method:'POST', headers: authHeaders(), body: fd});
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      await portalNivel(folioId);
+      await loadFoliosForFrontend();
+      await loadDashboard();
+    }catch(err){
+      alert(`No se pudo subir el documento: ${err.message}`);
+    }
+  };
+  input.click();
 }
 
 // ── TRASPASO BLOQUEO ─────────────────────────────
@@ -1657,7 +1925,7 @@ async function runConciliacionIA(input){
     fd.append('usuario', getUsuarioActivo());
     if(empresaId) fd.append('empresa_id', empresaId);
     if(proveedorId) fd.append('proveedor_id', proveedorId);
-    const res = await fetch(`${API_BASE}/conciliacion/estado_cuenta`, {method:'POST', body:fd});
+    const res = await fetch(`${API_BASE}/conciliacion/estado_cuenta`, {method:'POST', headers: authHeaders(), body:fd});
     const data = await res.json().catch(()=>({}));
     if(!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
     const ok = `<div class="astrip ok" style="margin-top:8px"><div class="astrip-ico">✅</div><div class="astrip-txt"><strong>${data.conciliados} movimientos conciliados correctamente</strong>Archivo: ${data.archivo} · Total analizado: ${data.total}</div></div>`;
@@ -1885,7 +2153,7 @@ function descargarJSON(nombre, data){
 }
 
 async function descargarPdf(url){
-  const res = await fetch(url);
+  const res = await fetch(url, {headers: authHeaders()});
   if(!res.ok){
     const data = await res.json().catch(()=>({}));
     throw new Error(data.error || `HTTP ${res.status}`);
@@ -1904,7 +2172,7 @@ async function descargarPdf(url){
 }
 
 async function descargarArchivo(url){
-  const res = await fetch(url);
+  const res = await fetch(url, {headers: authHeaders()});
   if(!res.ok){
     const data = await res.json().catch(()=>({}));
     throw new Error(data.error || `HTTP ${res.status}`);
@@ -2357,7 +2625,12 @@ async function loadFoliosForFrontend(){
   try{
     const folios = await apiGet('/folios');
     PORTAL_FOLIOS = folios.slice();
-    const proveedores = await apiGet('/proveedores');
+    let proveedores = [];
+    try{
+      proveedores = await apiGet('/proveedores');
+    }catch(_e){
+      proveedores = [];
+    }
     PROVEEDORES_CACHE = proveedores.slice();
     const proveedorById = Object.fromEntries(proveedores.map(p=>[p.id,p]));
     const select = document.getElementById('traspaso-prov');
@@ -2406,12 +2679,20 @@ async function loadFoliosForFrontend(){
     const portalEmpresaSel = document.getElementById('portal-empresa-select');
     if(portalEmpresaSel){
       portalEmpresaSel.innerHTML = '<option value="">— Elegir empresa —</option>';
-      EMPRESAS_CACHE.filter(e=>e.activo).forEach(e=>{
+      let empresasPortal = EMPRESAS_CACHE.filter(e=>e.activo);
+      if(AUTH_USER && AUTH_USER.tipo === 'proveedor' && AUTH_USER.empresa_id){
+        empresasPortal = empresasPortal.filter(e=>Number(e.id)===Number(AUTH_USER.empresa_id));
+      }
+      empresasPortal.forEach(e=>{
         const op = document.createElement('option');
         op.value = String(e.id);
         op.textContent = `${e.nombre} (${e.rfc})`;
         portalEmpresaSel.appendChild(op);
       });
+      if(AUTH_USER && AUTH_USER.tipo === 'proveedor' && AUTH_USER.empresa_id){
+        portalEmpresaSel.value = String(AUTH_USER.empresa_id);
+        portalEmpresaChange(String(AUTH_USER.empresa_id));
+      }
     }
     const portalSel = document.getElementById('portal-select');
     if(portalSel){
@@ -2434,14 +2715,20 @@ async function registrarProveedor(){
   const nombre = document.getElementById('prov-nombre').value.trim();
   const rfc = document.getElementById('prov-rfc').value.trim();
   const tipo = document.getElementById('prov-tipo').value;
+  const c5a = buildCuestionario5A('prov');
+  const cuestionario5a = JSON.stringify(c5a.payload, null, 2);
   const monto = cleanNumber(document.getElementById('prov-monto').value);
   if(!tipoEmpresa || !empresaId || !nombre || !rfc || !tipo){
     alert('Completa tipo de empresa, empresa, nombre, RFC y tipo de servicio');
     return;
   }
+  if(requiereCuestionario5A(tipo) && c5a.faltantes.length){
+    alert('Para este tipo de proveedor debes contestar completo el cuestionario 5-A CFF.');
+    return;
+  }
   const empresaSel = EMPRESAS_CACHE.find(e=>Number(e.id)===empresaId);
-  if(!empresaSel || empresaSel.tipo_empresa !== tipoEmpresa){
-    alert('La empresa seleccionada no coincide con el tipo de empresa elegido.');
+  if(!empresaSel){
+    alert('Selecciona una empresa válida.');
     return;
   }
   const policyStatus = POLICY_STATUS_BY_EMPRESA[String(empresaId)];
@@ -2468,7 +2755,8 @@ async function registrarProveedor(){
       crear_folio: true,
       empresa_id: empresaId,
       folio_periodo: periodo,
-      folio_presupuesto: monto
+      folio_presupuesto: monto,
+      cuestionario_5a: cuestionario5a
     });
     closeModal('modal-proveedor');
     if(resp && resp.folio && resp.folio.numero){
@@ -2489,14 +2777,20 @@ async function registrarProveedorSelf(){
   const nombre = document.getElementById('self-nombre').value.trim();
   const rfc = document.getElementById('self-rfc').value.trim();
   const tipo = document.getElementById('self-tipo').value;
+  const c5a = buildCuestionario5A('self');
+  const cuestionario5a = JSON.stringify(c5a.payload, null, 2);
   const monto = cleanNumber(document.getElementById('self-monto').value);
   if(!tipoEmpresa || !empresaId || !nombre || !rfc || !tipo){
     alert('Completa tipo de empresa, empresa, nombre, RFC y tipo de servicio');
     return;
   }
+  if(requiereCuestionario5A(tipo) && c5a.faltantes.length){
+    alert('Para este tipo de proveedor debes contestar completo el cuestionario 5-A CFF.');
+    return;
+  }
   const empresaSel = EMPRESAS_CACHE.find(e=>Number(e.id)===empresaId);
-  if(!empresaSel || empresaSel.tipo_empresa !== tipoEmpresa){
-    alert('La empresa seleccionada no coincide con el tipo de empresa elegido.');
+  if(!empresaSel){
+    alert('Selecciona una empresa válida.');
     return;
   }
   const policyStatus = POLICY_STATUS_BY_EMPRESA[String(empresaId)];
@@ -2511,7 +2805,7 @@ async function registrarProveedorSelf(){
       return;
     }
     const periodo = new Date().toISOString().slice(0,7);
-    await apiSend('/proveedores','POST',{
+    const resp = await apiSend('/proveedores/self-register','POST',{
       nombre,
       rfc,
       tipo,
@@ -2523,11 +2817,22 @@ async function registrarProveedorSelf(){
       crear_folio: true,
       empresa_id: empresaId,
       folio_periodo: periodo,
-      folio_presupuesto: monto
+      folio_presupuesto: monto,
+      cuestionario_5a: cuestionario5a
     });
-    alert('Registro enviado. El equipo interno validará tu expediente.');
+    const c = resp.credenciales || {};
+    const clas = resp.clasificacion || {};
+    const nivelTxt = clas.nivel ? `Nivel ${clas.nivel} · ${clas.label || ''}` : 'Sin nivel';
+    alert(`Registro completado.\n${nivelTxt}\nUsuario: ${c.username}\nPassword: ${c.password}\nEmpresa: ${c.empresa_nombre || ''}`);
+    setAuthUser({
+      tipo: 'proveedor',
+      username: c.username,
+      rol: 'proveedor',
+      proveedor_id: c.proveedor_id,
+      empresa_id: c.empresa_id,
+      nombre: c.proveedor_nombre || nombre
+    });
     await loadFoliosForFrontend();
-    await loadDashboard();
     backToRoleMenu();
   }catch(err){
     alert(`No se pudo registrar proveedor: ${err.message}`);
@@ -2562,6 +2867,7 @@ async function confirmarTraspaso(){
 document.getElementById('prov-registrar-btn').addEventListener('click', registrarProveedor);
 document.getElementById('traspaso-confirm-btn').addEventListener('click', confirmarTraspaso);
 document.getElementById('login-btn').addEventListener('click', doLogin);
+document.getElementById('prov-login-btn').addEventListener('click', doProveedorLogin);
 loadDashboard();
 loadEmpresas();
 loadFoliosForFrontend();
@@ -2573,6 +2879,9 @@ loadReportesPorNivel();
 loadKpisPersonal();
 setTimeout(renderTimeline,100);
 loadLoginUsers();
+if(!AUTH_USER){
+  openModal('modal-role');
+}
 </script>
 </body>
 </html>

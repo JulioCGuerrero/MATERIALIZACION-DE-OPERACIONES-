@@ -4,6 +4,7 @@ from flask import Blueprint, jsonify, request
 
 from ..extensions import db
 from ..models import Documento, Empresa, Expediente, Folio, Proveedor
+from ..security import get_actor
 from ..services.auditoria import log_event
 from ..services.bloqueo import calcular_completitud
 from ..services.catalogo import DOCS_BY_LEVEL
@@ -35,6 +36,9 @@ def _folio_dict(folio: Folio) -> dict:
 @folios_bp.get("/folios")
 def listar_folios():
     q = Folio.query
+    actor = get_actor()
+    if actor and actor.is_proveedor:
+        q = q.filter(Folio.proveedor_id == actor.proveedor_id, Folio.empresa_id == actor.empresa_id)
     if request.args.get("periodo"):
         q = q.filter(Folio.periodo == request.args["periodo"])
     if request.args.get("estado"):
@@ -51,6 +55,10 @@ def listar_folios():
 @folios_bp.get("/folios/<int:folio_id>")
 def detalle_folio(folio_id: int):
     f = Folio.query.get_or_404(folio_id)
+    actor = get_actor()
+    if actor and actor.is_proveedor:
+        if f.proveedor_id != actor.proveedor_id or f.empresa_id != actor.empresa_id:
+            return jsonify({"error": "No tienes acceso a este folio"}), 403
     data = _folio_dict(f)
     if f.expediente:
         data["expediente_id"] = f.expediente.id

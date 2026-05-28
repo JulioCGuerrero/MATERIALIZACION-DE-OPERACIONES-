@@ -3,6 +3,7 @@ from flask import Blueprint, jsonify, request
 from ..models import Expediente, Folio, Proveedor
 from ..services.bloqueo import calcular_completitud, puede_pagar
 from ..services.serializers import expediente_to_dict
+from ..security import get_actor
 
 expedientes_bp = Blueprint("expedientes", __name__)
 
@@ -10,6 +11,9 @@ expedientes_bp = Blueprint("expedientes", __name__)
 @expedientes_bp.get("/expedientes")
 def listar_expedientes():
     q = Expediente.query.join(Expediente.folio).join(Folio.proveedor)
+    actor = get_actor()
+    if actor and actor.is_proveedor:
+        q = q.filter(Folio.proveedor_id == actor.proveedor_id, Folio.empresa_id == actor.empresa_id)
 
     if request.args.get("bloqueado"):
         bloqueado = request.args["bloqueado"].lower() in ("1", "true", "si")
@@ -32,10 +36,21 @@ def listar_expedientes():
 def detalle_expediente(expediente_id: int):
     calcular_completitud(expediente_id)
     exp = Expediente.query.get_or_404(expediente_id)
+    actor = get_actor()
+    if actor and actor.is_proveedor:
+        folio = exp.folio
+        if folio.proveedor_id != actor.proveedor_id or folio.empresa_id != actor.empresa_id:
+            return jsonify({"error": "No tienes acceso a este expediente"}), 403
     return jsonify(expediente_to_dict(exp))
 
 
 @expedientes_bp.get("/expedientes/<int:expediente_id>/completitud")
 def completitud_expediente(expediente_id: int):
+    exp = Expediente.query.get_or_404(expediente_id)
+    actor = get_actor()
+    if actor and actor.is_proveedor:
+        folio = exp.folio
+        if folio.proveedor_id != actor.proveedor_id or folio.empresa_id != actor.empresa_id:
+            return jsonify({"error": "No tienes acceso a este expediente"}), 403
     data = puede_pagar(expediente_id)
     return jsonify(data)

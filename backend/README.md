@@ -19,7 +19,15 @@ python backend/seed.py
 
 ```bash
 python backend/run.py
-# API: http://localhost:8000/api/health
+# API: http://localhost:8010/api/health
+```
+
+Puerto por defecto: `8010`.
+
+Si necesitas usar otro puerto temporalmente:
+
+```bash
+PORT=8011 python backend/run.py
 ```
 
 ## Endpoints principales
@@ -52,6 +60,51 @@ python backend/run.py
 - `GET /api/export/paquete_sat.zip`
 
 El frontend (`frontend.html`) ya está conectado a estos endpoints.
+
+## Acceso por rol (nuevo)
+
+El backend ahora valida acceso por rol usando encabezados:
+
+- Interno: `X-Auth-Email` + `X-Auth-Role`
+- Proveedor: `X-Proveedor-Username`
+
+Roles internos operativos:
+
+- `direccion`: consulta general (solo lectura) + gestión de políticas (`/api/empresas/{id}/policy/*`)
+- `tesoreria`: traspasos y conciliación bancaria IA
+- `administracion`: expedientes y carga documental
+- `contabilidad`: operación completa (empresas/proveedores/folios/alertas/reportes/export)
+
+## Flujo proveedor por empresa (nuevo)
+
+1. Auto-registro público:
+
+```bash
+POST /api/proveedores/self-register
+```
+
+Payload base:
+
+```json
+{
+  "nombre": "Proveedor XYZ",
+  "rfc": "XYZ010101AAA",
+  "tipo": "outsourcing",
+  "monto": 120000,
+  "repse": true,
+  "tiene_fisico": false,
+  "empresa_id": 1
+}
+```
+
+2. El sistema crea/relaciona proveedor, genera folio/expediente y devuelve credenciales por empresa (`username`, `password`).
+3. Login proveedor:
+
+```bash
+POST /api/auth/proveedor/login
+```
+
+4. Proveedor autenticado solo puede consultar/subir su propia información (misma empresa/proveedor).
 
 ## Subida real de documentos
 
