@@ -12,6 +12,7 @@ from ..services.catalogo import DOCS_BY_LEVEL
 from ..services.clasificador import clasificar_proveedor
 from ..services.document_review import aplicar_validacion_documento
 from ..services.efos import esta_en_efos, normalizar_rfc
+from ..services.onboarding_empresas import empresa_habilitada_para_proveedores
 from ..services.policy_engine import get_policy_status
 from ..services.serializers import expediente_to_dict
 
@@ -130,6 +131,18 @@ def crear_proveedor():
                 ),
                 409,
             )
+        onboarding_ok, onboarding_status = empresa_habilitada_para_proveedores(empresa)
+        if not onboarding_ok:
+            return (
+                jsonify(
+                    {
+                        "error": "La empresa no tiene onboarding aprobado para recibir proveedores.",
+                        "empresa_id": empresa.id,
+                        "onboarding_status": onboarding_status,
+                    }
+                ),
+                409,
+            )
 
     clasificado = clasificar_proveedor(
         tipo=body["tipo"],
@@ -142,7 +155,7 @@ def crear_proveedor():
         save_evaluation=True,
     )
     cuestionario_5a = (body.get("cuestionario_5a") or "").strip()
-    if _requires_cuestionario_5a(clasificado["nivel"]) and not cuestionario_5a:
+    if empresa is not None and _requires_cuestionario_5a(clasificado["nivel"]) and not cuestionario_5a:
         return (
             jsonify(
                 {
@@ -305,6 +318,18 @@ def self_register_proveedor():
         return jsonify({"error": "RFC encontrado en EFOS SAT. Registro bloqueado.", "rfc": rfc}), 409
 
     empresa = Empresa.query.get_or_404(int(body["empresa_id"]))
+    onboarding_ok, onboarding_status = empresa_habilitada_para_proveedores(empresa)
+    if not onboarding_ok:
+        return (
+            jsonify(
+                {
+                    "error": "La empresa no tiene onboarding aprobado para recibir auto-registro.",
+                    "empresa_id": empresa.id,
+                    "onboarding_status": onboarding_status,
+                }
+            ),
+            409,
+        )
     policy_status = get_policy_status(empresa.id)
     if not policy_status.get("has_active_published_policy"):
         return (

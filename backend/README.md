@@ -77,6 +77,11 @@ Roles internos operativos:
 
 ## Flujo proveedor por empresa (nuevo)
 
+Prerequisito obligatorio para alta de proveedores:
+
+- La empresa debe tener `onboarding` aprobado (`/api/empresas/{id}/onboarding/aprobar`).
+- La empresa debe tener política activa publicada.
+
 1. Auto-registro público:
 
 ```bash
@@ -105,6 +110,43 @@ POST /api/auth/proveedor/login
 ```
 
 4. Proveedor autenticado solo puede consultar/subir su propia información (misma empresa/proveedor).
+
+## Onboarding de empresa cliente (nuevo)
+
+1. Alta base empresa:
+
+```bash
+POST /api/empresas
+```
+
+2. Subir y validar documentos requeridos:
+
+```bash
+GET /api/empresas/catalogo/onboarding
+POST /api/empresas/{id}/documentos
+PATCH /api/empresas/{id}/documentos/{doc_id}/validar
+```
+
+3. Registrar y validar cuentas bancarias:
+
+```bash
+POST /api/empresas/{id}/cuentas-bancarias
+PATCH /api/empresas/{id}/cuentas-bancarias/{cuenta_id}
+```
+
+4. Configurar reglas de negocio:
+
+```bash
+PATCH /api/empresas/{id}/reglas-negocio
+```
+
+5. Revisar semáforo/checklist y aprobar onboarding:
+
+```bash
+GET /api/empresas/{id}/onboarding/status
+POST /api/empresas/{id}/onboarding/enviar-revision
+POST /api/empresas/{id}/onboarding/aprobar
+```
 
 ## Subida real de documentos
 

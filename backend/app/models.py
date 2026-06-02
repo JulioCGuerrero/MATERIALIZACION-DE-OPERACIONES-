@@ -43,9 +43,54 @@ class Empresa(db.Model):
     rfc = db.Column(db.String, nullable=False, unique=True)
     tipo_empresa = db.Column(db.String, nullable=False, default="servicios")
     activo = db.Column(db.Boolean, default=True)
+    onboarding_status = db.Column(db.String, nullable=False, default="borrador")
+    onboarding_aprobada_en = db.Column(db.DateTime)
+    onboarding_aprobada_por = db.Column(db.String)
+    reglas_negocio = db.Column(db.JSON, nullable=False, default=dict)
     creado_en = db.Column(db.DateTime, default=datetime.utcnow)
 
     folios = db.relationship("Folio", back_populates="empresa", cascade="all, delete-orphan")
+    documentos = db.relationship("EmpresaDocumento", back_populates="empresa", cascade="all, delete-orphan")
+    cuentas_bancarias = db.relationship("EmpresaCuentaBancaria", back_populates="empresa", cascade="all, delete-orphan")
+
+
+class EmpresaDocumento(db.Model):
+    __tablename__ = "empresa_documentos"
+
+    id = db.Column(db.Integer, primary_key=True)
+    empresa_id = db.Column(db.Integer, db.ForeignKey("empresas.id"), nullable=False)
+    tipo = db.Column(db.String, nullable=False)
+    nombre_archivo = db.Column(db.String)
+    url = db.Column(db.String)
+    estado_validacion = db.Column(db.String, nullable=False, default="pendiente")
+    observaciones = db.Column(db.Text)
+    vigente_hasta = db.Column(db.Date)
+    subido_por = db.Column(db.String)
+    validado_por = db.Column(db.String)
+    subido_en = db.Column(db.DateTime, default=datetime.utcnow)
+    validado_en = db.Column(db.DateTime)
+
+    empresa = db.relationship("Empresa", back_populates="documentos")
+
+
+class EmpresaCuentaBancaria(db.Model):
+    __tablename__ = "empresa_cuentas_bancarias"
+
+    id = db.Column(db.Integer, primary_key=True)
+    empresa_id = db.Column(db.Integer, db.ForeignKey("empresas.id"), nullable=False)
+    banco = db.Column(db.String, nullable=False)
+    titular = db.Column(db.String, nullable=False)
+    clabe = db.Column(db.String, nullable=False)
+    numero_cuenta = db.Column(db.String)
+    moneda = db.Column(db.String, default="MXN")
+    activa = db.Column(db.Boolean, default=True)
+    validada = db.Column(db.Boolean, default=False)
+    validada_por = db.Column(db.String)
+    validada_en = db.Column(db.DateTime)
+    creada_en = db.Column(db.DateTime, default=datetime.utcnow)
+    actualizada_en = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    empresa = db.relationship("Empresa", back_populates="cuentas_bancarias")
 
 
 class Folio(db.Model):

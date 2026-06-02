@@ -100,6 +100,8 @@ def is_allowed(actor: AuthActor, method: str, path: str) -> bool:
     if actor.is_proveedor:
         if method == "GET" and path in {"/api/auth/me"}:
             return True
+        if method == "POST" and path == "/api/clasificar":
+            return True
         if method == "GET" and (path == "/api/folios" or path.startswith("/api/folios/")):
             return True
         if method == "GET" and (path == "/api/expedientes" or path.startswith("/api/expedientes/")):
@@ -112,11 +114,7 @@ def is_allowed(actor: AuthActor, method: str, path: str) -> bool:
 
     role = actor.role
     if role == "direccion":
-        if method == "GET":
-            return True
-        if path.startswith("/api/empresas/") and "/policy/" in path and method == "POST":
-            return True
-        return False
+        return True
 
     if role == "tesoreria":
         if method == "GET":

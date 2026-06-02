@@ -342,19 +342,19 @@ input[type=file]{display:none;}
   </div>
   <nav>
     <div class="ns">Principal</div>
-    <div class="ni active" onclick="goNav(this,'dashboard')"><span class="ico">◈</span>Dashboard General</div>
-    <div class="ni" onclick="goNav(this,'politicas')"><span class="ico">⌘</span>Políticas por Empresa</div>
+    <div class="ni active" data-view="dashboard" onclick="goNav(this,'dashboard')"><span class="ico">◈</span>Dashboard General</div>
+    <div class="ni" data-view="politicas" onclick="goNav(this,'politicas')"><span class="ico">⌘</span>Políticas por Empresa</div>
     <div class="ns">Materialización</div>
-    <div class="ni" onclick="goNav(this,'clasificador')"><span class="ico">⬡</span>Clasificador de Nivel<span class="nb y">4</span></div>
-    <div class="ni" onclick="goNav(this,'expedientes')"><span class="ico">▦</span>Expedientes<span class="nb r">3</span></div>
-    <div class="ni" onclick="goNav(this,'semaforo')"><span class="ico">◎</span>Semáforo Fiscal<span class="nb r">2</span></div>
-    <div class="ni" onclick="goNav(this,'portal')"><span class="ico">◷</span>Portal Proveedor</div>
+    <div class="ni" data-view="clasificador" onclick="goNav(this,'clasificador')"><span class="ico">⬡</span>Clasificador de Nivel<span class="nb y">4</span></div>
+    <div class="ni" data-view="expedientes" onclick="goNav(this,'expedientes')"><span class="ico">▦</span>Expedientes<span class="nb r">3</span></div>
+    <div class="ni" data-view="semaforo" onclick="goNav(this,'semaforo')"><span class="ico">◎</span>Semáforo Fiscal<span class="nb r">2</span></div>
+    <div class="ni" data-view="portal" onclick="goNav(this,'portal')"><span class="ico">◷</span>Portal Proveedor</div>
     <div class="ns">Control Bancario</div>
-    <div class="ni" onclick="goNav(this,'trazabilidad')"><span class="ico">⬡</span>Trazabilidad Bancaria<span class="nb y">3</span></div>
-    <div class="ni" onclick="goNav(this,'kpis')"><span class="ico">◉</span>KPIs del Personal</div>
-    <div class="ni" onclick="goNav(this,'cierre')"><span class="ico">◷</span>Cierre Mensual<span class="nb y">2</span></div>
+    <div class="ni" data-view="trazabilidad" onclick="goNav(this,'trazabilidad')"><span class="ico">⬡</span>Trazabilidad Bancaria<span class="nb y">3</span></div>
+    <div class="ni" data-view="kpis" onclick="goNav(this,'kpis')"><span class="ico">◉</span>KPIs del Personal</div>
+    <div class="ni" data-view="cierre" onclick="goNav(this,'cierre')"><span class="ico">◷</span>Cierre Mensual<span class="nb y">2</span></div>
     <div class="ns">IA</div>
-    <div class="ni" onclick="goNav(this,'auditoria')"><span class="ico">✦</span>Auditoría IA<span class="nb r">2</span></div>
+    <div class="ni" data-view="auditoria" onclick="goNav(this,'auditoria')"><span class="ico">✦</span>Auditoría IA<span class="nb r">2</span></div>
   </nav>
 </aside>
 
@@ -366,6 +366,7 @@ input[type=file]{display:none;}
   <div id="usuario-badge" class="chip">No autenticado</div>
   <button class="btn btn-ghost" onclick="logout()">Cerrar sesión</button>
   <button class="btn btn-ghost">Exportar</button>
+  <button id="btn-nueva-empresa" class="btn btn-ghost" onclick="openModalEmpresaSegura()">＋ Nueva Empresa Cliente</button>
   <button id="btn-nuevo-proveedor" class="btn btn-primary" onclick="openModal('modal-proveedor')">＋ Nuevo Proveedor</button>
 </div>
 <div class="content">
@@ -1023,6 +1024,81 @@ input[type=file]{display:none;}
   </div>
 </div>
 
+<!-- MODAL EMPRESA CLIENTE -->
+<div class="modal-overlay" id="modal-empresa">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3>Alta Empresa Cliente y Onboarding</h3>
+    <div class="field-row">
+      <div class="field"><label>Razón social</label><input id="emp-nombre" type="text" placeholder="Empresa Cliente SA de CV" /></div>
+      <div class="field"><label>RFC</label><input id="emp-rfc" type="text" placeholder="ABC010101AAA" /></div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Tipo de empresa</label>
+        <select id="emp-tipo">
+          <option value="servicios">Servicios</option>
+          <option value="comercializadora">Comercializadora</option>
+          <option value="industrial">Industrial</option>
+          <option value="constructora">Constructora</option>
+          <option value="logistica">Logística</option>
+          <option value="tecnologia">Tecnología</option>
+          <option value="financiera">Financiera</option>
+          <option value="otra">Otra</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Empresa registrada</label>
+        <select id="emp-id" onchange="cargarOnboardingEmpresa()">
+          <option value="">— Seleccionar empresa —</option>
+        </select>
+      </div>
+    </div>
+    <div class="field"><label>Semáforo onboarding</label><div id="emp-onboarding-status" class="muted">Crea o selecciona empresa para ver estatus.</div></div>
+    <div class="field-row">
+      <div class="field">
+        <label>Documento onboarding</label>
+        <select id="emp-doc-tipo"></select>
+      </div>
+      <div class="field">
+        <label>Nombre archivo</label>
+        <input id="emp-doc-nombre" type="text" placeholder="constancia_fiscal_2026.pdf" />
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>URL archivo</label><input id="emp-doc-url" type="text" placeholder="/uploads/empresa_1/archivo.pdf" /></div>
+      <div class="field"><label>Vigente hasta</label><input id="emp-doc-vigencia" type="date" /></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Banco</label><input id="emp-cuenta-banco" type="text" placeholder="BBVA" /></div>
+      <div class="field"><label>Titular</label><input id="emp-cuenta-titular" type="text" placeholder="Empresa Cliente SA de CV" /></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>CLABE</label><input id="emp-cuenta-clabe" type="text" placeholder="012345678901234567" /></div>
+      <div class="field"><label>Moneda</label><input id="emp-cuenta-moneda" type="text" value="MXN" /></div>
+    </div>
+    <div class="field">
+      <label>Reglas de negocio (obligatorias)</label>
+      <div class="field-row">
+        <label><input id="emp-regla-alta-prov" type="checkbox" /> Flujo alta proveedores</label>
+        <label><input id="emp-regla-no-pago" type="checkbox" /> No pago sin expediente</label>
+      </div>
+      <div class="field-row">
+        <label><input id="emp-regla-cambio-cuenta" type="checkbox" /> Política cambio cuenta proveedor</label>
+        <label><input id="emp-regla-conciliacion" type="checkbox" /> Conciliación mensual</label>
+      </div>
+    </div>
+    <div class="modal-footer" style="flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="registrarEmpresaCliente()">1) Crear empresa</button>
+      <button class="btn btn-ghost" onclick="subirDocumentoEmpresa()">2) Subir documento</button>
+      <button class="btn btn-ghost" onclick="validarDocumentoEmpresa('valido')">3) Validar documento</button>
+      <button class="btn btn-ghost" onclick="guardarCuentaEmpresa()">4) Guardar cuenta</button>
+      <button class="btn btn-ghost" onclick="guardarReglasEmpresa()">5) Guardar reglas</button>
+      <button class="btn btn-ghost" onclick="enviarRevisionEmpresa()">6) Enviar revisión</button>
+      <button class="btn btn-primary" onclick="aprobarEmpresa()">7) Aprobar onboarding</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL TRASPASO -->
 <div class="modal-overlay" id="modal-traspaso">
   <div class="modal" onclick="event.stopPropagation()">
@@ -1172,8 +1248,10 @@ let CURRENT_FOLIO_NUMERO = null;
 let EMPRESAS_CACHE = [];
 let PROVEEDORES_CACHE = [];
 let POLICY_STATUS_BY_EMPRESA = {};
+let ONBOARDING_STATUS_BY_EMPRESA = {};
 let AUTH_USER = null;
 let PORTAL_DOCS_CACHE = [];
+let EMP_LAST_DOC_ID = null;
 const TIPO_EMPRESA_LABEL = {
   servicios: 'Servicios',
   comercializadora: 'Comercializadora',
@@ -1216,10 +1294,13 @@ function authHeaders(extra){
 function empresaLabel(e){
   const tipo = TIPO_EMPRESA_LABEL[e.tipo_empresa] || (e.tipo_empresa || 'Sin tipo');
   const st = POLICY_STATUS_BY_EMPRESA[String(e.id)];
+  const onb = ONBOARDING_STATUS_BY_EMPRESA[String(e.id)];
+  const onbOk = onb && onb.onboarding_status === 'aprobada' && onb.puede_aprobarse;
+  const onbTag = onbOk ? ' · Onboarding OK' : ' · Onboarding pendiente';
   const policyTag = !st
     ? ' · Política: validando...'
     : (st.has_active_published_policy ? ' · Política OK' : ' · Sin política publicada');
-  return `${e.nombre} (${e.rfc}) · ${tipo}${policyTag}`;
+  return `${e.nombre} (${e.rfc}) · ${tipo}${onbTag}${policyTag}`;
 }
 
 
@@ -1236,8 +1317,10 @@ function filtrarEmpresasRegistro(scope){
   const bloqueadas = [];
   base.forEach(e=>{
     const st = POLICY_STATUS_BY_EMPRESA[String(e.id)];
+    const onb = ONBOARDING_STATUS_BY_EMPRESA[String(e.id)];
     const policyOk = st ? !!st.has_active_published_policy : true;
-    if(policyOk) habilitadas.push(e);
+    const onboardingOk = !!(onb && onb.onboarding_status === 'aprobada' && onb.puede_aprobarse);
+    if(policyOk && onboardingOk) habilitadas.push(e);
     else bloqueadas.push(e);
   });
 
@@ -1261,14 +1344,14 @@ function filtrarEmpresasRegistro(scope){
     op.value = String(e.id);
     op.textContent = empresaLabel(e);
     op.disabled = true;
-    op.title = 'Requiere política activa publicada';
+    op.title = 'Requiere onboarding aprobado + política activa publicada';
     sel.appendChild(op);
   });
 
   if(base.length && !habilitadas.length){
     const op = document.createElement('option');
     op.value = '';
-    op.textContent = '— Sin empresas habilitadas con política activa —';
+    op.textContent = '— Sin empresas habilitadas (onboarding + política) —';
     op.disabled = true;
     sel.appendChild(op);
   }
@@ -1278,6 +1361,34 @@ function filtrarEmpresasRegistro(scope){
   else{
     const firstEnabled = Array.from(sel.options).find(o => o.value && !o.disabled);
     sel.value = firstEnabled ? firstEnabled.value : '';
+  }
+}
+
+function refreshEmpresaSelectOnboarding(){
+  const sel = document.getElementById('emp-id');
+  const docSel = document.getElementById('emp-doc-tipo');
+  if(sel){
+    const current = sel.value;
+    sel.innerHTML = '<option value="">— Seleccionar empresa —</option>';
+    EMPRESAS_CACHE.forEach(e=>{
+      const op = document.createElement('option');
+      op.value = String(e.id);
+      op.textContent = empresaLabel(e);
+      sel.appendChild(op);
+    });
+    if(Array.from(sel.options).some(o=>o.value === current)) sel.value = current;
+  }
+  if(docSel && docSel.options.length===0){
+    [
+      'constancia_fiscal','acta_constitutiva','poder_representante','identificacion_representante',
+      'comprobante_domicilio_fiscal','opinion_32d','carta_bancaria_cuentas','estado_cuenta_bancario',
+      'politica_autorizacion_pagos'
+    ].forEach(t=>{
+      const op = document.createElement('option');
+      op.value = t;
+      op.textContent = t;
+      docSel.appendChild(op);
+    });
   }
 }
 
@@ -1330,10 +1441,44 @@ function setAuthUser(user){
 
 function applyRoleUI(){
   const isProveedor = !!(AUTH_USER && AUTH_USER.tipo === 'proveedor');
+  const isContabilidad = !!(AUTH_USER && AUTH_USER.tipo !== 'proveedor' && AUTH_USER.rol === 'contabilidad');
   const btnNuevo = document.getElementById('btn-nuevo-proveedor');
   if(btnNuevo) btnNuevo.style.display = isProveedor ? 'none' : '';
+  const btnNuevaEmpresa = document.getElementById('btn-nueva-empresa');
+  if(btnNuevaEmpresa) btnNuevaEmpresa.style.display = isContabilidad ? '' : 'none';
   const linkNuevo = document.getElementById('link-agregar-proveedor');
   if(linkNuevo) linkNuevo.style.display = isProveedor ? 'none' : '';
+  const allowedProveedorViews = new Set(['clasificador', 'portal']);
+  document.querySelectorAll('.ni[data-view]').forEach(item=>{
+    const view = item.getAttribute('data-view') || '';
+    if(isProveedor){
+      item.style.display = allowedProveedorViews.has(view) ? '' : 'none';
+    }else{
+      item.style.display = '';
+    }
+  });
+  document.querySelectorAll('.ns').forEach(section=>{
+    if(!isProveedor){
+      section.style.display = '';
+      return;
+    }
+    const nextItems = [];
+    let el = section.nextElementSibling;
+    while(el && !el.classList.contains('ns')){
+      if(el.classList.contains('ni')) nextItems.push(el);
+      el = el.nextElementSibling;
+    }
+    const hasVisible = nextItems.some(i => i.style.display !== 'none');
+    section.style.display = hasVisible ? '' : 'none';
+  });
+}
+
+function openModalEmpresaSegura(){
+  if(!AUTH_USER || AUTH_USER.tipo === 'proveedor' || AUTH_USER.rol !== 'contabilidad'){
+    alert('Solo el rol contabilidad puede registrar empresas cliente.');
+    return;
+  }
+  openModal('modal-empresa');
 }
 
 function logout(){
@@ -1417,6 +1562,8 @@ async function doLogin(){
     const data = await apiSend('/auth/login', 'POST', {email, password});
     setAuthUser(data.usuario);
     closeModal('modal-login');
+    await loadEmpresas();
+    await loadAlertasActivas();
     await loadKpisPersonal();
   }catch(err){
     alert(`No se pudo iniciar sesión: ${err.message}`);
@@ -1442,6 +1589,8 @@ async function doProveedorLogin(){
       nombre: u.proveedor_nombre || u.username,
     });
     closeRoleModals();
+    await loadEmpresas();
+    await loadAlertasActivas();
     goNav(document.querySelector('.ni[onclick*="portal"]'), 'portal');
     await loadFoliosForFrontend();
     await portalEmpresaChange(String(u.empresa_id || ''));
@@ -1512,6 +1661,10 @@ const FOLIOS = {
 
 // ── NAV ──────────────────────────────────────────
 function goNav(el, id) {
+  if(AUTH_USER && AUTH_USER.tipo === 'proveedor' && !['clasificador','portal'].includes(id)){
+    id = 'portal';
+    el = document.querySelector('.ni[data-view="portal"]');
+  }
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
   const v = document.getElementById('view-'+id);
@@ -2324,13 +2477,19 @@ async function loadEmpresas(){
   try{
     EMPRESAS_CACHE = await apiGet('/empresas');
     POLICY_STATUS_BY_EMPRESA = {};
+    ONBOARDING_STATUS_BY_EMPRESA = {};
     await Promise.all(
       EMPRESAS_CACHE.map(async (e)=>{
         try{
-          const st = await apiGet(`/empresas/${e.id}/policy/status`);
+          const [st, onb] = await Promise.all([
+            apiGet(`/empresas/${e.id}/policy/status`),
+            apiGet(`/empresas/${e.id}/onboarding/status`)
+          ]);
           POLICY_STATUS_BY_EMPRESA[String(e.id)] = st;
+          ONBOARDING_STATUS_BY_EMPRESA[String(e.id)] = onb;
         }catch(_err){
           POLICY_STATUS_BY_EMPRESA[String(e.id)] = {has_active_published_policy:false, reason:'status_error'};
+          ONBOARDING_STATUS_BY_EMPRESA[String(e.id)] = {onboarding_status:'desconocido', puede_aprobarse:false};
         }
       })
     );
@@ -2399,13 +2558,18 @@ async function loadEmpresas(){
       listEl.innerHTML = active.length
         ? active.map(e=>{
             const st = POLICY_STATUS_BY_EMPRESA[String(e.id)];
+            const onb = ONBOARDING_STATUS_BY_EMPRESA[String(e.id)];
             const policyBadge = st && st.has_active_published_policy
               ? '<span class="badge g" style="margin-left:6px;">Política OK</span>'
               : '<span class="badge r" style="margin-left:6px;">Sin política publicada</span>';
-            return `<div class="chip" style="margin-right:6px;margin-bottom:6px;display:inline-block">${e.nombre} · ${e.rfc} · ${TIPO_EMPRESA_LABEL[e.tipo_empresa] || (e.tipo_empresa || 'Sin tipo')} ${policyBadge}</div>`;
+            const onbBadge = onb && onb.onboarding_status === 'aprobada' && onb.puede_aprobarse
+              ? '<span class="badge g" style="margin-left:6px;">Onboarding OK</span>'
+              : `<span class="badge y" style="margin-left:6px;">Onboarding ${onb?.onboarding_status || 'pendiente'}</span>`;
+            return `<div class="chip" style="margin-right:6px;margin-bottom:6px;display:inline-block">${e.nombre} · ${e.rfc} · ${TIPO_EMPRESA_LABEL[e.tipo_empresa] || (e.tipo_empresa || 'Sin tipo')} ${onbBadge} ${policyBadge}</div>`;
           }).join('')
         : 'Sin empresas activas';
     }
+    refreshEmpresaSelectOnboarding();
   }catch(err){
     console.error(err);
     const listEl = document.getElementById('dashboard-empresas-list');
@@ -2414,6 +2578,162 @@ async function loadEmpresas(){
   syncSatProveedorFilter();
   syncConciliacionProveedorFilter();
   syncPolicyEmpresas();
+}
+
+async function registrarEmpresaCliente(){
+  try{
+    const nombre = (document.getElementById('emp-nombre')?.value || '').trim();
+    const rfc = (document.getElementById('emp-rfc')?.value || '').trim().toUpperCase();
+    const tipo = (document.getElementById('emp-tipo')?.value || 'servicios').trim();
+    if(!nombre || !rfc){
+      alert('Captura razón social y RFC');
+      return;
+    }
+    const resp = await apiSend('/empresas', 'POST', {
+      nombre, rfc, tipo_empresa: tipo, usuario: getUsuarioActivo()
+    });
+    await loadEmpresas();
+    const sel = document.getElementById('emp-id');
+    if(sel) sel.value = String(resp.id);
+    await cargarOnboardingEmpresa();
+    alert(`Empresa creada: ${resp.nombre}`);
+  }catch(err){
+    alert(`No se pudo crear empresa: ${err.message}`);
+  }
+}
+
+async function cargarOnboardingEmpresa(){
+  const empresaId = Number(document.getElementById('emp-id')?.value || 0);
+  const view = document.getElementById('emp-onboarding-status');
+  if(!empresaId){
+    if(view) view.textContent = 'Selecciona empresa para ver estatus.';
+    return;
+  }
+  try{
+    const st = await apiGet(`/empresas/${empresaId}/onboarding/status`);
+    ONBOARDING_STATUS_BY_EMPRESA[String(empresaId)] = st;
+    if(view){
+      view.innerHTML = `Estado: <strong>${st.onboarding_status}</strong> · Completitud: <strong>${st.completitud}%</strong><br>
+      Documentos: ${st.documentos.ok}/${st.documentos.total} · Reglas: ${st.reglas_negocio.ok}/${st.reglas_negocio.total} · Cuentas validadas: ${st.cuentas_bancarias.validadas}`;
+    }
+    await loadEmpresas();
+  }catch(err){
+    if(view) view.textContent = `No se pudo cargar estatus: ${err.message}`;
+  }
+}
+
+async function subirDocumentoEmpresa(){
+  const empresaId = Number(document.getElementById('emp-id')?.value || 0);
+  const tipo = (document.getElementById('emp-doc-tipo')?.value || '').trim();
+  const nombreArchivo = (document.getElementById('emp-doc-nombre')?.value || '').trim();
+  const url = (document.getElementById('emp-doc-url')?.value || '').trim();
+  const vigenteHasta = (document.getElementById('emp-doc-vigencia')?.value || '').trim();
+  if(!empresaId || !tipo || !nombreArchivo){
+    alert('Selecciona empresa y captura tipo + nombre de archivo');
+    return;
+  }
+  try{
+    const resp = await apiSend(`/empresas/${empresaId}/documentos`, 'POST', {
+      tipo, nombre_archivo: nombreArchivo, url: url || null, vigente_hasta: vigenteHasta || null, usuario: getUsuarioActivo()
+    });
+    EMP_LAST_DOC_ID = resp.documento_id;
+    await cargarOnboardingEmpresa();
+    alert(`Documento cargado (${tipo}).`);
+  }catch(err){
+    alert(`No se pudo subir documento: ${err.message}`);
+  }
+}
+
+async function validarDocumentoEmpresa(estado){
+  const empresaId = Number(document.getElementById('emp-id')?.value || 0);
+  if(!empresaId || !EMP_LAST_DOC_ID){
+    alert('Primero sube un documento para tener doc_id');
+    return;
+  }
+  try{
+    await apiSend(`/empresas/${empresaId}/documentos/${EMP_LAST_DOC_ID}/validar`, 'PATCH', {
+      estado_validacion: estado, usuario: getUsuarioActivo()
+    });
+    await cargarOnboardingEmpresa();
+    alert(`Documento marcado como ${estado}.`);
+  }catch(err){
+    alert(`No se pudo validar documento: ${err.message}`);
+  }
+}
+
+async function guardarCuentaEmpresa(){
+  const empresaId = Number(document.getElementById('emp-id')?.value || 0);
+  const banco = (document.getElementById('emp-cuenta-banco')?.value || '').trim();
+  const titular = (document.getElementById('emp-cuenta-titular')?.value || '').trim();
+  const clabe = (document.getElementById('emp-cuenta-clabe')?.value || '').trim();
+  const moneda = (document.getElementById('emp-cuenta-moneda')?.value || 'MXN').trim().toUpperCase();
+  if(!empresaId || !banco || !titular || !clabe){
+    alert('Completa banco, titular y CLABE');
+    return;
+  }
+  try{
+    const resp = await apiSend(`/empresas/${empresaId}/cuentas-bancarias`, 'POST', {
+      banco, titular, clabe, moneda, validada: true, usuario: getUsuarioActivo()
+    });
+    await apiSend(`/empresas/${empresaId}/cuentas-bancarias/${resp.cuenta_id}`, 'PATCH', {
+      validada: true, usuario: getUsuarioActivo()
+    });
+    await cargarOnboardingEmpresa();
+    alert('Cuenta bancaria registrada y validada.');
+  }catch(err){
+    alert(`No se pudo guardar cuenta: ${err.message}`);
+  }
+}
+
+async function guardarReglasEmpresa(){
+  const empresaId = Number(document.getElementById('emp-id')?.value || 0);
+  if(!empresaId){
+    alert('Selecciona empresa');
+    return;
+  }
+  try{
+    await apiSend(`/empresas/${empresaId}/reglas-negocio`, 'PATCH', {
+      flujo_alta_proveedores: !!document.getElementById('emp-regla-alta-prov')?.checked,
+      regla_no_pago_sin_expediente: !!document.getElementById('emp-regla-no-pago')?.checked,
+      politica_cambio_cuenta_proveedor: !!document.getElementById('emp-regla-cambio-cuenta')?.checked,
+      conciliacion_bancaria_mensual: !!document.getElementById('emp-regla-conciliacion')?.checked,
+      usuario: getUsuarioActivo()
+    });
+    await cargarOnboardingEmpresa();
+    alert('Reglas de negocio guardadas.');
+  }catch(err){
+    alert(`No se pudieron guardar reglas: ${err.message}`);
+  }
+}
+
+async function enviarRevisionEmpresa(){
+  const empresaId = Number(document.getElementById('emp-id')?.value || 0);
+  if(!empresaId){
+    alert('Selecciona empresa');
+    return;
+  }
+  try{
+    await apiSend(`/empresas/${empresaId}/onboarding/enviar-revision`, 'POST', {usuario: getUsuarioActivo()});
+    await cargarOnboardingEmpresa();
+    alert('Empresa enviada a revisión.');
+  }catch(err){
+    alert(`No se pudo enviar a revisión: ${err.message}`);
+  }
+}
+
+async function aprobarEmpresa(){
+  const empresaId = Number(document.getElementById('emp-id')?.value || 0);
+  if(!empresaId){
+    alert('Selecciona empresa');
+    return;
+  }
+  try{
+    await apiSend(`/empresas/${empresaId}/onboarding/aprobar`, 'POST', {usuario: getUsuarioActivo()});
+    await cargarOnboardingEmpresa();
+    alert('Onboarding aprobado. Ahora puedes habilitar proveedores con política activa.');
+  }catch(err){
+    alert(`No se pudo aprobar onboarding: ${err.message}`);
+  }
 }
 
 async function loadPolicyByEmpresa(){
@@ -2617,7 +2937,13 @@ async function loadAlertasActivas(){
     }).join('');
   }catch(err){
     const wrap = document.getElementById('dashboard-alertas-list');
-    if(wrap) wrap.innerHTML = `<div class="muted">No se pudieron cargar alertas: ${err.message}</div>`;
+    if(wrap){
+      if((err.message || '').toLowerCase().includes('autenticarte')){
+        wrap.innerHTML = '<div class="muted">Inicia sesión para cargar alertas activas.</div>';
+      }else{
+        wrap.innerHTML = `<div class="muted">No se pudieron cargar alertas: ${err.message}</div>`;
+      }
+    }
   }
 }
 

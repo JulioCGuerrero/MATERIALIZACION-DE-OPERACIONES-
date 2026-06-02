@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, send_from_directory
 from flask_cors import CORS
-from sqlalchemy import text
+from sqlalchemy import inspect, text
 
 from .blueprints.audit_log import audit_log_bp
 from .blueprints.alertas import alertas_bp
@@ -44,11 +44,41 @@ def _create_schema(app: Flask) -> None:
                         if row[0] is None and row[1] is not None:
                             connection.execute(text(f'DROP SEQUENCE IF EXISTS "{sequence_name}" CASCADE'))
                     db.metadata.create_all(bind=connection)
+                    _ensure_runtime_columns(connection, dialect="postgresql")
                 finally:
                     connection.execute(text("SELECT pg_advisory_unlock(4393188)"))
             return
 
         db.create_all()
+        with engine.begin() as connection:
+            _ensure_runtime_columns(connection, dialect=engine.dialect.name)
+
+
+def _ensure_runtime_columns(connection, dialect: str) -> None:
+    inspector = inspect(connection)
+    existing = {c["name"] for c in inspector.get_columns("empresas")}
+    wanted = (
+        {
+            "onboarding_status": "TEXT NOT NULL DEFAULT 'borrador'",
+            "onboarding_aprobada_en": "TIMESTAMP",
+            "onboarding_aprobada_por": "TEXT",
+            "reglas_negocio": "JSONB DEFAULT '{}'::jsonb",
+        }
+        if dialect == "postgresql"
+        else {
+            "onboarding_status": "TEXT NOT NULL DEFAULT 'borrador'",
+            "onboarding_aprobada_en": "TIMESTAMP",
+            "onboarding_aprobada_por": "TEXT",
+            "reglas_negocio": "TEXT DEFAULT '{}'",
+        }
+    )
+    for col, col_type in wanted.items():
+        if col in existing:
+            continue
+        if dialect == "postgresql":
+            connection.execute(text(f'ALTER TABLE empresas ADD COLUMN IF NOT EXISTS "{col}" {col_type}'))
+        else:
+            connection.execute(text(f"ALTER TABLE empresas ADD COLUMN {col} {col_type}"))
 
 
 def create_app(config_object=Config) -> Flask:
