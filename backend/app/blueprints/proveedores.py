@@ -12,7 +12,6 @@ from ..services.catalogo import DOCS_BY_LEVEL
 from ..services.clasificador import clasificar_proveedor
 from ..services.document_review import aplicar_validacion_documento
 from ..services.efos import esta_en_efos, normalizar_rfc
-from ..services.onboarding_empresas import empresa_habilitada_para_proveedores
 from ..services.policy_engine import get_policy_status
 from ..services.serializers import expediente_to_dict
 
@@ -131,18 +130,6 @@ def crear_proveedor():
                 ),
                 409,
             )
-        onboarding_ok, onboarding_status = empresa_habilitada_para_proveedores(empresa)
-        if not onboarding_ok:
-            return (
-                jsonify(
-                    {
-                        "error": "La empresa no tiene onboarding aprobado para recibir proveedores.",
-                        "empresa_id": empresa.id,
-                        "onboarding_status": onboarding_status,
-                    }
-                ),
-                409,
-            )
 
     clasificado = clasificar_proveedor(
         tipo=body["tipo"],
@@ -230,11 +217,24 @@ def crear_proveedor():
             body.get("usuario"),
         )
 
+    credenciales = None
+    if empresa is not None:
+        cred, is_new_cred = _ensure_proveedor_credencial(proveedor, empresa)
+        credenciales = {
+            "username": cred.username,
+            "password": cred.password,
+            "empresa_id": empresa.id,
+            "empresa_nombre": empresa.nombre,
+            "proveedor_id": proveedor.id,
+            "proveedor_nombre": proveedor.nombre,
+            "es_nueva": is_new_cred,
+        }
+
     db.session.commit()
     if folio_creado:
         calcular_completitud(folio_creado["expediente_id"])
 
-    return jsonify({**_proveedor_dict(proveedor), "clasificacion": clasificado, "folio": folio_creado}), 201
+    return jsonify({**_proveedor_dict(proveedor), "clasificacion": clasificado, "folio": folio_creado, "credenciales": credenciales}), 201
 
 
 @proveedores_bp.patch("/proveedores/<int:proveedor_id>")
@@ -318,18 +318,6 @@ def self_register_proveedor():
         return jsonify({"error": "RFC encontrado en EFOS SAT. Registro bloqueado.", "rfc": rfc}), 409
 
     empresa = Empresa.query.get_or_404(int(body["empresa_id"]))
-    onboarding_ok, onboarding_status = empresa_habilitada_para_proveedores(empresa)
-    if not onboarding_ok:
-        return (
-            jsonify(
-                {
-                    "error": "La empresa no tiene onboarding aprobado para recibir auto-registro.",
-                    "empresa_id": empresa.id,
-                    "onboarding_status": onboarding_status,
-                }
-            ),
-            409,
-        )
     policy_status = get_policy_status(empresa.id)
     if not policy_status.get("has_active_published_policy"):
         return (

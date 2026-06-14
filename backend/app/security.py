@@ -7,6 +7,11 @@ from flask import current_app, g, request
 from .models import ProveedorCredencial, Usuario
 
 INTERNAL_ROLES = {"direccion", "tesoreria", "administracion", "contabilidad"}
+AUDITORIA_IA_ROLES = {"direccion", "tesoreria", "contabilidad"}
+ADMIN_ONLY_CREATION_PATHS = {
+    "/api/empresas",
+    "/api/proveedores",
+}
 
 
 @dataclass
@@ -42,13 +47,29 @@ def _is_public_request() -> bool:
         return True
     if method == "GET" and path == "/api/empresas":
         return True
+    if method == "GET" and path == "/api/folios":
+        return True
     if method == "GET" and path.startswith("/api/empresas/") and path.endswith("/policy/status"):
+        return True
+    if method == "GET" and path.startswith("/api/empresas/") and path.endswith("/onboarding/status"):
         return True
     if method == "GET" and path.startswith("/api/efos/consultar"):
         return True
     if method == "POST" and path == "/api/proveedores/self-register":
         return True
     return False
+
+
+def _is_auditoria_ia_path(path: str) -> bool:
+    return path in {
+        "/api/audit_log",
+        "/api/conciliacion/estado_cuenta",
+        "/api/export/reportes/nivel.pdf",
+        "/api/export/reportes/semaforo.pdf",
+        "/api/export/reportes/auditoria.pdf",
+        "/api/export/reportes/trazabilidad.pdf",
+        "/api/export/paquete_sat.zip",
+    }
 
 
 def _load_internal_actor() -> AuthActor | None:
@@ -113,6 +134,18 @@ def is_allowed(actor: AuthActor, method: str, path: str) -> bool:
         return False
 
     role = actor.role
+    if method == "POST" and path in ADMIN_ONLY_CREATION_PATHS:
+        return role == "administracion"
+    if method == "POST" and path.startswith("/api/empresas/") and path.endswith("/policy/upload"):
+        return role == "administracion"
+
+    if _is_auditoria_ia_path(path):
+        if role not in AUDITORIA_IA_ROLES:
+            return False
+        if method == "GET":
+            return True
+        return method == "POST" and path == "/api/conciliacion/estado_cuenta"
+
     if role == "direccion":
         return True
 
@@ -128,11 +161,17 @@ def is_allowed(actor: AuthActor, method: str, path: str) -> bool:
     if role == "administracion":
         if method == "GET":
             return True
-        if method == "POST" and path in {"/api/documentos", "/api/proveedores", "/api/folios"}:
+        if method == "POST" and path in {"/api/documentos", "/api/proveedores", "/api/folios", "/api/empresas"}:
+            return True
+        if method == "POST" and path.startswith("/api/empresas/") and path.endswith("/policy/upload"):
             return True
         if method == "POST" and path.startswith("/api/documentos/") and path.endswith("/subir"):
             return True
-        if method == "PATCH" and (path.startswith("/api/proveedores/") or path.startswith("/api/folios/")):
+        if method == "PATCH" and (
+            path.startswith("/api/proveedores/")
+            or path.startswith("/api/folios/")
+            or path.startswith("/api/empresas/")
+        ):
             return True
         return False
 

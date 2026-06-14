@@ -158,6 +158,58 @@ tbody td{padding:10px 12px;font-size:12px;}
 .field textarea{resize:vertical;min-height:56px;}
 .modal-footer{display:flex;gap:8px;margin-top:18px;padding-top:14px;border-top:1px solid var(--border);}
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.modal.modal-onboarding{width:680px;background:
+  radial-gradient(circle at top right, rgba(79,132,255,.08), transparent 32%),
+  linear-gradient(180deg, rgba(255,255,255,.02), transparent 22%),
+  var(--surface);}
+.flow-intro{padding:14px 16px;border:1px solid rgba(79,132,255,.16);background:linear-gradient(135deg,rgba(79,132,255,.08),rgba(32,214,138,.04));border-radius:12px;margin-bottom:16px;}
+.flow-intro strong{display:block;font-size:13px;margin-bottom:4px;}
+.flow-intro span{font-size:12px;color:var(--muted2);line-height:1.5;}
+.flow-steps{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:0 0 16px;}
+.flow-step-pill{padding:8px 10px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);min-height:62px;}
+.flow-step-pill b{display:block;font-family:var(--mono);font-size:11px;color:var(--accent);margin-bottom:4px;}
+.flow-step-pill span{display:block;font-size:11px;color:var(--muted2);line-height:1.35;}
+.onboard-stage{background:rgba(255,255,255,.015);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px;}
+.onboard-stage.stage-primary{background:linear-gradient(180deg,rgba(79,132,255,.06),rgba(255,255,255,.015));border-color:rgba(79,132,255,.2);}
+.onboard-stage.stage-muted{background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.01));}
+.stage-head{display:flex;align-items:flex-start;gap:12px;margin-bottom:12px;}
+.stage-num{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;font:600 12px var(--mono);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 0 4px rgba(79,132,255,.12);}
+.stage-title{flex:1;}
+.stage-title h4{font-size:14px;font-weight:600;margin-bottom:3px;}
+.stage-title p{font-size:12px;color:var(--muted2);line-height:1.45;}
+.stage-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+.stage-divider{height:1px;background:var(--border);margin:14px 0;}
+.docs-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:12px;align-items:start;}
+.docs-list{display:flex;flex-direction:column;gap:8px;}
+.doc-item{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);}
+.doc-dot{width:10px;height:10px;border-radius:50%;background:var(--muted);}
+.doc-item.ok .doc-dot{background:var(--green);box-shadow:0 0 8px rgba(32,214,138,.35);}
+.doc-item.pending .doc-dot{background:var(--yellow);}
+.doc-item.missing .doc-dot{background:var(--red);}
+.doc-copy{flex:1;min-width:0;}
+.doc-copy strong{display:block;font-size:12px;margin-bottom:2px;}
+.doc-copy small{display:block;font-size:11px;color:var(--muted2);}
+.doc-badge{font-size:10px;font-family:var(--mono);padding:2px 7px;border-radius:999px;background:var(--surface3);color:var(--muted2);}
+.doc-helper{padding:12px;border-radius:12px;background:var(--surface2);border:1px solid rgba(79,132,255,.16);}
+.doc-helper h5{font-size:12px;font-weight:600;margin-bottom:6px;}
+.doc-helper p{font-size:12px;color:var(--muted2);line-height:1.5;margin-bottom:10px;}
+.doc-helper code{font-family:var(--mono);font-size:11px;color:var(--accent);}
+.doc-upload-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px;}
+.file-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:rgba(79,132,255,.1);border:1px solid rgba(79,132,255,.2);font-size:11px;color:var(--text);max-width:100%;}
+.file-chip.empty{background:var(--surface2);border-color:var(--border);color:var(--muted2);}
+.file-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:240px;}
+.account-list{display:flex;flex-direction:column;gap:8px;margin-top:12px;}
+.account-card{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:12px;background:var(--surface2);border:1px solid var(--border);}
+.account-icon{width:30px;height:30px;border-radius:9px;background:rgba(32,214,138,.12);color:var(--green);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:var(--mono);font-size:12px;}
+.account-copy{flex:1;min-width:0;}
+.account-copy strong{display:block;font-size:12px;margin-bottom:3px;}
+.account-copy small{display:block;font-size:11px;color:var(--muted2);line-height:1.4;}
+.account-empty{padding:12px;border-radius:12px;background:var(--surface2);border:1px dashed var(--border2);font-size:12px;color:var(--muted2);}
+.bank-grid,.rules-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.review-strip{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-radius:12px;background:linear-gradient(90deg,rgba(79,132,255,.06),rgba(32,214,138,.05));border:1px solid rgba(79,132,255,.18);}
+.review-strip p{font-size:12px;color:var(--muted2);line-height:1.45;}
+.review-strip strong{display:block;color:var(--text);margin-bottom:2px;}
+.section-disabled-note{font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:8px;}
 
 /* DETAIL PANEL */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:none;align-items:flex-start;justify-content:flex-end;backdrop-filter:blur(3px);}
@@ -367,7 +419,7 @@ input[type=file]{display:none;}
   <button class="btn btn-ghost" onclick="logout()">Cerrar sesión</button>
   <button class="btn btn-ghost">Exportar</button>
   <button id="btn-nueva-empresa" class="btn btn-ghost" onclick="openModalEmpresaSegura()">＋ Nueva Empresa Cliente</button>
-  <button id="btn-nuevo-proveedor" class="btn btn-primary" onclick="openModal('modal-proveedor')">＋ Nuevo Proveedor</button>
+  <button id="btn-nuevo-proveedor" class="btn btn-primary" onclick="openModalProveedorSegura()">＋ Nuevo Proveedor</button>
 </div>
 <div class="content">
 
@@ -472,6 +524,27 @@ input[type=file]{display:none;}
     </div>
     <div style="margin:8px 0 12px 0;">
       <button class="btn btn-ghost" onclick="descargarPoliticaEmpresaPDF()">Descargar política en PDF</button>
+    </div>
+    <div id="policy-upload-wrap" class="card" style="padding:12px;margin-bottom:12px;display:none;">
+      <div class="clabel" style="margin-bottom:8px">Carga y activación de política</div>
+      <div class="csub" style="margin-bottom:10px">Administración puede subir la política operativa desde la computadora. Al publicarla aquí, la empresa queda habilitada para registrar proveedores.</div>
+      <div class="field-row">
+        <div class="field" style="margin-bottom:8px">
+          <label>Archivo de política</label>
+          <div class="stage-actions">
+            <button class="btn btn-ghost" type="button" onclick="document.getElementById('policy-upload-file').click()">Elegir archivo</button>
+            <input id="policy-upload-file" type="file" accept=".pdf,.doc,.docx,.txt" onchange="handlePolicyUploadFileChange(event)" />
+            <div id="policy-upload-file-chip" class="file-chip empty"><span>Ningún archivo seleccionado</span></div>
+          </div>
+        </div>
+        <div class="field" style="margin-bottom:8px">
+          <label>Nota de cambio</label>
+          <input id="policy-upload-note" type="text" placeholder="Ej. Política operativa vigente 2026" />
+        </div>
+      </div>
+      <div class="stage-actions">
+        <button class="btn btn-primary" type="button" onclick="subirPoliticaEmpresa()">Subir política y activar empresa</button>
+      </div>
     </div>
     <div id="policy-company-view" class="muted">Selecciona una empresa para consultar su política activa.</div>
   </div>
@@ -880,13 +953,13 @@ input[type=file]{display:none;}
       <div class="clabel" style="margin-bottom:12px">Exportar para auditoría SAT</div>
       <div class="field" style="margin-bottom:8px">
         <label>Empresa (filtro paquete)</label>
-        <select id="sat-empresa-filter" onchange="syncSatProveedorFilter()">
+        <select id="sat-empresa-filter" onchange="syncSatFilters()">
           <option value="">Todas las empresas</option>
         </select>
       </div>
       <div class="field" style="margin-bottom:8px">
         <label>Proveedor (filtro paquete)</label>
-        <select id="sat-proveedor-filter">
+        <select id="sat-proveedor-filter" onchange="syncSatNivelFilter()">
           <option value="">Todos los proveedores</option>
         </select>
       </div>
@@ -1026,75 +1099,205 @@ input[type=file]{display:none;}
 
 <!-- MODAL EMPRESA CLIENTE -->
 <div class="modal-overlay" id="modal-empresa">
-  <div class="modal" onclick="event.stopPropagation()">
+  <div class="modal modal-onboarding" onclick="event.stopPropagation()">
     <h3>Alta Empresa Cliente y Onboarding</h3>
-    <div class="field-row">
-      <div class="field"><label>Razón social</label><input id="emp-nombre" type="text" placeholder="Empresa Cliente SA de CV" /></div>
-      <div class="field"><label>RFC</label><input id="emp-rfc" type="text" placeholder="ABC010101AAA" /></div>
+    <div class="flow-intro">
+      <strong>Flujo guiado de alta</strong>
+      <span>La empresa se crea primero. Después completas el paquete documental, registras una cuenta bancaria válida, guardas reglas y al final la envías a revisión para aprobar su onboarding.</span>
     </div>
-    <div class="field-row">
-      <div class="field">
-        <label>Tipo de empresa</label>
-        <select id="emp-tipo">
-          <option value="servicios">Servicios</option>
-          <option value="comercializadora">Comercializadora</option>
-          <option value="industrial">Industrial</option>
-          <option value="constructora">Constructora</option>
-          <option value="logistica">Logística</option>
-          <option value="tecnologia">Tecnología</option>
-          <option value="financiera">Financiera</option>
-          <option value="otra">Otra</option>
-        </select>
+    <div class="flow-steps">
+      <div class="flow-step-pill"><b>1</b><span>Crear empresa</span></div>
+      <div class="flow-step-pill"><b>2</b><span>Seleccionar onboarding</span></div>
+      <div class="flow-step-pill"><b>3</b><span>Subir documentos</span></div>
+      <div class="flow-step-pill"><b>4</b><span>Validar documentos</span></div>
+      <div class="flow-step-pill"><b>5</b><span>Registrar cuenta</span></div>
+      <div class="flow-step-pill"><b>6</b><span>Guardar reglas y aprobar</span></div>
+    </div>
+
+    <section class="onboard-stage stage-primary">
+      <div class="stage-head">
+        <div class="stage-num">1</div>
+        <div class="stage-title">
+          <h4>Crear la empresa</h4>
+          <p>Captura los datos base del cliente. Al guardar, la empresa queda lista para continuar su onboarding.</p>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Razón social</label><input id="emp-nombre" type="text" placeholder="Empresa Cliente SA de CV" /></div>
+        <div class="field"><label>RFC</label><input id="emp-rfc" type="text" placeholder="ABC010101AAA" /></div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Tipo de empresa</label>
+          <select id="emp-tipo">
+            <option value="servicios">Servicios</option>
+            <option value="comercializadora">Comercializadora</option>
+            <option value="industrial">Industrial</option>
+            <option value="constructora">Constructora</option>
+            <option value="logistica">Logística</option>
+            <option value="tecnologia">Tecnología</option>
+            <option value="financiera">Financiera</option>
+            <option value="otra">Otra</option>
+          </select>
+        </div>
+      </div>
+      <div class="stage-actions">
+        <button class="btn btn-primary" onclick="registrarEmpresaCliente()">1) Crear empresa y continuar</button>
+        <button class="btn btn-ghost" onclick="actualizarEmpresaCliente()">Actualizar datos de empresa</button>
+      </div>
+    </section>
+
+    <section class="onboard-stage stage-muted">
+      <div class="stage-head">
+        <div class="stage-num">2</div>
+        <div class="stage-title">
+          <h4>Seleccionar empresa en onboarding</h4>
+          <p>Si acabas de crearla se selecciona sola. También puedes retomar una empresa ya registrada para continuar el proceso.</p>
+        </div>
       </div>
       <div class="field">
-        <label>Empresa registrada</label>
+        <label>Empresa en onboarding</label>
         <select id="emp-id" onchange="cargarOnboardingEmpresa()">
-          <option value="">— Seleccionar empresa —</option>
+          <option value="">— Se asigna al crear o retomar una empresa —</option>
         </select>
+        <div class="muted" style="margin-top:6px;">Aquí eliges la empresa sobre la que se guardarán documentos, cuentas, reglas y aprobación.</div>
       </div>
+    </section>
+
+    <div id="emp-onboarding-flow" style="opacity:.55;pointer-events:none;">
+      <section class="onboard-stage">
+        <div class="stage-head">
+          <div class="stage-num">3</div>
+          <div class="stage-title">
+            <h4>Cargar paquete documental</h4>
+            <p>Los documentos no bancarios se suben uno por uno. Selecciona el tipo, captura su nombre, registra su ubicación y cárgalo.</p>
+          </div>
+        </div>
+        <div class="docs-grid">
+          <div class="docs-list" id="emp-doc-checklist"></div>
+          <div class="doc-helper">
+            <h5>Cómo subir un documento</h5>
+            <p>1. Elige el tipo de documento. 2. Escribe el nombre del archivo. 3. Indica la ruta o URL donde quedó almacenado. 4. Guarda la vigencia si aplica.</p>
+            <p>Después usa <code>2) Subir documento</code> y enseguida <code>3) Validar documento</code> para marcarlo como válido.</p>
+          </div>
+        </div>
+        <div class="stage-divider"></div>
+        <div class="field-row">
+          <div class="field">
+            <label>Tipo de documento a cargar</label>
+            <select id="emp-doc-tipo"></select>
+          </div>
+          <div class="field">
+            <label>Nombre archivo</label>
+            <input id="emp-doc-nombre" type="text" placeholder="constancia_fiscal_2026.pdf" />
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Archivo desde tu computadora o URL</label>
+            <input id="emp-doc-url" type="text" placeholder="/uploads/empresa_1/archivo.pdf o https://..." />
+            <div class="doc-upload-tools">
+              <label class="btn btn-ghost" for="emp-doc-file">Elegir archivo</label>
+              <input id="emp-doc-file" type="file" onchange="handleEmpresaDocFileChange(event, 'general')" />
+              <div id="emp-doc-file-chip" class="file-chip empty"><span>Ningún archivo seleccionado</span></div>
+            </div>
+          </div>
+          <div class="field"><label>Vigente hasta</label><input id="emp-doc-vigencia" type="date" /></div>
+        </div>
+        <div class="stage-actions">
+          <button class="btn btn-ghost" onclick="subirDocumentoEmpresa('general')">2) Subir documento</button>
+          <button class="btn btn-success" onclick="validarDocumentoEmpresa('valido', 'general')">3) Validar documento</button>
+        </div>
+      </section>
+
+      <section class="onboard-stage">
+        <div class="stage-head">
+          <div class="stage-num">5</div>
+          <div class="stage-title">
+            <h4>Registrar cuenta bancaria válida</h4>
+            <p>Registra todas las cuentas que necesite la empresa. La documentación bancaria queda aquí, separada del paquete documental general.</p>
+          </div>
+        </div>
+        <div class="docs-grid" style="margin-bottom:12px;">
+          <div class="docs-list" id="emp-bank-doc-checklist"></div>
+          <div class="doc-helper">
+            <h5>Documentación bancaria</h5>
+            <p>Sube aquí exclusivamente la carta bancaria de cuentas y el estado de cuenta bancario. Después registra una o varias cuentas activas para la misma empresa.</p>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Documento bancario a cargar</label>
+            <select id="emp-bank-doc-tipo"></select>
+          </div>
+          <div class="field">
+            <label>Nombre archivo</label>
+            <input id="emp-bank-doc-nombre" type="text" placeholder="estado_cuenta_bancario.pdf" />
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Archivo bancario desde tu computadora o URL</label>
+            <input id="emp-bank-doc-url" type="text" placeholder="/uploads/empresas/1/estado_cuenta.pdf o https://..." />
+            <div class="doc-upload-tools">
+              <label class="btn btn-ghost" for="emp-bank-doc-file">Elegir archivo</label>
+              <input id="emp-bank-doc-file" type="file" onchange="handleEmpresaDocFileChange(event, 'bank')" />
+              <div id="emp-bank-doc-file-chip" class="file-chip empty"><span>Ningún archivo seleccionado</span></div>
+            </div>
+          </div>
+          <div class="field"><label>Vigente hasta</label><input id="emp-bank-doc-vigencia" type="date" /></div>
+        </div>
+        <div class="stage-actions">
+          <button class="btn btn-ghost" onclick="subirDocumentoEmpresa('bank')">Subir documento bancario</button>
+          <button class="btn btn-success" onclick="validarDocumentoEmpresa('valido', 'bank')">Validar documento bancario</button>
+        </div>
+        <div class="stage-divider"></div>
+        <div class="bank-grid">
+          <div class="field"><label>Banco</label><input id="emp-cuenta-banco" type="text" placeholder="BBVA" /></div>
+          <div class="field"><label>Titular</label><input id="emp-cuenta-titular" type="text" placeholder="Empresa Cliente SA de CV" /></div>
+          <div class="field"><label>CLABE</label><input id="emp-cuenta-clabe" type="text" placeholder="012345678901234567" /></div>
+          <div class="field"><label>Moneda</label><input id="emp-cuenta-moneda" type="text" value="MXN" /></div>
+        </div>
+        <div class="stage-actions">
+          <button class="btn btn-ghost" onclick="guardarCuentaEmpresa()">4) Guardar cuenta bancaria</button>
+        </div>
+        <div id="emp-cuentas-list" class="account-list"></div>
+      </section>
+
+      <section class="onboard-stage">
+        <div class="stage-head">
+          <div class="stage-num">6</div>
+          <div class="stage-title">
+            <h4>Guardar reglas y cerrar el proceso</h4>
+            <p>Marca las reglas obligatorias, revisa el semáforo de onboarding y luego envía la empresa a revisión para aprobarla.</p>
+          </div>
+        </div>
+        <div class="field"><label>Semáforo onboarding</label><div id="emp-onboarding-status" class="muted">Crea o selecciona empresa para ver estatus.</div></div>
+        <div class="field">
+          <label>Reglas de negocio obligatorias</label>
+          <div class="rules-grid">
+            <label><input id="emp-regla-alta-prov" type="checkbox" /> Flujo alta proveedores</label>
+            <label><input id="emp-regla-no-pago" type="checkbox" /> No pago sin expediente</label>
+            <label><input id="emp-regla-cambio-cuenta" type="checkbox" /> Política cambio cuenta proveedor</label>
+            <label><input id="emp-regla-conciliacion" type="checkbox" /> Conciliación mensual</label>
+          </div>
+        </div>
+        <div class="review-strip">
+          <div>
+            <strong>Último tramo del flujo</strong>
+            <p>Primero guarda reglas. Cuando el semáforo esté completo, envía a revisión y finalmente aprueba el onboarding.</p>
+          </div>
+          <div class="stage-actions" style="margin-top:0;justify-content:flex-end;">
+            <button class="btn btn-ghost" onclick="guardarReglasEmpresa()">5) Guardar reglas</button>
+            <button class="btn btn-ghost" onclick="enviarRevisionEmpresa()">6) Enviar revisión</button>
+            <button class="btn btn-primary" onclick="aprobarEmpresa()">7) Aprobar onboarding</button>
+          </div>
+        </div>
+      </section>
+      <div class="section-disabled-note" id="emp-flow-note">Selecciona una empresa para habilitar las secciones de documentos, banca y aprobación.</div>
     </div>
-    <div class="field"><label>Semáforo onboarding</label><div id="emp-onboarding-status" class="muted">Crea o selecciona empresa para ver estatus.</div></div>
-    <div class="field-row">
-      <div class="field">
-        <label>Documento onboarding</label>
-        <select id="emp-doc-tipo"></select>
-      </div>
-      <div class="field">
-        <label>Nombre archivo</label>
-        <input id="emp-doc-nombre" type="text" placeholder="constancia_fiscal_2026.pdf" />
-      </div>
-    </div>
-    <div class="field-row">
-      <div class="field"><label>URL archivo</label><input id="emp-doc-url" type="text" placeholder="/uploads/empresa_1/archivo.pdf" /></div>
-      <div class="field"><label>Vigente hasta</label><input id="emp-doc-vigencia" type="date" /></div>
-    </div>
-    <div class="field-row">
-      <div class="field"><label>Banco</label><input id="emp-cuenta-banco" type="text" placeholder="BBVA" /></div>
-      <div class="field"><label>Titular</label><input id="emp-cuenta-titular" type="text" placeholder="Empresa Cliente SA de CV" /></div>
-    </div>
-    <div class="field-row">
-      <div class="field"><label>CLABE</label><input id="emp-cuenta-clabe" type="text" placeholder="012345678901234567" /></div>
-      <div class="field"><label>Moneda</label><input id="emp-cuenta-moneda" type="text" value="MXN" /></div>
-    </div>
-    <div class="field">
-      <label>Reglas de negocio (obligatorias)</label>
-      <div class="field-row">
-        <label><input id="emp-regla-alta-prov" type="checkbox" /> Flujo alta proveedores</label>
-        <label><input id="emp-regla-no-pago" type="checkbox" /> No pago sin expediente</label>
-      </div>
-      <div class="field-row">
-        <label><input id="emp-regla-cambio-cuenta" type="checkbox" /> Política cambio cuenta proveedor</label>
-        <label><input id="emp-regla-conciliacion" type="checkbox" /> Conciliación mensual</label>
-      </div>
-    </div>
-    <div class="modal-footer" style="flex-wrap:wrap">
-      <button class="btn btn-primary" onclick="registrarEmpresaCliente()">1) Crear empresa</button>
-      <button class="btn btn-ghost" onclick="subirDocumentoEmpresa()">2) Subir documento</button>
-      <button class="btn btn-ghost" onclick="validarDocumentoEmpresa('valido')">3) Validar documento</button>
-      <button class="btn btn-ghost" onclick="guardarCuentaEmpresa()">4) Guardar cuenta</button>
-      <button class="btn btn-ghost" onclick="guardarReglasEmpresa()">5) Guardar reglas</button>
-      <button class="btn btn-ghost" onclick="enviarRevisionEmpresa()">6) Enviar revisión</button>
-      <button class="btn btn-primary" onclick="aprobarEmpresa()">7) Aprobar onboarding</button>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-empresa')">Cerrar</button>
     </div>
   </div>
 </div>
@@ -1251,7 +1454,10 @@ let POLICY_STATUS_BY_EMPRESA = {};
 let ONBOARDING_STATUS_BY_EMPRESA = {};
 let AUTH_USER = null;
 let PORTAL_DOCS_CACHE = [];
-let EMP_LAST_DOC_ID = null;
+let EMP_LAST_DOC_ID = {general:null, bank:null};
+let EMP_SELECTED_DOC_FILE = {general:null, bank:null};
+let EMPRESA_CUENTAS_CACHE = [];
+let POLICY_SELECTED_FILE = null;
 const TIPO_EMPRESA_LABEL = {
   servicios: 'Servicios',
   comercializadora: 'Comercializadora',
@@ -1262,6 +1468,8 @@ const TIPO_EMPRESA_LABEL = {
   financiera: 'Financiera',
   otra: 'Otra',
 };
+const EMPRESA_DOCS_BANCARIOS = ['estado_cuenta_bancario'];
+const EMPRESA_DOCS_BANCARIOS_SET = new Set(EMPRESA_DOCS_BANCARIOS);
 
 function toMoney(value){
   const n = Number(value||0);
@@ -1317,10 +1525,8 @@ function filtrarEmpresasRegistro(scope){
   const bloqueadas = [];
   base.forEach(e=>{
     const st = POLICY_STATUS_BY_EMPRESA[String(e.id)];
-    const onb = ONBOARDING_STATUS_BY_EMPRESA[String(e.id)];
     const policyOk = st ? !!st.has_active_published_policy : true;
-    const onboardingOk = !!(onb && onb.onboarding_status === 'aprobada' && onb.puede_aprobarse);
-    if(policyOk && onboardingOk) habilitadas.push(e);
+    if(policyOk) habilitadas.push(e);
     else bloqueadas.push(e);
   });
 
@@ -1344,14 +1550,14 @@ function filtrarEmpresasRegistro(scope){
     op.value = String(e.id);
     op.textContent = empresaLabel(e);
     op.disabled = true;
-    op.title = 'Requiere onboarding aprobado + política activa publicada';
+    op.title = 'Requiere política activa publicada';
     sel.appendChild(op);
   });
 
   if(base.length && !habilitadas.length){
     const op = document.createElement('option');
     op.value = '';
-    op.textContent = '— Sin empresas habilitadas (onboarding + política) —';
+    op.textContent = '— Sin empresas habilitadas (política activa) —';
     op.disabled = true;
     sel.appendChild(op);
   }
@@ -1367,9 +1573,10 @@ function filtrarEmpresasRegistro(scope){
 function refreshEmpresaSelectOnboarding(){
   const sel = document.getElementById('emp-id');
   const docSel = document.getElementById('emp-doc-tipo');
+  const bankDocSel = document.getElementById('emp-bank-doc-tipo');
   if(sel){
     const current = sel.value;
-    sel.innerHTML = '<option value="">— Seleccionar empresa —</option>';
+    sel.innerHTML = '<option value="">— Se asigna al crear o retomar una empresa —</option>';
     EMPRESAS_CACHE.forEach(e=>{
       const op = document.createElement('option');
       op.value = String(e.id);
@@ -1378,11 +1585,12 @@ function refreshEmpresaSelectOnboarding(){
     });
     if(Array.from(sel.options).some(o=>o.value === current)) sel.value = current;
   }
+  setEmpresaOnboardingUIState();
+  renderEmpresaDocumentChecklist();
   if(docSel && docSel.options.length===0){
     [
       'constancia_fiscal','acta_constitutiva','poder_representante','identificacion_representante',
-      'comprobante_domicilio_fiscal','opinion_32d','carta_bancaria_cuentas','estado_cuenta_bancario',
-      'politica_autorizacion_pagos'
+      'comprobante_domicilio_fiscal','opinion_32d','politica_autorizacion_pagos'
     ].forEach(t=>{
       const op = document.createElement('option');
       op.value = t;
@@ -1390,6 +1598,168 @@ function refreshEmpresaSelectOnboarding(){
       docSel.appendChild(op);
     });
   }
+  if(bankDocSel && bankDocSel.options.length===0){
+    EMPRESA_DOCS_BANCARIOS.forEach(t=>{
+      const op = document.createElement('option');
+      op.value = t;
+      op.textContent = t;
+      bankDocSel.appendChild(op);
+    });
+  }
+}
+
+function prettyEmpresaDocLabel(tipo){
+  const labels = {
+    constancia_fiscal: 'Constancia fiscal',
+    acta_constitutiva: 'Acta constitutiva',
+    poder_representante: 'Poder del representante',
+    identificacion_representante: 'Identificación del representante',
+    comprobante_domicilio_fiscal: 'Comprobante de domicilio fiscal',
+    opinion_32d: 'Opinión 32-D',
+    estado_cuenta_bancario: 'Estado de cuenta bancario',
+    politica_autorizacion_pagos: 'Política de autorización de pagos'
+  };
+  return labels[tipo] || tipo;
+}
+
+function renderEmpresaDocumentChecklist(){
+  const empresaId = String(document.getElementById('emp-id')?.value || '');
+  const st = ONBOARDING_STATUS_BY_EMPRESA[empresaId];
+  const detalle = st?.documentos?.detalle || [];
+  if(!empresaId){
+    const wrap = document.getElementById('emp-doc-checklist');
+    const bankWrap = document.getElementById('emp-bank-doc-checklist');
+    if(wrap) wrap.innerHTML = '<div class="doc-helper"><h5>Paquete documental</h5><p>Cuando selecciones una empresa verás aquí el checklist de documentos no bancarios y su avance.</p></div>';
+    if(bankWrap) bankWrap.innerHTML = '<div class="doc-helper"><h5>Documentación bancaria</h5><p>Cuando selecciones una empresa verás aquí la carta bancaria y el estado de cuenta requeridos.</p></div>';
+    return;
+  }
+  const renderItems = (items)=> items.map((doc)=>{
+    const stateClass = doc.ok ? 'ok' : (doc.presente ? 'pending' : 'missing');
+    const stateLabel = doc.ok ? 'OK' : (doc.presente ? (doc.estado_validacion || 'pendiente') : 'faltante');
+    const vigencia = doc.presente ? (doc.vigente ? 'Vigente' : 'Revisar vigencia') : 'Aún no cargado';
+    return `<div class="doc-item ${stateClass}">
+      <div class="doc-dot"></div>
+      <div class="doc-copy">
+        <strong>${prettyEmpresaDocLabel(doc.tipo)}</strong>
+        <small>${vigencia}</small>
+      </div>
+      <span class="doc-badge">${stateLabel}</span>
+    </div>`;
+  }).join('');
+  const generalDocs = detalle.filter(doc=>!EMPRESA_DOCS_BANCARIOS_SET.has(doc.tipo));
+  const bankDocs = detalle.filter(doc=>EMPRESA_DOCS_BANCARIOS_SET.has(doc.tipo));
+  const wrap = document.getElementById('emp-doc-checklist');
+  const bankWrap = document.getElementById('emp-bank-doc-checklist');
+  if(wrap) wrap.innerHTML = generalDocs.length ? renderItems(generalDocs) : '<div class="doc-helper"><h5>Paquete documental</h5><p>No se pudo cargar el detalle documental general todavía.</p></div>';
+  if(bankWrap) bankWrap.innerHTML = bankDocs.length ? renderItems(bankDocs) : '<div class="doc-helper"><h5>Documentación bancaria</h5><p>No se pudo cargar el detalle de documentos bancarios todavía.</p></div>';
+}
+
+function renderEmpresaDocSelectedFile(scope='general'){
+  const chip = document.getElementById(scope === 'bank' ? 'emp-bank-doc-file-chip' : 'emp-doc-file-chip');
+  if(!chip) return;
+  const selected = EMP_SELECTED_DOC_FILE[scope];
+  if(selected){
+    chip.className = 'file-chip';
+    chip.innerHTML = `<span>${selected.name}</span>`;
+    const nameInput = document.getElementById(scope === 'bank' ? 'emp-bank-doc-nombre' : 'emp-doc-nombre');
+    if(nameInput && !nameInput.value.trim()) nameInput.value = selected.name;
+  }else{
+    chip.className = 'file-chip empty';
+    chip.innerHTML = '<span>Ningún archivo seleccionado</span>';
+  }
+}
+
+function handleEmpresaDocFileChange(event, scope='general'){
+  const input = event?.target;
+  EMP_SELECTED_DOC_FILE[scope] = input?.files?.[0] || null;
+  const urlInput = document.getElementById(scope === 'bank' ? 'emp-bank-doc-url' : 'emp-doc-url');
+  if(urlInput && EMP_SELECTED_DOC_FILE[scope]) urlInput.value = '';
+  renderEmpresaDocSelectedFile(scope);
+}
+
+function renderPolicySelectedFile(){
+  const chip = document.getElementById('policy-upload-file-chip');
+  if(!chip) return;
+  if(POLICY_SELECTED_FILE){
+    chip.className = 'file-chip';
+    chip.innerHTML = `<span>${POLICY_SELECTED_FILE.name}</span>`;
+  }else{
+    chip.className = 'file-chip empty';
+    chip.innerHTML = '<span>Ningún archivo seleccionado</span>';
+  }
+}
+
+function handlePolicyUploadFileChange(event){
+  POLICY_SELECTED_FILE = event?.target?.files?.[0] || null;
+  renderPolicySelectedFile();
+}
+
+function renderEmpresaCuentasList(){
+  const wrap = document.getElementById('emp-cuentas-list');
+  if(!wrap) return;
+  if(!EMPRESA_CUENTAS_CACHE.length){
+    wrap.innerHTML = '<div class="account-empty">Aún no hay cuentas bancarias registradas para esta empresa. Puedes guardar varias una por una.</div>';
+    return;
+  }
+  wrap.innerHTML = EMPRESA_CUENTAS_CACHE.map((cuenta)=>{
+    const clabe = cuenta.clabe ? `CLABE terminación ${String(cuenta.clabe).slice(-4)}` : 'Sin CLABE';
+    const badgeClass = cuenta.validada ? 'g' : 'y';
+    return `<div class="account-card">
+      <div class="account-icon">${cuenta.moneda || 'MXN'}</div>
+      <div class="account-copy">
+        <strong>${cuenta.banco} · ${cuenta.titular}</strong>
+        <small>${clabe} · ${cuenta.moneda || 'MXN'} · ${cuenta.activa ? 'Activa' : 'Inactiva'}</small>
+      </div>
+      <span class="badge ${badgeClass}">${cuenta.validada ? 'Validada' : 'Pendiente'}</span>
+    </div>`;
+  }).join('');
+}
+
+async function loadEmpresaCuentas(){
+  const empresaId = Number(document.getElementById('emp-id')?.value || 0);
+  if(!empresaId){
+    EMPRESA_CUENTAS_CACHE = [];
+    renderEmpresaCuentasList();
+    return;
+  }
+  try{
+    EMPRESA_CUENTAS_CACHE = await apiGet(`/empresas/${empresaId}/cuentas-bancarias`);
+  }catch(_err){
+    EMPRESA_CUENTAS_CACHE = [];
+  }
+  renderEmpresaCuentasList();
+}
+
+function getEmpresaSelectedDocId(scope='general'){
+  const empresaId = String(document.getElementById('emp-id')?.value || '');
+  const tipo = (document.getElementById(scope === 'bank' ? 'emp-bank-doc-tipo' : 'emp-doc-tipo')?.value || '').trim();
+  const st = ONBOARDING_STATUS_BY_EMPRESA[empresaId];
+  const detalle = st?.documentos?.detalle || [];
+  const doc = detalle.find(item => item.tipo === tipo);
+  return doc?.id || null;
+}
+
+function setEmpresaOnboardingUIState(){
+  const empresaId = Number(document.getElementById('emp-id')?.value || 0);
+  const flow = document.getElementById('emp-onboarding-flow');
+  const note = document.getElementById('emp-flow-note');
+  if(!flow) return;
+  flow.style.opacity = empresaId ? '1' : '.55';
+  flow.style.pointerEvents = empresaId ? 'auto' : 'none';
+  if(note) note.style.display = empresaId ? 'none' : 'block';
+}
+
+function syncEmpresaFormFromSelected(){
+  const empresaId = Number(document.getElementById('emp-id')?.value || 0);
+  if(!empresaId) return;
+  const empresa = EMPRESAS_CACHE.find(e=>Number(e.id)===empresaId);
+  if(!empresa) return;
+  const nombreInput = document.getElementById('emp-nombre');
+  const rfcInput = document.getElementById('emp-rfc');
+  const tipoSel = document.getElementById('emp-tipo');
+  if(nombreInput) nombreInput.value = empresa.nombre || '';
+  if(rfcInput) rfcInput.value = empresa.rfc || '';
+  if(tipoSel && empresa.tipo_empresa) tipoSel.value = empresa.tipo_empresa;
 }
 
 function syncTipoEmpresaFromSelected(scope){
@@ -1439,20 +1809,34 @@ function setAuthUser(user){
   }
 }
 
+function canAccessAuditoriaIA(){
+  if(!AUTH_USER || AUTH_USER.tipo === 'proveedor') return false;
+  return ['direccion','tesoreria','contabilidad'].includes(AUTH_USER.rol);
+}
+
+function isAdministracion(){
+  return !!(AUTH_USER && AUTH_USER.tipo !== 'proveedor' && AUTH_USER.rol === 'administracion');
+}
+
 function applyRoleUI(){
   const isProveedor = !!(AUTH_USER && AUTH_USER.tipo === 'proveedor');
-  const isContabilidad = !!(AUTH_USER && AUTH_USER.tipo !== 'proveedor' && AUTH_USER.rol === 'contabilidad');
+  const canAdmin = isAdministracion();
+  const canAudit = canAccessAuditoriaIA();
   const btnNuevo = document.getElementById('btn-nuevo-proveedor');
-  if(btnNuevo) btnNuevo.style.display = isProveedor ? 'none' : '';
+  if(btnNuevo) btnNuevo.style.display = canAdmin ? '' : 'none';
   const btnNuevaEmpresa = document.getElementById('btn-nueva-empresa');
-  if(btnNuevaEmpresa) btnNuevaEmpresa.style.display = isContabilidad ? '' : 'none';
+  if(btnNuevaEmpresa) btnNuevaEmpresa.style.display = canAdmin ? '' : 'none';
   const linkNuevo = document.getElementById('link-agregar-proveedor');
-  if(linkNuevo) linkNuevo.style.display = isProveedor ? 'none' : '';
+  if(linkNuevo) linkNuevo.style.display = canAdmin ? '' : 'none';
+  const policyUploadWrap = document.getElementById('policy-upload-wrap');
+  if(policyUploadWrap) policyUploadWrap.style.display = canAdmin ? '' : 'none';
   const allowedProveedorViews = new Set(['clasificador', 'portal']);
   document.querySelectorAll('.ni[data-view]').forEach(item=>{
     const view = item.getAttribute('data-view') || '';
     if(isProveedor){
       item.style.display = allowedProveedorViews.has(view) ? '' : 'none';
+    }else if(view === 'auditoria'){
+      item.style.display = canAudit ? '' : 'none';
     }else{
       item.style.display = '';
     }
@@ -1471,14 +1855,26 @@ function applyRoleUI(){
     const hasVisible = nextItems.some(i => i.style.display !== 'none');
     section.style.display = hasVisible ? '' : 'none';
   });
+  const auditoriaView = document.getElementById('view-auditoria');
+  if(auditoriaView && auditoriaView.classList.contains('active') && !canAudit){
+    goNav(document.querySelector('.ni[data-view="dashboard"]'), 'dashboard');
+  }
 }
 
 function openModalEmpresaSegura(){
-  if(!AUTH_USER || AUTH_USER.tipo === 'proveedor' || AUTH_USER.rol !== 'contabilidad'){
-    alert('Solo el rol contabilidad puede registrar empresas cliente.');
+  if(!AUTH_USER || AUTH_USER.tipo === 'proveedor' || AUTH_USER.rol !== 'administracion'){
+    alert('Solo el rol administración puede registrar empresas cliente.');
     return;
   }
   openModal('modal-empresa');
+}
+
+function openModalProveedorSegura(){
+  if(!AUTH_USER || AUTH_USER.tipo === 'proveedor' || AUTH_USER.rol !== 'administracion'){
+    alert('Solo el rol administración puede registrar proveedores manualmente.');
+    return;
+  }
+  openModal('modal-proveedor');
 }
 
 function logout(){
@@ -1508,10 +1904,7 @@ async function enterAsProveedor(){
   await loadEmpresas();
   const tipoSel = document.getElementById('self-empresa-tipo');
   if(tipoSel) tipoSel.value = '';
-  const sel = document.getElementById('self-empresa');
-  if(sel){
-    sel.innerHTML = '<option value="">— Seleccionar empresa —</option>';
-  }
+  filtrarEmpresasRegistro('self');
   openModal('modal-proveedor-self');
 }
 
@@ -1664,6 +2057,11 @@ function goNav(el, id) {
   if(AUTH_USER && AUTH_USER.tipo === 'proveedor' && !['clasificador','portal'].includes(id)){
     id = 'portal';
     el = document.querySelector('.ni[data-view="portal"]');
+  }
+  if(id === 'auditoria' && !canAccessAuditoriaIA()){
+    alert('Solo dirección, tesorería y contabilidad pueden acceder a Auditoría IA.');
+    id = 'dashboard';
+    el = document.querySelector('.ni[data-view="dashboard"]');
   }
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
@@ -2403,6 +2801,37 @@ function syncSatProveedorFilter(){
   });
   const stillExists = Array.from(sel.options).some(o=>o.value === current);
   if(stillExists) sel.value = current;
+  else sel.value = '';
+}
+
+function syncSatNivelFilter(){
+  const empresaId = (document.getElementById('sat-empresa-filter')?.value || '').trim();
+  const proveedorId = (document.getElementById('sat-proveedor-filter')?.value || '').trim();
+  const sel = document.getElementById('sat-nivel-filter');
+  if(!sel) return;
+  const current = sel.value;
+  const items = (PORTAL_FOLIOS || []).filter(f=>{
+    if(empresaId && String(f.empresa_id) !== empresaId) return false;
+    if(proveedorId && String(f.proveedor_id) !== proveedorId) return false;
+    return true;
+  });
+  const niveles = Array.from(new Set(items.map(f=>Number(f.nivel)).filter(n=>Number.isFinite(n)))).sort((a,b)=>a-b);
+  sel.innerHTML = '<option value="">Todos los niveles</option>';
+  niveles.forEach(nivel=>{
+    const op = document.createElement('option');
+    op.value = String(nivel);
+    op.textContent = `Nivel ${nivel}`;
+    sel.appendChild(op);
+  });
+  const stillExists = Array.from(sel.options).some(o=>o.value === current);
+  if(stillExists) sel.value = current;
+  else if(niveles.length === 1) sel.value = String(niveles[0]);
+  else sel.value = '';
+}
+
+function syncSatFilters(){
+  syncSatProveedorFilter();
+  syncSatNivelFilter();
 }
 
 function syncConciliacionProveedorFilter(){
@@ -2575,7 +3004,7 @@ async function loadEmpresas(){
     const listEl = document.getElementById('dashboard-empresas-list');
     if(listEl) listEl.textContent = `No se pudieron cargar empresas: ${err.message}`;
   }
-  syncSatProveedorFilter();
+  syncSatFilters();
   syncConciliacionProveedorFilter();
   syncPolicyEmpresas();
 }
@@ -2595,6 +3024,7 @@ async function registrarEmpresaCliente(){
     await loadEmpresas();
     const sel = document.getElementById('emp-id');
     if(sel) sel.value = String(resp.id);
+    syncEmpresaFormFromSelected();
     await cargarOnboardingEmpresa();
     alert(`Empresa creada: ${resp.nombre}`);
   }catch(err){
@@ -2602,41 +3032,98 @@ async function registrarEmpresaCliente(){
   }
 }
 
-async function cargarOnboardingEmpresa(){
+async function actualizarEmpresaCliente(){
   const empresaId = Number(document.getElementById('emp-id')?.value || 0);
-  const view = document.getElementById('emp-onboarding-status');
   if(!empresaId){
-    if(view) view.textContent = 'Selecciona empresa para ver estatus.';
+    alert('Primero selecciona una empresa en onboarding para actualizarla.');
     return;
   }
   try{
+    const nombre = (document.getElementById('emp-nombre')?.value || '').trim();
+    const rfc = (document.getElementById('emp-rfc')?.value || '').trim().toUpperCase();
+    const tipo = (document.getElementById('emp-tipo')?.value || 'servicios').trim();
+    if(!nombre || !rfc){
+      alert('Captura razón social y RFC');
+      return;
+    }
+    const resp = await apiSend(`/empresas/${empresaId}`, 'PATCH', {
+      nombre, rfc, tipo_empresa: tipo, usuario: getUsuarioActivo()
+    });
+    await loadEmpresas();
+    const sel = document.getElementById('emp-id');
+    if(sel) sel.value = String(resp.id);
+    syncEmpresaFormFromSelected();
+    await cargarOnboardingEmpresa();
+    alert(`Empresa actualizada: ${resp.nombre}`);
+  }catch(err){
+    alert(`No se pudo actualizar empresa: ${err.message}`);
+  }
+}
+
+async function cargarOnboardingEmpresa(){
+  const empresaId = Number(document.getElementById('emp-id')?.value || 0);
+  const view = document.getElementById('emp-onboarding-status');
+  setEmpresaOnboardingUIState();
+  if(!empresaId){
+    if(view) view.textContent = 'Selecciona empresa para ver estatus.';
+    renderEmpresaDocumentChecklist();
+    await loadEmpresaCuentas();
+    return;
+  }
+  try{
+    syncEmpresaFormFromSelected();
     const st = await apiGet(`/empresas/${empresaId}/onboarding/status`);
     ONBOARDING_STATUS_BY_EMPRESA[String(empresaId)] = st;
     if(view){
       view.innerHTML = `Estado: <strong>${st.onboarding_status}</strong> · Completitud: <strong>${st.completitud}%</strong><br>
       Documentos: ${st.documentos.ok}/${st.documentos.total} · Reglas: ${st.reglas_negocio.ok}/${st.reglas_negocio.total} · Cuentas validadas: ${st.cuentas_bancarias.validadas}`;
     }
+    renderEmpresaDocumentChecklist();
+    await loadEmpresaCuentas();
     await loadEmpresas();
   }catch(err){
     if(view) view.textContent = `No se pudo cargar estatus: ${err.message}`;
+    renderEmpresaDocumentChecklist();
+    await loadEmpresaCuentas();
   }
 }
 
-async function subirDocumentoEmpresa(){
+async function subirDocumentoEmpresa(scope='general'){
   const empresaId = Number(document.getElementById('emp-id')?.value || 0);
-  const tipo = (document.getElementById('emp-doc-tipo')?.value || '').trim();
-  const nombreArchivo = (document.getElementById('emp-doc-nombre')?.value || '').trim();
-  const url = (document.getElementById('emp-doc-url')?.value || '').trim();
-  const vigenteHasta = (document.getElementById('emp-doc-vigencia')?.value || '').trim();
+  const tipo = (document.getElementById(scope === 'bank' ? 'emp-bank-doc-tipo' : 'emp-doc-tipo')?.value || '').trim();
+  const nombreArchivo = (document.getElementById(scope === 'bank' ? 'emp-bank-doc-nombre' : 'emp-doc-nombre')?.value || '').trim();
+  const url = (document.getElementById(scope === 'bank' ? 'emp-bank-doc-url' : 'emp-doc-url')?.value || '').trim();
+  const vigenteHasta = (document.getElementById(scope === 'bank' ? 'emp-bank-doc-vigencia' : 'emp-doc-vigencia')?.value || '').trim();
   if(!empresaId || !tipo || !nombreArchivo){
     alert('Selecciona empresa y captura tipo + nombre de archivo');
     return;
   }
   try{
-    const resp = await apiSend(`/empresas/${empresaId}/documentos`, 'POST', {
-      tipo, nombre_archivo: nombreArchivo, url: url || null, vigente_hasta: vigenteHasta || null, usuario: getUsuarioActivo()
-    });
-    EMP_LAST_DOC_ID = resp.documento_id;
+    let resp;
+    if(EMP_SELECTED_DOC_FILE[scope]){
+      const form = new FormData();
+      form.append('tipo', tipo);
+      form.append('nombre_archivo', nombreArchivo || EMP_SELECTED_DOC_FILE[scope].name);
+      form.append('usuario', getUsuarioActivo());
+      if(vigenteHasta) form.append('vigente_hasta', vigenteHasta);
+      form.append('archivo', EMP_SELECTED_DOC_FILE[scope]);
+      const res = await fetch(`${API_BASE}/empresas/${empresaId}/documentos`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: form
+      });
+      resp = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(resp.error || `HTTP ${res.status}`);
+    }else{
+      resp = await apiSend(`/empresas/${empresaId}/documentos`, 'POST', {
+        tipo, nombre_archivo: nombreArchivo, url: url || null, vigente_hasta: vigenteHasta || null, usuario: getUsuarioActivo()
+      });
+    }
+    EMP_LAST_DOC_ID[scope] = resp.documento_id;
+    EMP_SELECTED_DOC_FILE[scope] = null;
+    const fileInput = document.getElementById(scope === 'bank' ? 'emp-bank-doc-file' : 'emp-doc-file');
+    if(fileInput) fileInput.value = '';
+    renderEmpresaDocSelectedFile(scope);
     await cargarOnboardingEmpresa();
     alert(`Documento cargado (${tipo}).`);
   }catch(err){
@@ -2644,16 +3131,18 @@ async function subirDocumentoEmpresa(){
   }
 }
 
-async function validarDocumentoEmpresa(estado){
+async function validarDocumentoEmpresa(estado, scope='general'){
   const empresaId = Number(document.getElementById('emp-id')?.value || 0);
-  if(!empresaId || !EMP_LAST_DOC_ID){
-    alert('Primero sube un documento para tener doc_id');
+  const documentoId = EMP_LAST_DOC_ID[scope] || getEmpresaSelectedDocId(scope);
+  if(!empresaId || !documentoId){
+    alert('Primero sube el documento seleccionado y luego valida ese mismo tipo.');
     return;
   }
   try{
-    await apiSend(`/empresas/${empresaId}/documentos/${EMP_LAST_DOC_ID}/validar`, 'PATCH', {
+    await apiSend(`/empresas/${empresaId}/documentos/${documentoId}/validar`, 'PATCH', {
       estado_validacion: estado, usuario: getUsuarioActivo()
     });
+    EMP_LAST_DOC_ID[scope] = documentoId;
     await cargarOnboardingEmpresa();
     alert(`Documento marcado como ${estado}.`);
   }catch(err){
@@ -2736,6 +3225,47 @@ async function aprobarEmpresa(){
   }
 }
 
+async function subirPoliticaEmpresa(){
+  const empresaId = (document.getElementById('policy-company-select')?.value || '').trim();
+  if(!isAdministracion()){
+    alert('Solo el rol administración puede subir políticas de empresas cliente.');
+    return;
+  }
+  if(!empresaId){
+    alert('Selecciona una empresa para cargar su política.');
+    return;
+  }
+  if(!POLICY_SELECTED_FILE){
+    alert('Selecciona primero un archivo de política desde tu computadora.');
+    return;
+  }
+  try{
+    const note = (document.getElementById('policy-upload-note')?.value || '').trim();
+    const fd = new FormData();
+    fd.append('archivo', POLICY_SELECTED_FILE);
+    fd.append('usuario', getUsuarioActivo());
+    if(note) fd.append('nota_cambio', note);
+    const res = await fetch(`${API_BASE}/empresas/${encodeURIComponent(empresaId)}/policy/upload`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: fd
+    });
+    const data = await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    POLICY_SELECTED_FILE = null;
+    const input = document.getElementById('policy-upload-file');
+    if(input) input.value = '';
+    const noteInput = document.getElementById('policy-upload-note');
+    if(noteInput) noteInput.value = '';
+    renderPolicySelectedFile();
+    await loadEmpresas();
+    await loadPolicyByEmpresa();
+    alert('Política cargada y publicada. La empresa ya puede habilitar registro de proveedores.');
+  }catch(err){
+    alert(`No se pudo subir la política: ${err.message}`);
+  }
+}
+
 async function loadPolicyByEmpresa(){
   const empresaId = (document.getElementById('policy-company-select')?.value || '').trim();
   const view = document.getElementById('policy-company-view');
@@ -2753,6 +3283,7 @@ async function loadPolicyByEmpresa(){
     const clasif = policy.policy?.classification || {};
     const gates = policy.policy?.gates || {};
     const sem = policy.policy?.semaforo || {};
+    const documento = policy.active_version?.documento || null;
     const versionsHtml = (versions || []).map(v=>`<tr><td>${v.version}</td><td>${v.estado}</td><td>${v.creado_por||'n/a'}</td><td>${v.publicado_en||'—'}</td><td>${v.nota_cambio||''}</td></tr>`).join('');
     view.innerHTML = `
       <div class="cg cg2" style="margin-bottom:10px;">
@@ -2768,6 +3299,16 @@ async function loadPolicyByEmpresa(){
           <div class="csub">Semáforo amarillo: <strong>&lt; ${Number(sem.amarillo_min || 70)}</strong></div>
           <div class="csub">Semáforo verde: <strong>≥ ${Number(sem.verde_min || 90)}</strong></div>
         </div>
+      </div>
+      <div class="card" style="padding:12px;margin-bottom:10px;">
+        <div class="clabel">Documento de política vigente</div>
+        ${documento ? `
+          <div class="csub">Archivo: <strong>${documento.nombre_archivo || 'n/a'}</strong></div>
+          <div class="csub">Subido por: <strong>${documento.subido_por || 'n/a'}</strong> · Fecha: <strong>${documento.subido_en || '—'}</strong></div>
+          <div class="stage-actions" style="margin-top:8px;">
+            <a class="btn btn-ghost" href="${documento.url}" target="_blank" rel="noopener noreferrer">Abrir documento cargado</a>
+          </div>
+        ` : '<div class="csub">Aún no hay un documento de política cargado para esta empresa.</div>'}
       </div>
       <div class="card" style="padding:12px;margin-bottom:10px;">
         <div class="clabel">Reglas de negocio (clasificación)</div>
@@ -3024,7 +3565,7 @@ async function loadFoliosForFrontend(){
     if(portalSel){
       portalSel.innerHTML = '<option value="">— Elegir proveedor para ver su portal —</option>';
     }
-    syncSatProveedorFilter();
+    syncSatFilters();
     syncConciliacionProveedorFilter();
     const policyEmpresa = document.getElementById('policy-empresa-select');
     if(policyEmpresa && policyEmpresa.value){
@@ -3085,8 +3626,13 @@ async function registrarProveedor(){
       cuestionario_5a: cuestionario5a
     });
     closeModal('modal-proveedor');
-    if(resp && resp.folio && resp.folio.numero){
-      alert(`Proveedor creado con folio #${resp.folio.numero} y checklist generado.`);
+    const c = resp.credenciales || {};
+    const clas = resp.clasificacion || {};
+    const nivelTxt = clas.nivel ? `Nivel ${clas.nivel} · ${clas.label || ''}` : 'Sin nivel';
+    if(c.username && c.password){
+      alert(`Registro completado.\n${nivelTxt}\nUsuario: ${c.username}\nPassword: ${c.password}\nEmpresa: ${c.empresa_nombre || empresaSel.nombre}`);
+    }else{
+      throw new Error('El backend no devolvió credenciales del proveedor. Recarga la app y vuelve a intentar.');
     }
     await loadDashboard();
     await loadFoliosForFrontend();

@@ -12,7 +12,6 @@ DOCS_REQUERIDOS_EMPRESA = [
     "identificacion_representante",
     "comprobante_domicilio_fiscal",
     "opinion_32d",
-    "carta_bancaria_cuentas",
     "estado_cuenta_bancario",
     "politica_autorizacion_pagos",
 ]
@@ -40,6 +39,7 @@ def empresa_onboarding_status(empresa: Empresa) -> dict:
             docs_ok += 1
         docs_detalle.append(
             {
+                "id": doc.id if doc else None,
                 "tipo": tipo,
                 "presente": bool(doc),
                 "estado_validacion": doc.estado_validacion if doc else "faltante",

@@ -15,6 +15,15 @@ python backend/init_db.py
 python backend/seed.py
 ```
 
+`backend/seed.py` reinicia la base demo completa:
+
+- borra la base actual
+- vuelve a crear tablas
+- vuelve a sembrar empresas, proveedores, folios, expedientes y credenciales demo
+- vuelve a generar documentos placeholder en `uploads/`
+
+Si capturas datos manualmente en la app y luego corres `seed.py`, esos cambios se pierden y el sistema regresa al escenario demo estándar.
+
 ## Levantar API
 
 ```bash
@@ -74,6 +83,79 @@ Roles internos operativos:
 - `tesoreria`: traspasos y conciliación bancaria IA
 - `administracion`: expedientes y carga documental
 - `contabilidad`: operación completa (empresas/proveedores/folios/alertas/reportes/export)
+
+## Datos demo sembrados
+
+### Usuarios internos demo
+
+Todos usan password:
+
+```text
+servicia2026
+```
+
+Usuarios:
+
+- `salo@batia.local` · `direccion`
+- `mgonzalez@batia.local` · `tesoreria`
+- `lhernandez@batia.local` · `tesoreria`
+- `rfuentes@batia.local` · `administracion`
+- `cmorales@batia.local` · `administracion`
+- `pramirez@batia.local` · `contabilidad`
+
+### Empresas cliente demo
+
+Se siembran dos empresas activas:
+
+- `Batia` · RFC `BAT010101AAA`
+- `Grupo Norte` · RFC `GRN010101BBB`
+
+Ambas quedan listas para demo con:
+
+- onboarding aprobado
+- política activa publicada
+- documentos obligatorios cargados y validados
+- cuentas bancarias activas/validadas
+
+### Proveedores demo registrados
+
+Se siembran estos proveedores base:
+
+- `Limpiadores SA`
+- `Insumos Alfa`
+- `TechServ`
+- `Mant. Delta`
+
+Además se generan sus folios, expedientes y documentos demo para portal proveedor.
+
+### Credenciales demo de proveedor
+
+El seed genera credenciales determinísticas por relación proveedor-empresa:
+
+```text
+username: prov_{proveedor_id}_emp_{empresa_id}
+password: demo-prov-{proveedor_id}-{empresa_id}
+```
+
+Credenciales sembradas en la demo base:
+
+- `prov_1_emp_1` / `demo-prov-1-1` → `Limpiadores SA` en `Batia`
+- `prov_2_emp_1` / `demo-prov-2-1` → `Insumos Alfa` en `Batia`
+- `prov_3_emp_2` / `demo-prov-3-2` → `TechServ` en `Grupo Norte`
+- `prov_4_emp_2` / `demo-prov-4-2` → `Mant. Delta` en `Grupo Norte`
+
+### Documentos demo
+
+El seed deja archivos placeholder para demostración en:
+
+- `uploads/<folio>/...` para documentos de expediente/proveedor
+- `uploads/empresas/<empresa_id>/...` para onboarding de empresa cliente
+
+Estos archivos:
+
+- sirven para abrir documentos durante la demo sin `404`
+- no son documentos fiscales, legales o bancarios reales
+- existen solo como material de presentación
 
 ## Flujo proveedor por empresa (nuevo)
 

@@ -1,13 +1,30 @@
 from itertools import islice
 from calendar import monthrange
-from datetime import date
+from copy import deepcopy
+from datetime import date, datetime, timedelta
 
 from app import create_app
 from app.extensions import db
-from app.models import Documento, Empresa, Expediente, Folio, Proveedor, Traspaso, Usuario
+from app.models import (
+    Documento,
+    Empresa,
+    EmpresaCuentaBancaria,
+    EmpresaDocumento,
+    Expediente,
+    Folio,
+    PolicySet,
+    PolicyVersion,
+    Proveedor,
+    ProveedorCredencial,
+    Traspaso,
+    Usuario,
+)
 from app.services.bloqueo import calcular_completitud
 from app.services.catalogo import DOCS_BY_LEVEL
+from app.services.demo_uploads import ensure_demo_document_file, ensure_demo_empresa_document_file
 from app.services.document_review import aplicar_validacion_documento
+from app.services.onboarding_empresas import DOCS_REQUERIDOS_EMPRESA, REGLAS_NEGOCIO_REQUERIDAS
+from app.services.policy_engine import DEFAULT_POLICY
 
 app = create_app()
 
@@ -58,6 +75,58 @@ EMPRESAS = [
     {"nombre": "Batia", "rfc": "BAT010101AAA", "tipo_empresa": "servicios"},
     {"nombre": "Grupo Norte", "rfc": "GRN010101BBB", "tipo_empresa": "industrial"},
 ]
+
+EMPRESAS_ONBOARDING = {
+    "Batia": {
+        "documentos": {
+            "constancia_fiscal": "constancia_fiscal_batia.pdf",
+            "acta_constitutiva": "acta_constitutiva_batia.pdf",
+            "poder_representante": "poder_representante_batia.pdf",
+            "identificacion_representante": "identificacion_representante_batia.pdf",
+            "comprobante_domicilio_fiscal": "comprobante_domicilio_batia.pdf",
+            "opinion_32d": "opinion_32d_batia.pdf",
+            "estado_cuenta_bancario": "estado_cuenta_bancario_batia.pdf",
+            "politica_autorizacion_pagos": "politica_autorizacion_pagos_batia.pdf",
+        },
+        "cuentas": [
+            {
+                "banco": "Banorte",
+                "titular": "Batia Servicios SA de CV",
+                "clabe": "072180012345678901",
+                "numero_cuenta": "1234567890",
+                "moneda": "MXN",
+            },
+            {
+                "banco": "Mifel",
+                "titular": "Batia Servicios SA de CV",
+                "clabe": "042180098765432109",
+                "numero_cuenta": "0098765432",
+                "moneda": "MXN",
+            },
+        ],
+    },
+    "Grupo Norte": {
+        "documentos": {
+            "constancia_fiscal": "constancia_fiscal_grupo_norte.pdf",
+            "acta_constitutiva": "acta_constitutiva_grupo_norte.pdf",
+            "poder_representante": "poder_representante_grupo_norte.pdf",
+            "identificacion_representante": "identificacion_representante_grupo_norte.pdf",
+            "comprobante_domicilio_fiscal": "comprobante_domicilio_grupo_norte.pdf",
+            "opinion_32d": "opinion_32d_grupo_norte.pdf",
+            "estado_cuenta_bancario": "estado_cuenta_bancario_grupo_norte.pdf",
+            "politica_autorizacion_pagos": "politica_autorizacion_pagos_grupo_norte.pdf",
+        },
+        "cuentas": [
+            {
+                "banco": "BBVA",
+                "titular": "Grupo Norte Industrial SA de CV",
+                "clabe": "012180112233445566",
+                "numero_cuenta": "1122334455",
+                "moneda": "MXN",
+            }
+        ],
+    },
+}
 
 USUARIOS = [
     {"email": "salo@batia.local", "nombre": "Salo", "rol": "direccion", "password": "servicia2026"},
@@ -130,6 +199,73 @@ with app.app_context():
 
     db.session.flush()
 
+    vigencia_demo = date.today() + timedelta(days=365)
+    aprobado_en_demo = datetime.utcnow()
+    for empresa_nombre, empresa in empresas.items():
+        onboarding_demo = EMPRESAS_ONBOARDING.get(empresa_nombre, {})
+        empresa.reglas_negocio = {regla: True for regla in REGLAS_NEGOCIO_REQUERIDAS}
+        empresa.onboarding_status = "aprobada"
+        empresa.onboarding_aprobada_por = "seed"
+        empresa.onboarding_aprobada_en = aprobado_en_demo
+
+        for tipo in DOCS_REQUERIDOS_EMPRESA:
+            filename = onboarding_demo.get("documentos", {}).get(tipo, f"{tipo}_{empresa.id}.pdf")
+            ensure_demo_empresa_document_file(
+                base_dir=app.config["BASE_DIR"],
+                empresa_id=empresa.id,
+                filename=filename,
+                empresa=empresa.nombre,
+                rfc=empresa.rfc,
+                doc_tipo=tipo,
+            )
+            db.session.add(
+                EmpresaDocumento(
+                    empresa_id=empresa.id,
+                    tipo=tipo,
+                    nombre_archivo=filename,
+                    url=f"/uploads/empresas/{empresa.id}/{filename}",
+                    estado_validacion="valido",
+                    vigente_hasta=vigencia_demo,
+                    subido_por="seed",
+                    validado_por="seed",
+                    subido_en=aprobado_en_demo,
+                    validado_en=aprobado_en_demo,
+                )
+            )
+
+        for cuenta in onboarding_demo.get("cuentas", []):
+            db.session.add(
+                EmpresaCuentaBancaria(
+                    empresa_id=empresa.id,
+                    banco=cuenta["banco"],
+                    titular=cuenta["titular"],
+                    clabe=cuenta["clabe"],
+                    numero_cuenta=cuenta.get("numero_cuenta"),
+                    moneda=cuenta.get("moneda", "MXN"),
+                    activa=True,
+                    validada=True,
+                    validada_por="seed",
+                    validada_en=aprobado_en_demo,
+                )
+            )
+
+        policy_set = PolicySet(empresa_id=empresa.id, nombre="Politica Operativa Demo")
+        db.session.add(policy_set)
+        db.session.flush()
+        policy_version = PolicyVersion(
+            policy_set_id=policy_set.id,
+            version=1,
+            estado="active",
+            parametros=deepcopy(DEFAULT_POLICY),
+            creado_por="seed",
+            nota_cambio="Version demo publicada para habilitar el flujo completo",
+            creado_en=aprobado_en_demo,
+            publicado_en=aprobado_en_demo,
+        )
+        db.session.add(policy_version)
+        db.session.flush()
+        policy_set.activa_version_id = policy_version.id
+
     for p in PROVEEDORES:
         proveedor = Proveedor(
             nombre=p["nombre"],
@@ -147,10 +283,12 @@ with app.app_context():
 
     db.session.flush()
 
+    cred_pairs = set()
     by_num = {}
     for f in FOLIOS:
         proveedor = by_name[f["proveedor"]]
         empresa = empresas[f["empresa"]]
+        cred_pairs.add((proveedor.id, empresa.id))
         folio = Folio(
             numero=f["numero"],
             proveedor_id=proveedor.id,
@@ -186,6 +324,16 @@ with app.app_context():
             d.nombre_archivo = f"{d.tipo}.pdf"
             d.url = f"/uploads/{folio.numero}/{d.tipo}.pdf"
             d.subido_por = "seed"
+            ensure_demo_document_file(
+                base_dir=app.config["BASE_DIR"],
+                folio_numero=folio.numero,
+                filename=d.nombre_archivo,
+                proveedor=proveedor.nombre,
+                empresa=empresa.nombre,
+                doc_tipo=d.tipo,
+                nivel=proveedor.nivel,
+                periodo=folio.periodo,
+            )
             aplicar_validacion_documento(d, motor="seed")
 
         if f["numero"] == "17172":
@@ -196,6 +344,17 @@ with app.app_context():
         by_num[f["numero"]] = folio
 
     db.session.flush()
+
+    for proveedor_id, empresa_id in sorted(cred_pairs):
+        db.session.add(
+            ProveedorCredencial(
+                proveedor_id=proveedor_id,
+                empresa_id=empresa_id,
+                username=f"prov_{proveedor_id}_emp_{empresa_id}",
+                password=f"demo-prov-{proveedor_id}-{empresa_id}",
+                activo=True,
+            )
+        )
 
     for t in TRASPASOS:
         folio = by_num[t["folio"]]

@@ -1,8 +1,11 @@
 .venv/
+venv-backend/
 __pycache__/
 *.pyc
 instance/*.db
+database.db
 .env
+uploads/
 
 # Claude Code
 .claude/

@@ -1,9 +1,15 @@
-from flask import Blueprint, jsonify, request
+from copy import deepcopy
+from datetime import datetime
+from pathlib import Path
+
+from flask import Blueprint, current_app, jsonify, request
+from werkzeug.utils import secure_filename
 
 from ..extensions import db
-from ..models import Empresa, Folio, PolicyEvaluation, PolicySet, PolicyVersion, Proveedor
+from ..models import Empresa, EmpresaDocumento, Folio, PolicyEvaluation, PolicySet, PolicyVersion, Proveedor
 from ..services.catalogo import DOCS_BY_LEVEL
 from ..services.policy_engine import (
+    DEFAULT_POLICY,
     evaluate_provider_classification,
     get_active_policy,
     get_or_create_policy_set,
@@ -14,10 +20,18 @@ from ..services.policy_engine import (
 policies_bp = Blueprint("policies", __name__)
 
 
+def _policy_document_from_version(version: PolicyVersion | None) -> dict | None:
+    if not version or not isinstance(version.parametros, dict):
+        return None
+    doc = version.parametros.get("_policy_document")
+    return doc if isinstance(doc, dict) else None
+
+
 @policies_bp.get("/empresas/<int:empresa_id>/policy")
 def get_policy(empresa_id: int):
     Empresa.query.get_or_404(empresa_id)
     policy, active = get_active_policy(empresa_id)
+    doc = _policy_document_from_version(active)
     return jsonify(
         {
             "empresa_id": empresa_id,
@@ -27,6 +41,7 @@ def get_policy(empresa_id: int):
                 "version": active.version,
                 "estado": active.estado,
                 "publicado_en": active.publicado_en.isoformat() if active and active.publicado_en else None,
+                "documento": doc,
             }
             if active
             else None,
@@ -75,6 +90,84 @@ def create_policy_draft(empresa_id: int):
     return jsonify({"ok": True, "draft_version_id": draft.id, "version": draft.version}), 201
 
 
+@policies_bp.post("/empresas/<int:empresa_id>/policy/upload")
+def upload_policy_document(empresa_id: int):
+    empresa = Empresa.query.get_or_404(empresa_id)
+    archivo = request.files.get("archivo")
+    if not archivo:
+        return jsonify({"error": "Debes adjuntar un archivo de política en el campo 'archivo'"}), 400
+
+    usuario = request.form.get("usuario") or "frontend"
+    nota = (request.form.get("nota_cambio") or "Carga de política operativa").strip()
+    filename = secure_filename(archivo.filename or f"politica_empresa_{empresa.id}.pdf")
+    upload_dir = Path(current_app.config["BASE_DIR"]) / "uploads" / "policies" / str(empresa.id)
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    file_path = upload_dir / filename
+    archivo.save(file_path)
+    public_url = f"/uploads/policies/{empresa.id}/{filename}"
+
+    doc = EmpresaDocumento.query.filter_by(empresa_id=empresa.id, tipo="politica_autorizacion_pagos").first()
+    if not doc:
+        doc = EmpresaDocumento(empresa_id=empresa.id, tipo="politica_autorizacion_pagos")
+        db.session.add(doc)
+    doc.nombre_archivo = filename
+    doc.url = public_url
+    doc.estado_validacion = "valido"
+    doc.subido_por = usuario
+    doc.validado_por = usuario
+    doc.subido_en = datetime.utcnow()
+    doc.validado_en = datetime.utcnow()
+
+    policy_set = get_or_create_policy_set(empresa.id, creado_por=usuario)
+    current = PolicyVersion.query.get(policy_set.activa_version_id) if policy_set.activa_version_id else None
+    latest = (
+        PolicyVersion.query.filter_by(policy_set_id=policy_set.id)
+        .order_by(PolicyVersion.version.desc())
+        .first()
+    )
+    next_version = (latest.version if latest else 0) + 1
+    base_params = deepcopy(current.parametros) if current and isinstance(current.parametros, dict) else deepcopy(DEFAULT_POLICY)
+    base_params["_policy_document"] = {
+        "nombre_archivo": filename,
+        "url": public_url,
+        "subido_por": usuario,
+        "subido_en": datetime.utcnow().isoformat(),
+        "nota_cambio": nota,
+    }
+
+    version = PolicyVersion(
+        policy_set_id=policy_set.id,
+        version=next_version,
+        estado="active",
+        parametros=base_params,
+        creado_por=usuario,
+        nota_cambio=nota,
+        publicado_en=datetime.utcnow(),
+    )
+    db.session.add(version)
+    db.session.flush()
+
+    PolicyVersion.query.filter(
+        PolicyVersion.policy_set_id == policy_set.id,
+        PolicyVersion.id != version.id,
+        PolicyVersion.estado == "active",
+    ).update({"estado": "archived"}, synchronize_session=False)
+    policy_set.activa_version_id = version.id
+    db.session.commit()
+
+    return jsonify(
+        {
+            "ok": True,
+            "empresa_id": empresa.id,
+            "empresa_nombre": empresa.nombre,
+            "active_version_id": version.id,
+            "version": version.version,
+            "documento": base_params["_policy_document"],
+            "policy_status": get_policy_status(empresa.id),
+        }
+    ), 201
+
+
 @policies_bp.post("/empresas/<int:empresa_id>/policy/publish/<int:version_id>")
 def publish_policy(empresa_id: int, version_id: int):
     Empresa.query.get_or_404(empresa_id)
@@ -119,6 +212,7 @@ def list_versions(empresa_id: int):
                 "nota_cambio": v.nota_cambio,
                 "creado_en": v.creado_en.isoformat() if v.creado_en else None,
                 "publicado_en": v.publicado_en.isoformat() if v.publicado_en else None,
+                "documento": _policy_document_from_version(v),
             }
             for v in versions
         ]

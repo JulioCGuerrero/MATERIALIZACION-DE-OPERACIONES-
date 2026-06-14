@@ -1,5 +1,9 @@
+import io
+from pathlib import Path
+
+from app import create_app
 from app.extensions import db
-from app.models import Expediente, Folio
+from app.models import Expediente, Folio, Usuario
 
 
 def _crear_proveedor(client, nombre="Proveedor Test", rfc="TST010101AAA", tipo="limpieza", monto=10000, repse=False, fisico=False):
@@ -48,6 +52,87 @@ def test_clasificador_monto_alto_nivel_4(client):
     data = res.get_json()
     assert data["nivel"] == 4
     assert data["riesgo"] == "critico"
+
+
+def test_empresa_nueva_aparece_como_activa_en_listado(client):
+    empresa = _crear_empresa(client, nombre="Empresa Activa", rfc="EAC010101AAA")
+    assert empresa["activo"] is True
+    assert empresa["onboarding_status"] == "borrador"
+
+    res = client.get("/api/empresas")
+    assert res.status_code == 200
+    items = res.get_json()
+    creada = next(item for item in items if item["id"] == empresa["id"])
+    assert creada["activo"] is True
+    assert creada["nombre"] == "Empresa Activa"
+    assert creada["rfc"] == "EAC010101AAA"
+
+
+def test_empresa_documento_onboarding_acepta_archivo_desde_multipart(client):
+    empresa = _crear_empresa(client, nombre="Empresa Archivo", rfc="EAR010101AAA")
+    res = client.post(
+        f"/api/empresas/{empresa['id']}/documentos",
+        data={
+            "tipo": "constancia_fiscal",
+            "nombre_archivo": "constancia_fiscal.pdf",
+            "usuario": "pytest",
+            "archivo": (io.BytesIO(b"pdf-demo"), "constancia_fiscal.pdf"),
+        },
+        content_type="multipart/form-data",
+    )
+    assert res.status_code == 201
+    data = res.get_json()
+    assert data["ok"] is True
+
+    status = client.get(f"/api/empresas/{empresa['id']}/onboarding/status")
+    assert status.status_code == 200
+    detalle = status.get_json()["documentos"]["detalle"]
+    constancia = next(doc for doc in detalle if doc["tipo"] == "constancia_fiscal")
+    assert constancia["id"] is not None
+    assert constancia["presente"] is True
+    assert constancia["estado_validacion"] == "pendiente"
+
+
+def test_empresa_puede_listar_varias_cuentas_bancarias(client):
+    empresa = _crear_empresa(client, nombre="Empresa Cuentas", rfc="ECU010101AAA")
+    for banco, clabe in [("BBVA", "012345678901234561"), ("Banorte", "012345678901234562")]:
+        res = client.post(
+            f"/api/empresas/{empresa['id']}/cuentas-bancarias",
+            json={
+                "banco": banco,
+                "titular": "Empresa Cuentas SA",
+                "clabe": clabe,
+                "moneda": "MXN",
+                "validada": True,
+                "usuario": "pytest",
+            },
+        )
+        assert res.status_code == 201
+
+    cuentas = client.get(f"/api/empresas/{empresa['id']}/cuentas-bancarias")
+    assert cuentas.status_code == 200
+    items = cuentas.get_json()
+    assert len(items) == 2
+    assert {item["banco"] for item in items} == {"BBVA", "Banorte"}
+    assert all(item["validada"] is True for item in items)
+
+
+def test_empresa_puede_actualizar_nombre_rfc_y_tipo(client):
+    empresa = _crear_empresa(client, nombre="Empresa Original", rfc="EOR010101AAA")
+    res = client.patch(
+        f"/api/empresas/{empresa['id']}",
+        json={
+            "nombre": "Empresa Editada",
+            "rfc": "EDI010101AAA",
+            "tipo_empresa": "industrial",
+            "usuario": "pytest",
+        },
+    )
+    assert res.status_code == 200
+    data = res.get_json()
+    assert data["nombre"] == "Empresa Editada"
+    assert data["rfc"] == "EDI010101AAA"
+    assert data["tipo_empresa"] == "industrial"
 
 
 def test_traspaso_bloqueado_si_expediente_incompleto(client):
@@ -227,3 +312,228 @@ def test_proveedor_con_empresa_requiere_policy_publicada(client):
     assert status.status_code == 200
     st = status.get_json()
     assert st["has_active_published_policy"] is False
+
+
+def test_solo_administracion_puede_registrar_empresas_y_proveedores(tmp_path):
+    class AuthzConfig:
+        BASE_DIR = Path(tmp_path)
+        SQLALCHEMY_DATABASE_URI = f"sqlite:///{tmp_path / 'authz.db'}"
+        SQLALCHEMY_TRACK_MODIFICATIONS = False
+        TESTING = True
+
+    app = create_app(AuthzConfig)
+    with app.app_context():
+        db.create_all()
+        db.session.add_all(
+            [
+                Usuario(email="admin@test.local", nombre="Admin", rol="administracion", password="x", activo=True),
+                Usuario(email="conta@test.local", nombre="Conta", rol="contabilidad", password="x", activo=True),
+            ]
+        )
+        db.session.commit()
+
+    app.config["TESTING"] = False
+    with app.test_client() as client:
+        headers_admin = {"X-Auth-Email": "admin@test.local", "X-Auth-Role": "administracion"}
+        headers_conta = {"X-Auth-Email": "conta@test.local", "X-Auth-Role": "contabilidad"}
+
+        res_emp_forbidden = client.post(
+            "/api/empresas",
+            json={"nombre": "Empresa Bloqueada", "rfc": "EBL010101AAA"},
+            headers=headers_conta,
+        )
+        assert res_emp_forbidden.status_code == 403
+
+        res_emp_ok = client.post(
+            "/api/empresas",
+            json={"nombre": "Empresa Admin", "rfc": "EAD010101AAA"},
+            headers=headers_admin,
+        )
+        assert res_emp_ok.status_code == 201
+        empresa = res_emp_ok.get_json()
+
+        res_emp_patch_ok = client.patch(
+            f"/api/empresas/{empresa['id']}",
+            json={"nombre": "Empresa Admin Editada", "usuario": "admin"},
+            headers=headers_admin,
+        )
+        assert res_emp_patch_ok.status_code == 200
+
+        res_prov_forbidden = client.post(
+            "/api/proveedores",
+            json={
+                "nombre": "Proveedor Bloqueado",
+                "rfc": "PBA010101AAA",
+                "tipo": "limpieza",
+                "monto": 10000,
+                "repse": False,
+                "tiene_fisico": False,
+            },
+            headers=headers_conta,
+        )
+        assert res_prov_forbidden.status_code == 403
+
+        res_prov_ok = client.post(
+            "/api/proveedores",
+            json={
+                "nombre": "Proveedor Admin",
+                "rfc": "PAD010101AAA",
+                "tipo": "limpieza",
+                "monto": 10000,
+                "repse": False,
+                "tiene_fisico": False,
+            },
+            headers=headers_admin,
+        )
+        assert res_prov_ok.status_code == 201
+
+    with app.app_context():
+        db.session.remove()
+        db.drop_all()
+
+
+def test_administracion_puede_subir_politica_y_activar_empresa(tmp_path):
+    class PolicyUploadConfig:
+        BASE_DIR = Path(tmp_path)
+        SQLALCHEMY_DATABASE_URI = f"sqlite:///{tmp_path / 'policy_upload.db'}"
+        SQLALCHEMY_TRACK_MODIFICATIONS = False
+        TESTING = True
+
+    app = create_app(PolicyUploadConfig)
+    with app.app_context():
+        db.create_all()
+        db.session.add_all(
+            [
+                Usuario(email="admin@test.local", nombre="Admin", rol="administracion", password="x", activo=True),
+                Usuario(email="conta@test.local", nombre="Conta", rol="contabilidad", password="x", activo=True),
+            ]
+        )
+        db.session.commit()
+
+    app.config["TESTING"] = False
+    with app.test_client() as client:
+        headers_admin = {"X-Auth-Email": "admin@test.local", "X-Auth-Role": "administracion"}
+        headers_conta = {"X-Auth-Email": "conta@test.local", "X-Auth-Role": "contabilidad"}
+
+        res_emp = client.post(
+            "/api/empresas",
+            json={"nombre": "Empresa Policy Upload", "rfc": "EPU010101AAA"},
+            headers=headers_admin,
+        )
+        assert res_emp.status_code == 201
+        empresa = res_emp.get_json()
+
+        status_before = client.get(f"/api/empresas/{empresa['id']}/policy/status")
+        assert status_before.status_code == 200
+        assert status_before.get_json()["has_active_published_policy"] is False
+
+        forbidden = client.post(
+            f"/api/empresas/{empresa['id']}/policy/upload",
+            data={
+                "usuario": "conta",
+                "nota_cambio": "Intento sin permiso",
+                "archivo": (io.BytesIO(b"policy-demo"), "politica_conta.pdf"),
+            },
+            content_type="multipart/form-data",
+            headers=headers_conta,
+        )
+        assert forbidden.status_code == 403
+
+        upload = client.post(
+            f"/api/empresas/{empresa['id']}/policy/upload",
+            data={
+                "usuario": "admin",
+                "nota_cambio": "Politica operativa vigente",
+                "archivo": (io.BytesIO(b"policy-demo"), "politica_empresa.pdf"),
+            },
+            content_type="multipart/form-data",
+            headers=headers_admin,
+        )
+        assert upload.status_code == 201
+        payload = upload.get_json()
+        assert payload["policy_status"]["has_active_published_policy"] is True
+        assert payload["documento"]["url"].endswith("/politica_empresa.pdf")
+
+        status_after = client.get(f"/api/empresas/{empresa['id']}/policy/status")
+        assert status_after.status_code == 200
+        assert status_after.get_json()["has_active_published_policy"] is True
+
+        policy = client.get(f"/api/empresas/{empresa['id']}/policy", headers=headers_admin)
+        assert policy.status_code == 200
+        assert policy.get_json()["active_version"]["documento"]["nombre_archivo"] == "politica_empresa.pdf"
+
+    with app.app_context():
+        db.session.remove()
+        db.drop_all()
+
+
+def test_empresa_con_politica_activa_permite_registro_y_autoregistro_proveedor(tmp_path):
+    class PolicyGateConfig:
+        BASE_DIR = Path(tmp_path)
+        SQLALCHEMY_DATABASE_URI = f"sqlite:///{tmp_path / 'policy_gate.db'}"
+        SQLALCHEMY_TRACK_MODIFICATIONS = False
+        TESTING = True
+
+    app = create_app(PolicyGateConfig)
+    with app.app_context():
+        db.create_all()
+        db.session.add(Usuario(email="admin@test.local", nombre="Admin", rol="administracion", password="x", activo=True))
+        db.session.commit()
+
+    app.config["TESTING"] = False
+    with app.test_client() as client:
+        headers_admin = {"X-Auth-Email": "admin@test.local", "X-Auth-Role": "administracion"}
+
+        res_emp = client.post(
+            "/api/empresas",
+            json={"nombre": "Empresa Gate", "rfc": "EGA010101AAA"},
+            headers=headers_admin,
+        )
+        assert res_emp.status_code == 201
+        empresa = res_emp.get_json()
+
+        upload = client.post(
+            f"/api/empresas/{empresa['id']}/policy/upload",
+            data={
+                "usuario": "admin",
+                "nota_cambio": "Politica activa para alta proveedor",
+                "archivo": (io.BytesIO(b"policy-demo"), "politica_gate.pdf"),
+            },
+            content_type="multipart/form-data",
+            headers=headers_admin,
+        )
+        assert upload.status_code == 201
+
+        manual = client.post(
+            "/api/proveedores",
+            json={
+                "nombre": "Proveedor Gate",
+                "rfc": "PGA010101AAA",
+                "tipo": "limpieza",
+                "monto": 12000,
+                "repse": False,
+                "tiene_fisico": False,
+                "empresa_id": empresa["id"],
+                "tipo_empresa": "servicios",
+            },
+            headers=headers_admin,
+        )
+        assert manual.status_code == 201
+
+        self_register = client.post(
+            "/api/proveedores/self-register",
+            json={
+                "nombre": "Proveedor Auto Gate",
+                "rfc": "PAG010101AAA",
+                "tipo": "limpieza",
+                "monto": 12000,
+                "repse": False,
+                "tiene_fisico": False,
+                "empresa_id": empresa["id"],
+            },
+        )
+        assert self_register.status_code == 201
+
+    with app.app_context():
+        db.session.remove()
+        db.drop_all()

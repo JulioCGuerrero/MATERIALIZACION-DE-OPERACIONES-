@@ -1,6 +1,8 @@
 from datetime import datetime
+from pathlib import Path
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, current_app, jsonify, request
+from werkzeug.utils import secure_filename
 
 from ..extensions import db
 from ..models import Empresa, EmpresaCuentaBancaria, EmpresaDocumento
@@ -38,6 +40,22 @@ def _empresa_dict(e: Empresa) -> dict:
     }
 
 
+def _cuenta_dict(c: EmpresaCuentaBancaria) -> dict:
+    return {
+        "id": c.id,
+        "banco": c.banco,
+        "titular": c.titular,
+        "clabe": c.clabe,
+        "numero_cuenta": c.numero_cuenta,
+        "moneda": c.moneda,
+        "activa": c.activa,
+        "validada": c.validada,
+        "validada_por": c.validada_por,
+        "validada_en": c.validada_en.isoformat() if c.validada_en else None,
+        "creada_en": c.creada_en.isoformat() if c.creada_en else None,
+    }
+
+
 @empresas_bp.get("/empresas")
 def listar_empresas():
     items = Empresa.query.order_by(Empresa.nombre.asc()).all()
@@ -71,6 +89,40 @@ def crear_empresa():
     return jsonify(_empresa_dict(empresa)), 201
 
 
+@empresas_bp.patch("/empresas/<int:empresa_id>")
+def actualizar_empresa(empresa_id: int):
+    empresa = Empresa.query.get_or_404(empresa_id)
+    body = request.get_json(silent=True) or {}
+
+    if "nombre" in body:
+        nombre = (body.get("nombre") or "").strip()
+        if not nombre:
+            return jsonify({"error": "nombre no puede estar vacío"}), 400
+        empresa.nombre = nombre
+
+    if "rfc" in body:
+        rfc = (body.get("rfc") or "").strip().upper()
+        if not rfc:
+            return jsonify({"error": "rfc no puede estar vacío"}), 400
+        empresa.rfc = rfc
+
+    if "tipo_empresa" in body:
+        tipo_empresa = (body.get("tipo_empresa") or "").strip().lower()
+        if tipo_empresa not in TIPOS_EMPRESA:
+            return jsonify({"error": f"tipo_empresa inválido. Valores permitidos: {', '.join(sorted(TIPOS_EMPRESA))}"}), 400
+        empresa.tipo_empresa = tipo_empresa
+
+    log_event(
+        "empresas",
+        empresa.id,
+        "actualizar",
+        {"nombre": empresa.nombre, "rfc": empresa.rfc, "tipo_empresa": empresa.tipo_empresa},
+        body.get("usuario"),
+    )
+    db.session.commit()
+    return jsonify(_empresa_dict(empresa))
+
+
 @empresas_bp.get("/empresas/<int:empresa_id>/onboarding/status")
 def onboarding_status_empresa(empresa_id: int):
     empresa = Empresa.query.get_or_404(empresa_id)
@@ -91,6 +143,9 @@ def onboarding_catalogo():
 def subir_documento_empresa(empresa_id: int):
     empresa = Empresa.query.get_or_404(empresa_id)
     body = request.get_json(silent=True) or {}
+    uploaded = request.files.get("archivo")
+    if uploaded:
+        body = request.form.to_dict()
     required = ["tipo", "nombre_archivo"]
     faltantes = [f for f in required if f not in body]
     if faltantes:
@@ -103,6 +158,17 @@ def subir_documento_empresa(empresa_id: int):
     if not doc:
         doc = EmpresaDocumento(empresa_id=empresa.id, tipo=tipo)
         db.session.add(doc)
+
+    if uploaded:
+        filename = secure_filename(uploaded.filename or body.get("nombre_archivo") or f"{tipo}.bin")
+        upload_dir = Path(current_app.config["BASE_DIR"]) / "uploads" / "empresas" / str(empresa.id)
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        file_path = upload_dir / filename
+        uploaded.save(file_path)
+        body["nombre_archivo"] = filename
+        body["url"] = f"/uploads/empresas/{empresa.id}/{filename}"
+        if not body.get("usuario"):
+            body["usuario"] = request.form.get("usuario", "frontend")
 
     doc.nombre_archivo = (body.get("nombre_archivo") or "").strip()
     doc.url = body.get("url")
@@ -168,6 +234,13 @@ def crear_cuenta_bancaria_empresa(empresa_id: int):
     log_event("empresas", empresa.id, "onboarding_cuenta_crear", {"clabe": cuenta.clabe}, body.get("usuario"))
     db.session.commit()
     return jsonify({"ok": True, "cuenta_id": cuenta.id}), 201
+
+
+@empresas_bp.get("/empresas/<int:empresa_id>/cuentas-bancarias")
+def listar_cuentas_bancarias_empresa(empresa_id: int):
+    Empresa.query.get_or_404(empresa_id)
+    cuentas = EmpresaCuentaBancaria.query.filter_by(empresa_id=empresa_id).order_by(EmpresaCuentaBancaria.creada_en.desc()).all()
+    return jsonify([_cuenta_dict(c) for c in cuentas])
 
 
 @empresas_bp.patch("/empresas/<int:empresa_id>/cuentas-bancarias/<int:cuenta_id>")
