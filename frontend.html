@@ -163,6 +163,9 @@ tbody td{padding:10px 12px;font-size:12px;}
   linear-gradient(180deg, rgba(255,255,255,.02), transparent 22%),
   var(--surface);}
 .flow-intro{padding:14px 16px;border:1px solid rgba(79,132,255,.16);background:linear-gradient(135deg,rgba(79,132,255,.08),rgba(32,214,138,.04));border-radius:12px;margin-bottom:16px;}
+.mode-pill{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;background:rgba(79,132,255,.12);border:1px solid rgba(79,132,255,.24);font:600 11px var(--mono);color:var(--accent);margin-bottom:10px;}
+.mode-pill.admin{background:rgba(79,132,255,.12);border-color:rgba(79,132,255,.24);color:var(--accent);}
+.mode-pill.conta{background:rgba(32,214,138,.12);border-color:rgba(32,214,138,.24);color:var(--green);}
 .flow-intro strong{display:block;font-size:13px;margin-bottom:4px;}
 .flow-intro span{font-size:12px;color:var(--muted2);line-height:1.5;}
 .flow-steps{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:0 0 16px;}
@@ -205,6 +208,22 @@ tbody td{padding:10px 12px;font-size:12px;}
 .account-copy strong{display:block;font-size:12px;margin-bottom:3px;}
 .account-copy small{display:block;font-size:11px;color:var(--muted2);line-height:1.4;}
 .account-empty{padding:12px;border-radius:12px;background:var(--surface2);border:1px dashed var(--border2);font-size:12px;color:var(--muted2);}
+.provider-accordion{display:flex;flex-direction:column;gap:10px;}
+.provider-fold{border:1px solid var(--border);border-radius:14px;background:linear-gradient(180deg,rgba(255,255,255,.018),rgba(255,255,255,.01));overflow:hidden;}
+.provider-fold summary{list-style:none;cursor:pointer;padding:14px 16px;display:flex;align-items:center;gap:12px;}
+.provider-fold summary::-webkit-details-marker{display:none;}
+.provider-fold summary::after{content:'+';margin-left:auto;font:600 18px var(--mono);color:var(--accent);transition:transform .18s ease;}
+.provider-fold[open] summary::after{content:'−';}
+.provider-fold summary:hover{background:rgba(79,132,255,.04);}
+.provider-fold-body{padding:0 16px 16px 16px;border-top:1px solid var(--border);}
+.provider-fold-kpis{display:flex;gap:8px;flex-wrap:wrap;}
+.provider-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;border-radius:999px;background:var(--surface2);border:1px solid var(--border);font-size:11px;color:var(--muted2);}
+.provider-fold-copy{min-width:0;}
+.provider-fold-copy strong{display:block;font-size:13px;margin-bottom:4px;}
+.provider-fold-copy small{display:block;font-size:11px;color:var(--muted2);}
+.folio-block{margin-top:12px;padding:12px;border-radius:12px;background:var(--surface2);border:1px solid var(--border);}
+.folio-block h4{font-size:12px;margin-bottom:4px;}
+.folio-block p{font-size:11px;color:var(--muted2);margin-bottom:10px;}
 .bank-grid,.rules-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .review-strip{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-radius:12px;background:linear-gradient(90deg,rgba(79,132,255,.06),rgba(32,214,138,.05));border:1px solid rgba(79,132,255,.18);}
 .review-strip p{font-size:12px;color:var(--muted2);line-height:1.45;}
@@ -401,6 +420,7 @@ input[type=file]{display:none;}
     <div class="ni" data-view="expedientes" onclick="goNav(this,'expedientes')"><span class="ico">▦</span>Expedientes<span class="nb r">3</span></div>
     <div class="ni" data-view="semaforo" onclick="goNav(this,'semaforo')"><span class="ico">◎</span>Semáforo Fiscal<span class="nb r">2</span></div>
     <div class="ni" data-view="portal" onclick="goNav(this,'portal')"><span class="ico">◷</span>Portal Proveedor</div>
+    <div class="ni" data-view="portal-empresa" onclick="goNav(this,'portal-empresa')"><span class="ico">◫</span>Portal Empresa Cliente</div>
     <div class="ns">Control Bancario</div>
     <div class="ni" data-view="trazabilidad" onclick="goNav(this,'trazabilidad')"><span class="ico">⬡</span>Trazabilidad Bancaria<span class="nb y">3</span></div>
     <div class="ni" data-view="kpis" onclick="goNav(this,'kpis')"><span class="ico">◉</span>KPIs del Personal</div>
@@ -824,6 +844,62 @@ input[type=file]{display:none;}
   </div>
 </div>
 
+<!-- ═══ PORTAL EMPRESA CLIENTE ═══ -->
+<div class="view" id="view-portal-empresa">
+  <div class="pv-header">
+    <div class="pv-icon">🧾</div>
+    <div class="pv-txt">
+      <h3>Portal de Autoservicio · Empresa Cliente</h3>
+      <p>Consulta aislada para la empresa cliente. Aquí solo se ve su propia documentación, sus cuentas bancarias y los proveedores ligados a su empresa.</p>
+    </div>
+    <div class="pv-lock">
+      <div class="lk">🔐</div>
+      <p>Acceso por empresa</p>
+    </div>
+  </div>
+
+  <div class="cg cg2">
+    <div>
+      <div id="portal-empresa-admin-switch" class="card" style="padding:18px;margin-bottom:12px;display:none;">
+        <div class="field" style="margin-bottom:0;">
+          <label>Empresa cliente a consultar</label>
+          <select id="portal-empresa-admin-select">
+            <option value="">— Seleccionar empresa cliente —</option>
+          </select>
+        </div>
+      </div>
+      <div id="portal-empresa-resumen" class="card" style="padding:18px;">
+        <div class="muted">Inicia sesión como empresa cliente para consultar su portal.</div>
+      </div>
+    </div>
+
+    <div class="card" style="padding:18px;">
+      <div class="sh"><h3>Flujo del portal empresa</h3><span>Consulta y seguimiento</span></div>
+      <div class="step-row">
+        <div class="step-num">1</div>
+        <div class="step-info">
+          <div class="step-title">Administración registra la empresa</div>
+          <div class="step-sub">Al crearla, el sistema genera un usuario y password para su representante.</div>
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">2</div>
+        <div class="step-info">
+          <div class="step-title">La empresa entra a su portal privado</div>
+          <div class="step-sub">Solo puede ver su expediente interno, política, cuentas y proveedores asociados.</div>
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">3</div>
+        <div class="step-info">
+          <div class="step-title">Monitorea onboarding y proveedores</div>
+          <div class="step-sub">Puede revisar si su política está activa y qué proveedores ya se dieron de alta.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ TRAZABILIDAD ═══ -->
 <div class="view" id="view-trazabilidad">
   <div class="cg cg4">
@@ -1100,10 +1176,11 @@ input[type=file]{display:none;}
 <!-- MODAL EMPRESA CLIENTE -->
 <div class="modal-overlay" id="modal-empresa">
   <div class="modal modal-onboarding" onclick="event.stopPropagation()">
-    <h3>Alta Empresa Cliente y Onboarding</h3>
+    <h3 id="emp-modal-title">Alta Empresa Cliente y Onboarding</h3>
     <div class="flow-intro">
+      <div id="emp-mode-pill" class="mode-pill admin">Modo administración</div>
       <strong>Flujo guiado de alta</strong>
-      <span>La empresa se crea primero. Después completas el paquete documental, registras una cuenta bancaria válida, guardas reglas y al final la envías a revisión para aprobar su onboarding.</span>
+      <span id="emp-flow-intro-copy">La empresa se crea primero. Después completas el paquete documental, registras una cuenta bancaria válida, guardas reglas y al final la envías a revisión para aprobar su onboarding.</span>
     </div>
     <div class="flow-steps">
       <div class="flow-step-pill"><b>1</b><span>Crear empresa</span></div>
@@ -1114,7 +1191,7 @@ input[type=file]{display:none;}
       <div class="flow-step-pill"><b>6</b><span>Guardar reglas y aprobar</span></div>
     </div>
 
-    <section class="onboard-stage stage-primary">
+    <section id="emp-stage-create" class="onboard-stage stage-primary">
       <div class="stage-head">
         <div class="stage-num">1</div>
         <div class="stage-title">
@@ -1142,8 +1219,8 @@ input[type=file]{display:none;}
         </div>
       </div>
       <div class="stage-actions">
-        <button class="btn btn-primary" onclick="registrarEmpresaCliente()">1) Crear empresa y continuar</button>
-        <button class="btn btn-ghost" onclick="actualizarEmpresaCliente()">Actualizar datos de empresa</button>
+        <button id="emp-create-btn" class="btn btn-primary" onclick="registrarEmpresaCliente()">1) Crear empresa y continuar</button>
+        <button id="emp-update-btn" class="btn btn-ghost" onclick="actualizarEmpresaCliente()">Actualizar datos de empresa</button>
       </div>
     </section>
 
@@ -1165,7 +1242,7 @@ input[type=file]{display:none;}
     </section>
 
     <div id="emp-onboarding-flow" style="opacity:.55;pointer-events:none;">
-      <section class="onboard-stage">
+      <section id="emp-stage-docs" class="onboard-stage">
         <div class="stage-head">
           <div class="stage-num">3</div>
           <div class="stage-title">
@@ -1176,9 +1253,10 @@ input[type=file]{display:none;}
         <div class="docs-grid">
           <div class="docs-list" id="emp-doc-checklist"></div>
           <div class="doc-helper">
-            <h5>Cómo subir un documento</h5>
-            <p>1. Elige el tipo de documento. 2. Escribe el nombre del archivo. 3. Indica la ruta o URL donde quedó almacenado. 4. Guarda la vigencia si aplica.</p>
-            <p>Después usa <code>2) Subir documento</code> y enseguida <code>3) Validar documento</code> para marcarlo como válido.</p>
+            <h5>Cómo subir o reemplazar un documento</h5>
+            <p>1. Elige el tipo de documento. 2. Escribe el nombre del archivo. 3. Selecciona el archivo nuevo o pega la URL correcta. 4. Guarda la vigencia si aplica.</p>
+            <p>Si ya existía un documento de ese tipo, el sistema lo reemplaza y vuelve a dejarlo en pendiente hasta validarlo otra vez.</p>
+            <p>Después usa <code>2) Subir o reemplazar documento</code> y enseguida <code>3) Validar documento</code> para marcarlo como válido.</p>
           </div>
         </div>
         <div class="stage-divider"></div>
@@ -1205,12 +1283,12 @@ input[type=file]{display:none;}
           <div class="field"><label>Vigente hasta</label><input id="emp-doc-vigencia" type="date" /></div>
         </div>
         <div class="stage-actions">
-          <button class="btn btn-ghost" onclick="subirDocumentoEmpresa('general')">2) Subir documento</button>
+          <button class="btn btn-ghost" onclick="subirDocumentoEmpresa('general')">2) Subir o reemplazar documento</button>
           <button class="btn btn-success" onclick="validarDocumentoEmpresa('valido', 'general')">3) Validar documento</button>
         </div>
       </section>
 
-      <section class="onboard-stage">
+      <section id="emp-stage-bank" class="onboard-stage">
         <div class="stage-head">
           <div class="stage-num">5</div>
           <div class="stage-title">
@@ -1222,7 +1300,7 @@ input[type=file]{display:none;}
           <div class="docs-list" id="emp-bank-doc-checklist"></div>
           <div class="doc-helper">
             <h5>Documentación bancaria</h5>
-            <p>Sube aquí exclusivamente la carta bancaria de cuentas y el estado de cuenta bancario. Después registra una o varias cuentas activas para la misma empresa.</p>
+            <p>Sube aquí exclusivamente la documentación bancaria. Si corriges un archivo ya cargado, esta sección también lo reemplaza y reinicia su validación.</p>
           </div>
         </div>
         <div class="field-row">
@@ -1248,7 +1326,7 @@ input[type=file]{display:none;}
           <div class="field"><label>Vigente hasta</label><input id="emp-bank-doc-vigencia" type="date" /></div>
         </div>
         <div class="stage-actions">
-          <button class="btn btn-ghost" onclick="subirDocumentoEmpresa('bank')">Subir documento bancario</button>
+          <button class="btn btn-ghost" onclick="subirDocumentoEmpresa('bank')">Subir o reemplazar documento bancario</button>
           <button class="btn btn-success" onclick="validarDocumentoEmpresa('valido', 'bank')">Validar documento bancario</button>
         </div>
         <div class="stage-divider"></div>
@@ -1259,12 +1337,13 @@ input[type=file]{display:none;}
           <div class="field"><label>Moneda</label><input id="emp-cuenta-moneda" type="text" value="MXN" /></div>
         </div>
         <div class="stage-actions">
-          <button class="btn btn-ghost" onclick="guardarCuentaEmpresa()">4) Guardar cuenta bancaria</button>
+          <button id="emp-cuenta-save-btn" class="btn btn-ghost" onclick="guardarCuentaEmpresa()">4) Guardar cuenta bancaria</button>
+          <button id="emp-cuenta-cancel-btn" class="btn btn-ghost" style="display:none;" onclick="limpiarFormularioCuentaEmpresa()">Cancelar edición</button>
         </div>
         <div id="emp-cuentas-list" class="account-list"></div>
       </section>
 
-      <section class="onboard-stage">
+      <section id="emp-stage-rules" class="onboard-stage">
         <div class="stage-head">
           <div class="stage-num">6</div>
           <div class="stage-title">
@@ -1335,10 +1414,11 @@ input[type=file]{display:none;}
     <div class="cg cg2" style="margin-top:8px;">
       <button class="btn btn-primary" style="height:52px;justify-content:center" onclick="enterAsProveedor()">Soy Proveedor (nuevo)</button>
       <button class="btn btn-ghost" style="height:52px;justify-content:center" onclick="enterAsProveedorRegistrado()">Proveedor ya registrado</button>
+      <button class="btn btn-ghost" style="height:52px;justify-content:center" onclick="enterAsEmpresaRegistrada()">Empresa cliente registrada</button>
       <button class="btn btn-ghost" style="height:52px;justify-content:center" onclick="enterAsOperador()">Soy Operador</button>
     </div>
     <div style="margin-top:12px;font-size:12px;color:var(--muted2);">
-      Proveedor: auto-registro a empresa cliente. Operador: acceso interno por rol.
+      Proveedor: auto-registro a empresa cliente. Empresa: consulta su propio portal. Operador: acceso interno por rol.
     </div>
   </div>
 </div>
@@ -1349,11 +1429,11 @@ input[type=file]{display:none;}
     <h3>Ingreso por Rol</h3>
     <div class="field">
       <label>Usuario</label>
-      <select id="login-email"></select>
+      <input id="login-email" type="text" placeholder="usuario@empresa.local" />
     </div>
     <div class="field">
       <label>Contraseña</label>
-      <input id="login-password" type="password" placeholder="servicia2026" />
+      <input id="login-password" type="password" placeholder="••••••••" />
     </div>
     <div class="modal-footer">
       <button id="login-btn" class="btn btn-primary" style="flex:1">Entrar</button>
@@ -1376,6 +1456,25 @@ input[type=file]{display:none;}
     <div class="modal-footer">
       <button class="btn btn-ghost" style="flex:1" onclick="backToRoleMenu()">Volver</button>
       <button id="prov-login-btn" class="btn btn-primary" style="flex:1">Entrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOGIN EMPRESA CLIENTE -->
+<div class="modal-overlay" id="modal-login-empresa" style="z-index:530;" data-backdrop-close="false">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3>Ingreso Empresa Cliente</h3>
+    <div class="field">
+      <label>Usuario empresa</label>
+      <input id="empresa-login-username" type="text" placeholder="empresa_1_portal" />
+    </div>
+    <div class="field">
+      <label>Contraseña</label>
+      <input id="empresa-login-password" type="password" placeholder="••••••••" />
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" style="flex:1" onclick="backToRoleMenu()">Volver</button>
+      <button id="empresa-login-btn" class="btn btn-primary" style="flex:1">Entrar</button>
     </div>
   </div>
 </div>
@@ -1443,7 +1542,7 @@ input[type=file]{display:none;}
 
 <script>
 // ── DATA ─────────────────────────────────────────
-const TITLES = {dashboard:'Dashboard General',politicas:'Políticas por Empresa',clasificador:'Clasificador de Nivel de Riesgo',expedientes:'Expedientes de Materialización',semaforo:'Semáforo Fiscal · Art. 69-B CFF',portal:'Portal de Autoservicio · Proveedor',trazabilidad:'Trazabilidad Bancaria',kpis:'KPIs del Personal',cierre:'Cierre Mensual · Contabilidad',auditoria:'Auditoría IA'};
+const TITLES = {dashboard:'Dashboard General',politicas:'Políticas por Empresa',clasificador:'Clasificador de Nivel de Riesgo',expedientes:'Expedientes de Materialización',semaforo:'Semáforo Fiscal · Art. 69-B CFF',portal:'Portal de Autoservicio · Proveedor','portal-empresa':'Portal de Autoservicio · Empresa Cliente',trazabilidad:'Trazabilidad Bancaria',kpis:'KPIs del Personal',cierre:'Cierre Mensual · Contabilidad',auditoria:'Auditoría IA'};
 const API_BASE = `${window.location.origin}/api`;
 const FOLIO_CACHE = {};
 let CURRENT_EXPEDIENTE = null;
@@ -1458,6 +1557,9 @@ let EMP_LAST_DOC_ID = {general:null, bank:null};
 let EMP_SELECTED_DOC_FILE = {general:null, bank:null};
 let EMPRESA_CUENTAS_CACHE = [];
 let POLICY_SELECTED_FILE = null;
+let PORTAL_EMPRESA_CACHE = null;
+let PORTAL_EMPRESA_SELECTED_ID = '';
+let EMP_CUENTA_EDITING_ID = null;
 const TIPO_EMPRESA_LABEL = {
   servicios: 'Servicios',
   comercializadora: 'Comercializadora',
@@ -1483,6 +1585,7 @@ function cleanNumber(value){
 function getUsuarioActivo(){
   if(!AUTH_USER) return 'frontend';
   if(AUTH_USER.tipo === 'proveedor') return AUTH_USER.username || 'proveedor';
+  if(AUTH_USER.tipo === 'empresa_cliente') return AUTH_USER.username || 'empresa_cliente';
   return AUTH_USER.rol || 'frontend';
 }
 
@@ -1491,6 +1594,8 @@ function authHeaders(extra){
   if(AUTH_USER){
     if(AUTH_USER.tipo === 'proveedor'){
       if(AUTH_USER.username) headers['X-Proveedor-Username'] = AUTH_USER.username;
+    } else if(AUTH_USER.tipo === 'empresa_cliente'){
+      if(AUTH_USER.username) headers['X-Empresa-Username'] = AUTH_USER.username;
     } else {
       if(AUTH_USER.email) headers['X-Auth-Email'] = AUTH_USER.email;
       if(AUTH_USER.rol) headers['X-Auth-Role'] = AUTH_USER.rol;
@@ -1710,15 +1815,57 @@ function renderEmpresaCuentasList(){
         <strong>${cuenta.banco} · ${cuenta.titular}</strong>
         <small>${clabe} · ${cuenta.moneda || 'MXN'} · ${cuenta.activa ? 'Activa' : 'Inactiva'}</small>
       </div>
-      <span class="badge ${badgeClass}">${cuenta.validada ? 'Validada' : 'Pendiente'}</span>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <span class="badge ${badgeClass}">${cuenta.validada ? 'Validada' : 'Pendiente'}</span>
+        ${canManageEmpresaOnboarding() ? `<button class="btn btn-ghost" onclick="editarCuentaEmpresa(${cuenta.id})">Editar</button>` : ''}
+      </div>
     </div>`;
   }).join('');
+}
+
+function limpiarFormularioCuentaEmpresa(){
+  EMP_CUENTA_EDITING_ID = null;
+  const defaults = {
+    'emp-cuenta-banco': '',
+    'emp-cuenta-titular': '',
+    'emp-cuenta-clabe': '',
+    'emp-cuenta-moneda': 'MXN',
+  };
+  Object.entries(defaults).forEach(([id, value])=>{
+    const el = document.getElementById(id);
+    if(el) el.value = value;
+  });
+  const saveBtn = document.getElementById('emp-cuenta-save-btn');
+  if(saveBtn) saveBtn.textContent = '4) Guardar cuenta bancaria';
+  const cancelBtn = document.getElementById('emp-cuenta-cancel-btn');
+  if(cancelBtn) cancelBtn.style.display = 'none';
+}
+
+function editarCuentaEmpresa(cuentaId){
+  const cuenta = EMPRESA_CUENTAS_CACHE.find(item => Number(item.id) === Number(cuentaId));
+  if(!cuenta) return;
+  EMP_CUENTA_EDITING_ID = cuenta.id;
+  const values = {
+    'emp-cuenta-banco': cuenta.banco || '',
+    'emp-cuenta-titular': cuenta.titular || '',
+    'emp-cuenta-clabe': cuenta.clabe || '',
+    'emp-cuenta-moneda': cuenta.moneda || 'MXN',
+  };
+  Object.entries(values).forEach(([id, value])=>{
+    const el = document.getElementById(id);
+    if(el) el.value = value;
+  });
+  const saveBtn = document.getElementById('emp-cuenta-save-btn');
+  if(saveBtn) saveBtn.textContent = '4) Guardar cambios de cuenta';
+  const cancelBtn = document.getElementById('emp-cuenta-cancel-btn');
+  if(cancelBtn) cancelBtn.style.display = '';
 }
 
 async function loadEmpresaCuentas(){
   const empresaId = Number(document.getElementById('emp-id')?.value || 0);
   if(!empresaId){
     EMPRESA_CUENTAS_CACHE = [];
+    limpiarFormularioCuentaEmpresa();
     renderEmpresaCuentasList();
     return;
   }
@@ -1747,6 +1894,36 @@ function setEmpresaOnboardingUIState(){
   flow.style.opacity = empresaId ? '1' : '.55';
   flow.style.pointerEvents = empresaId ? 'auto' : 'none';
   if(note) note.style.display = empresaId ? 'none' : 'block';
+}
+
+function syncEmpresaModalMode(){
+  const canAdmin = isAdministracion();
+  const isConta = isContabilidad();
+  const title = document.getElementById('emp-modal-title');
+  const intro = document.getElementById('emp-flow-intro-copy');
+  const createBtn = document.getElementById('emp-create-btn');
+  const updateBtn = document.getElementById('emp-update-btn');
+  const modePill = document.getElementById('emp-mode-pill');
+  const stageCreate = document.getElementById('emp-stage-create');
+  const stageDocs = document.getElementById('emp-stage-docs');
+  const stageRules = document.getElementById('emp-stage-rules');
+  const stageBank = document.getElementById('emp-stage-bank');
+  if(title) title.textContent = canAdmin ? 'Alta Empresa Cliente y Onboarding' : 'Gestión de Onboarding de Empresas';
+  if(intro){
+    intro.textContent = canAdmin
+      ? 'La empresa se crea primero. Después completas el paquete documental, registras una cuenta bancaria válida, guardas reglas y al final la envías a revisión para aprobar su onboarding.'
+      : 'Aquí retomas una empresa ya existente para revisar y corregir exclusivamente su estado de cuenta bancario y sus cuentas bancarias, sin dar de alta una empresa nueva.';
+  }
+  if(modePill){
+    modePill.textContent = canAdmin ? 'Modo administración' : 'Modo contabilidad';
+    modePill.className = `mode-pill ${canAdmin ? 'admin' : 'conta'}`;
+  }
+  if(createBtn) createBtn.style.display = canAdmin ? '' : 'none';
+  if(updateBtn) updateBtn.style.display = canAdmin ? '' : 'none';
+  if(stageCreate) stageCreate.style.display = canAdmin ? '' : 'none';
+  if(stageDocs) stageDocs.style.display = isConta ? 'none' : '';
+  if(stageRules) stageRules.style.display = isConta ? 'none' : '';
+  if(stageBank) stageBank.style.display = '';
 }
 
 function syncEmpresaFormFromSelected(){
@@ -1803,6 +1980,8 @@ function setAuthUser(user){
       badge.textContent = 'No autenticado';
     }else if(AUTH_USER.tipo === 'proveedor'){
       badge.textContent = `${AUTH_USER.nombre || AUTH_USER.username} · proveedor`;
+    }else if(AUTH_USER.tipo === 'empresa_cliente'){
+      badge.textContent = `${AUTH_USER.nombre || AUTH_USER.username} · empresa cliente`;
     }else{
       badge.textContent = `${AUTH_USER.nombre} · ${AUTH_USER.rol}`;
     }
@@ -1810,31 +1989,49 @@ function setAuthUser(user){
 }
 
 function canAccessAuditoriaIA(){
-  if(!AUTH_USER || AUTH_USER.tipo === 'proveedor') return false;
+  if(!AUTH_USER || AUTH_USER.tipo === 'proveedor' || AUTH_USER.tipo === 'empresa_cliente') return false;
   return ['direccion','tesoreria','contabilidad'].includes(AUTH_USER.rol);
 }
 
 function isAdministracion(){
-  return !!(AUTH_USER && AUTH_USER.tipo !== 'proveedor' && AUTH_USER.rol === 'administracion');
+  return !!(AUTH_USER && AUTH_USER.tipo !== 'proveedor' && AUTH_USER.tipo !== 'empresa_cliente' && AUTH_USER.rol === 'administracion');
+}
+
+function isContabilidad(){
+  return !!(AUTH_USER && AUTH_USER.tipo !== 'proveedor' && AUTH_USER.tipo !== 'empresa_cliente' && AUTH_USER.rol === 'contabilidad');
+}
+
+function canManageEmpresaOnboarding(){
+  return isAdministracion() || isContabilidad();
 }
 
 function applyRoleUI(){
   const isProveedor = !!(AUTH_USER && AUTH_USER.tipo === 'proveedor');
+  const isEmpresaCliente = !!(AUTH_USER && AUTH_USER.tipo === 'empresa_cliente');
   const canAdmin = isAdministracion();
+  const canManageOnboarding = canManageEmpresaOnboarding();
   const canAudit = canAccessAuditoriaIA();
   const btnNuevo = document.getElementById('btn-nuevo-proveedor');
   if(btnNuevo) btnNuevo.style.display = canAdmin ? '' : 'none';
   const btnNuevaEmpresa = document.getElementById('btn-nueva-empresa');
-  if(btnNuevaEmpresa) btnNuevaEmpresa.style.display = canAdmin ? '' : 'none';
+  if(btnNuevaEmpresa){
+    btnNuevaEmpresa.style.display = canManageOnboarding ? '' : 'none';
+    btnNuevaEmpresa.textContent = canAdmin ? '＋ Nueva Empresa Cliente' : 'Gestionar Empresas Cliente';
+  }
   const linkNuevo = document.getElementById('link-agregar-proveedor');
   if(linkNuevo) linkNuevo.style.display = canAdmin ? '' : 'none';
   const policyUploadWrap = document.getElementById('policy-upload-wrap');
   if(policyUploadWrap) policyUploadWrap.style.display = canAdmin ? '' : 'none';
+  const portalEmpresaSwitch = document.getElementById('portal-empresa-admin-switch');
+  if(portalEmpresaSwitch) portalEmpresaSwitch.style.display = canAdmin ? '' : 'none';
   const allowedProveedorViews = new Set(['clasificador', 'portal']);
+  const allowedEmpresaViews = new Set(['portal-empresa']);
   document.querySelectorAll('.ni[data-view]').forEach(item=>{
     const view = item.getAttribute('data-view') || '';
     if(isProveedor){
       item.style.display = allowedProveedorViews.has(view) ? '' : 'none';
+    }else if(isEmpresaCliente){
+      item.style.display = allowedEmpresaViews.has(view) ? '' : 'none';
     }else if(view === 'auditoria'){
       item.style.display = canAudit ? '' : 'none';
     }else{
@@ -1842,7 +2039,7 @@ function applyRoleUI(){
     }
   });
   document.querySelectorAll('.ns').forEach(section=>{
-    if(!isProveedor){
+    if(!isProveedor && !isEmpresaCliente){
       section.style.display = '';
       return;
     }
@@ -1862,10 +2059,19 @@ function applyRoleUI(){
 }
 
 function openModalEmpresaSegura(){
-  if(!AUTH_USER || AUTH_USER.tipo === 'proveedor' || AUTH_USER.rol !== 'administracion'){
-    alert('Solo el rol administración puede registrar empresas cliente.');
+  if(!AUTH_USER || AUTH_USER.tipo === 'proveedor' || AUTH_USER.tipo === 'empresa_cliente' || !canManageEmpresaOnboarding()){
+    alert('Solo administración y contabilidad pueden gestionar onboarding de empresas.');
     return;
   }
+  if(isContabilidad()){
+    const nombre = document.getElementById('emp-nombre');
+    const rfc = document.getElementById('emp-rfc');
+    const tipo = document.getElementById('emp-tipo');
+    if(nombre) nombre.value = '';
+    if(rfc) rfc.value = '';
+    if(tipo) tipo.value = 'servicios';
+  }
+  syncEmpresaModalMode();
   openModal('modal-empresa');
 }
 
@@ -1881,6 +2087,8 @@ function logout(){
   setAuthUser(null);
   const pass = document.getElementById('login-password');
   if(pass) pass.value = '';
+  const empresaPass = document.getElementById('empresa-login-password');
+  if(empresaPass) empresaPass.value = '';
   enterAsProveedor();
 }
 
@@ -1888,14 +2096,12 @@ function closeRoleModals(){
   closeModal('modal-role');
   closeModal('modal-login');
   closeModal('modal-login-proveedor');
+  closeModal('modal-login-empresa');
   closeModal('modal-proveedor-self');
 }
 
 function enterAsOperador(){
   closeRoleModals();
-  const pass = document.getElementById('login-password');
-  if(pass && !pass.value) pass.value = 'servicia2026';
-  loadLoginUsers();
   openModal('modal-login');
 }
 
@@ -1913,31 +2119,14 @@ function enterAsProveedorRegistrado(){
   openModal('modal-login-proveedor');
 }
 
+function enterAsEmpresaRegistrada(){
+  closeRoleModals();
+  openModal('modal-login-empresa');
+}
+
 function backToRoleMenu(){
   closeRoleModals();
   openModal('modal-role');
-}
-
-async function loadLoginUsers(){
-  const sel = document.getElementById('login-email');
-  if(!sel) return;
-  try{
-    const users = await apiGet('/auth/usuarios');
-    if(users && users.length){
-      sel.innerHTML = users.map(u=>`<option value="${u.email}">${u.nombre} (${u.rol})</option>`).join('');
-      return;
-    }
-  }catch(_err){
-    // fallback demo
-  }
-  sel.innerHTML = `
-    <option value="salo@batia.local">Salo (direccion)</option>
-    <option value="mgonzalez@batia.local">M. Gonzalez (tesoreria)</option>
-    <option value="lhernandez@batia.local">L. Hernandez (tesoreria)</option>
-    <option value="rfuentes@batia.local">R. Fuentes (administracion)</option>
-    <option value="cmorales@batia.local">C. Morales (administracion)</option>
-    <option value="pramirez@batia.local">P. Ramirez (contabilidad)</option>
-  `;
 }
 
 async function doLogin(){
@@ -1945,7 +2134,7 @@ async function doLogin(){
     const email = (document.getElementById('login-email').value || '').trim();
     const password = (document.getElementById('login-password').value || '').trim();
     if(!email){
-      alert('Selecciona un usuario');
+      alert('Escribe tu usuario');
       return;
     }
     if(!password){
@@ -1989,6 +2178,32 @@ async function doProveedorLogin(){
     await portalEmpresaChange(String(u.empresa_id || ''));
   }catch(err){
     alert(`No se pudo iniciar sesión de proveedor: ${err.message}`);
+  }
+}
+
+async function doEmpresaLogin(){
+  try{
+    const username = (document.getElementById('empresa-login-username').value || '').trim();
+    const password = (document.getElementById('empresa-login-password').value || '').trim();
+    if(!username || !password){
+      alert('Escribe usuario y contraseña');
+      return;
+    }
+    const data = await apiSend('/auth/empresa/login', 'POST', {username, password});
+    const u = data.usuario || {};
+    setAuthUser({
+      tipo: 'empresa_cliente',
+      username: u.username,
+      rol: 'empresa_cliente',
+      empresa_id: u.empresa_id,
+      nombre: u.empresa_nombre || u.username,
+    });
+    closeRoleModals();
+    await loadEmpresas();
+    await loadPortalEmpresaCliente();
+    goNav(document.querySelector('.ni[data-view="portal-empresa"]'), 'portal-empresa');
+  }catch(err){
+    alert(`No se pudo iniciar sesión de empresa cliente: ${err.message}`);
   }
 }
 
@@ -2058,6 +2273,10 @@ function goNav(el, id) {
     id = 'portal';
     el = document.querySelector('.ni[data-view="portal"]');
   }
+  if(AUTH_USER && AUTH_USER.tipo === 'empresa_cliente' && id !== 'portal-empresa'){
+    id = 'portal-empresa';
+    el = document.querySelector('.ni[data-view="portal-empresa"]');
+  }
   if(id === 'auditoria' && !canAccessAuditoriaIA()){
     alert('Solo dirección, tesorería y contabilidad pueden acceder a Auditoría IA.');
     id = 'dashboard';
@@ -2075,6 +2294,7 @@ function goNav(el, id) {
   if(id==='expedientes') loadReportesPorNivel();
   if(id==='kpis') loadKpisPersonal();
   if(id==='politicas') loadPolicyByEmpresa();
+  if(id==='portal-empresa') loadPortalEmpresaCliente();
 }
 
 function stab(el, id) {
@@ -2406,6 +2626,217 @@ async function portalNivel(v) {
   if(locked) html+=`<button class="btn btn-ghost" style="width:100%;margin-top:12px;opacity:.4;cursor:not-allowed">📤 Subir factura (bloqueado)</button>`;
   else html+=`<button class="btn btn-primary" style="width:100%;margin-top:12px">📤 Subir factura XML + PDF</button>`;
   el.innerHTML = html;
+}
+
+function renderPortalEmpresaCliente(data){
+  const wrap = document.getElementById('portal-empresa-resumen');
+  if(!wrap) return;
+  if(!data){
+    wrap.innerHTML = '<div class="muted">No se pudo cargar la información de la empresa cliente.</div>';
+    return;
+  }
+  const empresa = data.empresa || {};
+  const policy = data.policy_status || {};
+  const onboarding = data.onboarding_status || {};
+  const docs = Array.isArray(data.documentos_empresa) ? data.documentos_empresa : [];
+  const cuentas = Array.isArray(data.cuentas_bancarias) ? data.cuentas_bancarias : [];
+  const proveedores = Array.isArray(data.proveedores) ? data.proveedores : [];
+  const expedientes = Array.isArray(data.expedientes) ? data.expedientes : [];
+  const onboardingDocs = Array.isArray(onboarding.documentos?.detalle) ? onboarding.documentos.detalle : [];
+
+  const checklistHtml = onboardingDocs.length
+    ? onboardingDocs.map(doc=>{
+        const stateClass = doc.ok ? 'ok' : (doc.presente ? 'pending' : 'missing');
+        const stateLabel = doc.ok ? 'Validado' : (doc.presente ? (doc.estado_validacion || 'pendiente') : 'Faltante');
+        const helper = doc.presente ? (doc.vigente ? 'Documento cargado' : 'Revisar vigencia') : 'Aún no se ha subido';
+        return `<div class="doc-item ${stateClass}">
+          <div class="doc-dot"></div>
+          <div class="doc-copy">
+            <strong>${prettyEmpresaDocLabel(doc.tipo)}</strong>
+            <small>${helper}</small>
+          </div>
+          <span class="doc-badge">${stateLabel}</span>
+        </div>`;
+      }).join('')
+    : '<div class="account-empty">No se pudo cargar el checklist documental de esta empresa.</div>';
+
+  const docsHtml = docs.length
+    ? docs.map(doc=>{
+        const badgeClass = doc.estado_validacion === 'valido' ? 'g' : (doc.estado_validacion === 'rechazado' ? 'r' : 'y');
+        const link = doc.url ? `<a class="btn btn-ghost" href="${doc.url}" target="_blank" rel="noopener noreferrer">Abrir</a>` : '';
+        return `<div class="account-card">
+          <div class="account-icon">DOC</div>
+          <div class="account-copy">
+            <strong>${prettyEmpresaDocLabel(doc.tipo)}</strong>
+            <small>${doc.nombre_archivo || 'Sin archivo'} · ${doc.subido_en ? new Date(doc.subido_en).toLocaleString('es-MX') : 'Sin fecha'}</small>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <span class="badge ${badgeClass}">${doc.estado_validacion || 'pendiente'}</span>
+            ${link}
+          </div>
+        </div>`;
+      }).join('')
+    : '<div class="account-empty">Todavía no hay documentos cargados para esta empresa.</div>';
+
+  const cuentasHtml = cuentas.length
+    ? cuentas.map(cuenta=>`<div class="account-card">
+        <div class="account-icon">${cuenta.moneda || 'MXN'}</div>
+        <div class="account-copy">
+          <strong>${cuenta.banco} · ${cuenta.titular}</strong>
+          <small>CLABE terminación ${String(cuenta.clabe || '').slice(-4) || 's/d'} · ${cuenta.activa ? 'Activa' : 'Inactiva'}</small>
+        </div>
+        <span class="badge ${cuenta.validada ? 'g' : 'y'}">${cuenta.validada ? 'Validada' : 'Pendiente'}</span>
+      </div>`).join('')
+    : '<div class="account-empty">No hay cuentas bancarias registradas para esta empresa.</div>';
+
+  const proveedoresHtml = proveedores.length
+    ? `<div class="tw" style="margin-top:10px;">
+        <div class="th"><h3>Proveedores registrados para esta empresa</h3><span>${proveedores.length} vinculados</span></div>
+        <table>
+          <thead><tr><th>Proveedor</th><th>RFC</th><th>Nivel</th><th>Folios</th><th>Docs</th><th>Estado</th></tr></thead>
+          <tbody>${proveedores.map(p=>`<tr>
+            <td><strong>${p.nombre}</strong></td>
+            <td>${p.rfc}</td>
+            <td><span class="nlvl n${p.nivel}">N${p.nivel}</span></td>
+            <td>${(p.folios || []).map(f=>`#${f.numero}`).join(', ') || '—'}</td>
+            <td>${p.documentos_subidos || 0}/${p.documentos_total || 0}</td>
+            <td><span class="badge ${p.activo ? 'g' : 'y'}">${p.activo ? 'Activo' : 'Inactivo'}</span></td>
+          </tr>`).join('')}</tbody>
+        </table>
+      </div>`
+    : '<div class="account-empty" style="margin-top:10px;">Aún no hay proveedores registrados para esta empresa.</div>';
+
+  const expedientesByProveedor = new Map();
+  expedientes.forEach(exp=>{
+    const key = String(exp.proveedor_id || `${exp.proveedor_nombre}-${exp.folio_numero}`);
+    if(!expedientesByProveedor.has(key)) expedientesByProveedor.set(key, []);
+    expedientesByProveedor.get(key).push(exp);
+  });
+
+  const providerPanels = proveedores.map((prov, idx)=>{
+    const providerExpedientes = expedientesByProveedor.get(String(prov.id)) || [];
+    const foliosCount = providerExpedientes.length;
+    const docsTotal = providerExpedientes.reduce((acc, exp)=>acc + ((exp.documentos || []).length), 0);
+    const docsSubidos = providerExpedientes.reduce((acc, exp)=>acc + ((exp.documentos || []).filter(doc=>doc.subido).length), 0);
+    const avgCompletitud = foliosCount
+      ? Math.round(providerExpedientes.reduce((acc, exp)=>acc + Number(exp.completitud || 0), 0) / foliosCount)
+      : 0;
+    const foliosHtml = providerExpedientes.length
+      ? providerExpedientes.map(exp=>{
+          const docsExp = Array.isArray(exp.documentos) ? exp.documentos : [];
+          const resumenDocs = docsExp.length
+            ? docsExp.map(doc=>{
+                const ok = !!doc.subido;
+                const badgeClass = ok ? 'g' : 'r';
+                const badgeLabel = ok ? 'Subido' : 'Faltante';
+                const link = ok && doc.url ? `<a class="btn btn-ghost" href="${doc.url}" target="_blank" rel="noopener noreferrer">Abrir</a>` : '';
+                return `<tr>
+                  <td>${doc.label || doc.tipo}</td>
+                  <td><span class="badge ${badgeClass}">${badgeLabel}</span></td>
+                  <td>${doc.nombre_archivo || '—'}</td>
+                  <td>${doc.subido_en ? new Date(doc.subido_en).toLocaleString('es-MX') : '—'}</td>
+                  <td>${link}</td>
+                </tr>`;
+              }).join('')
+            : '<tr><td colspan="5" class="muted">Sin documentos definidos en este expediente.</td></tr>';
+          return `<div class="folio-block">
+            <h4>Folio #${exp.folio_numero} · N${exp.nivel}</h4>
+            <p>Completitud ${Math.round(exp.completitud || 0)}% · Pago ${exp.pago_bloqueado ? 'bloqueado' : 'liberado'} · Presupuesto ${toMoney(exp.presupuesto || 0)}</p>
+            <table>
+              <thead><tr><th>Documento proveedor</th><th>Estatus</th><th>Archivo</th><th>Fecha</th><th>Acción</th></tr></thead>
+              <tbody>${resumenDocs}</tbody>
+            </table>
+          </div>`;
+        }).join('')
+      : '<div class="account-empty" style="margin-top:12px;">Este proveedor aún no tiene expedientes ligados a esta empresa.</div>';
+
+    return `<details class="provider-fold" ${idx === 0 ? 'open' : ''}>
+      <summary>
+        <div class="account-icon">N${prov.nivel}</div>
+        <div class="provider-fold-copy">
+          <strong>${prov.nombre}</strong>
+          <small>${prov.rfc} · ${prov.activo ? 'Proveedor activo' : 'Proveedor inactivo'}</small>
+        </div>
+        <div class="provider-fold-kpis">
+          <span class="provider-pill">${foliosCount} folio${foliosCount === 1 ? '' : 's'}</span>
+          <span class="provider-pill">${docsSubidos}/${docsTotal} docs</span>
+          <span class="provider-pill">${avgCompletitud}% completo</span>
+        </div>
+      </summary>
+      <div class="provider-fold-body">
+        ${foliosHtml}
+      </div>
+    </details>`;
+  }).join('');
+
+  const expedientesHtml = providerPanels
+    ? `<div class="provider-accordion">${providerPanels}</div>`
+    : '<div class="account-empty" style="margin-top:10px;">Aún no existen expedientes de proveedores para esta empresa.</div>';
+
+  wrap.innerHTML = `
+    <div class="cg cg2" style="margin-bottom:12px;">
+      <div class="card" style="padding:14px;">
+        <div class="clabel">Empresa cliente</div>
+        <div class="cval" style="font-size:24px;">${empresa.nombre || 'Sin nombre'}</div>
+        <div class="csub">RFC: <strong>${empresa.rfc || 's/d'}</strong> · Tipo: <strong>${TIPO_EMPRESA_LABEL[empresa.tipo_empresa] || (empresa.tipo_empresa || 'Sin tipo')}</strong></div>
+        <div class="csub">Onboarding: <strong>${onboarding.onboarding_status || 'desconocido'}</strong> · Completitud: <strong>${onboarding.completitud || 0}%</strong></div>
+      </div>
+      <div class="card" style="padding:14px;">
+        <div class="clabel">Habilitación operativa</div>
+        <div class="csub">Política activa publicada: <strong style="color:${policy.has_active_published_policy ? 'var(--green)' : 'var(--red)'}">${policy.has_active_published_policy ? 'Sí' : 'No'}</strong></div>
+        <div class="csub">Documentos empresa: <strong>${docs.length}</strong> · Cuentas bancarias: <strong>${cuentas.length}</strong></div>
+        <div class="csub">Proveedores ligados: <strong>${proveedores.length}</strong></div>
+      </div>
+    </div>
+    <div class="cg cg2">
+      <div class="card" style="padding:14px;">
+        <div class="sh"><h3>Checklist documental de la empresa</h3><span>${onboarding.documentos?.ok || 0}/${onboarding.documentos?.total || 0} validados</span></div>
+        <div>${checklistHtml}</div>
+      </div>
+      <div class="card" style="padding:14px;">
+        <div class="sh"><h3>Documentación de la empresa</h3><span>Solo lectura</span></div>
+        <div>${docsHtml}</div>
+      </div>
+    </div>
+    <div class="cg cg1" style="margin-top:12px;">
+      <div class="card" style="padding:14px;">
+        <div class="sh"><h3>Cuentas bancarias registradas</h3><span>Solo lectura</span></div>
+        <div>${cuentasHtml}</div>
+      </div>
+    </div>
+    ${proveedoresHtml}
+    <div style="margin-top:12px;">
+      <div class="sh"><h3>Documentación por proveedor de esta empresa</h3><span>Expedientes ligados al cliente</span></div>
+      ${expedientesHtml}
+    </div>
+  `;
+}
+
+async function loadPortalEmpresaCliente(){
+  const wrap = document.getElementById('portal-empresa-resumen');
+  if(!wrap) return;
+  if(!AUTH_USER || (AUTH_USER.tipo !== 'empresa_cliente' && !isAdministracion())){
+    wrap.innerHTML = '<div class="muted">Inicia sesión como empresa cliente o como administración para consultar este portal.</div>';
+    return;
+  }
+  try{
+    wrap.innerHTML = '<div class="muted">Cargando portal de empresa...</div>';
+    let path = '/portal-empresa/resumen';
+    if(isAdministracion()){
+      const sel = document.getElementById('portal-empresa-admin-select');
+      const empresaId = (sel?.value || PORTAL_EMPRESA_SELECTED_ID || '').trim();
+      if(!empresaId){
+        wrap.innerHTML = '<div class="muted">Selecciona una empresa cliente para consultar su portal.</div>';
+        return;
+      }
+      PORTAL_EMPRESA_SELECTED_ID = empresaId;
+      path = `/portal-empresa/resumen?empresa_id=${encodeURIComponent(empresaId)}`;
+    }
+    PORTAL_EMPRESA_CACHE = await apiGet(path);
+    renderPortalEmpresaCliente(PORTAL_EMPRESA_CACHE);
+  }catch(err){
+    wrap.innerHTML = `<div class="bloqueo"><h4>No se pudo cargar el portal</h4><p>${err.message}</p></div>`;
+  }
 }
 
 async function portalSubirDocumento(expedienteId, folioId){
@@ -2940,6 +3371,24 @@ async function loadEmpresas(){
         portalSel.appendChild(op);
       });
     }
+    const portalEmpresaAdminSel = document.getElementById('portal-empresa-admin-select');
+    if(portalEmpresaAdminSel){
+      const current = PORTAL_EMPRESA_SELECTED_ID || portalEmpresaAdminSel.value;
+      portalEmpresaAdminSel.innerHTML = '<option value="">— Seleccionar empresa cliente —</option>';
+      EMPRESAS_CACHE.filter(e=>e.activo).forEach(e=>{
+        const op = document.createElement('option');
+        op.value = String(e.id);
+        op.textContent = empresaLabel(e);
+        portalEmpresaAdminSel.appendChild(op);
+      });
+      const stillExists = Array.from(portalEmpresaAdminSel.options).some(o=>o.value === current);
+      if(stillExists){
+        portalEmpresaAdminSel.value = current;
+      }else if(isAdministracion() && EMPRESAS_CACHE.length){
+        portalEmpresaAdminSel.value = String(EMPRESAS_CACHE[0].id);
+        PORTAL_EMPRESA_SELECTED_ID = portalEmpresaAdminSel.value;
+      }
+    }
     const aiSel = document.getElementById('ai-empresa-filter');
     if(aiSel){
       const current = aiSel.value;
@@ -3026,7 +3475,12 @@ async function registrarEmpresaCliente(){
     if(sel) sel.value = String(resp.id);
     syncEmpresaFormFromSelected();
     await cargarOnboardingEmpresa();
-    alert(`Empresa creada: ${resp.nombre}`);
+    const c = resp.credenciales || {};
+    if(c.username && c.password){
+      alert(`Empresa creada: ${resp.nombre}\nUsuario portal empresa: ${c.username}\nPassword: ${c.password}`);
+    }else{
+      alert(`Empresa creada: ${resp.nombre}`);
+    }
   }catch(err){
     alert(`No se pudo crear empresa: ${err.message}`);
   }
@@ -3161,20 +3615,33 @@ async function guardarCuentaEmpresa(){
     return;
   }
   try{
-    const resp = await apiSend(`/empresas/${empresaId}/cuentas-bancarias`, 'POST', {
-      banco, titular, clabe, moneda, validada: true, usuario: getUsuarioActivo()
-    });
-    await apiSend(`/empresas/${empresaId}/cuentas-bancarias/${resp.cuenta_id}`, 'PATCH', {
-      validada: true, usuario: getUsuarioActivo()
-    });
+    const editingId = EMP_CUENTA_EDITING_ID;
+    if(editingId){
+      await apiSend(`/empresas/${empresaId}/cuentas-bancarias/${editingId}`, 'PATCH', {
+        banco, titular, clabe, moneda, validada: true, activa: true, usuario: getUsuarioActivo()
+      });
+    }else{
+      const resp = await apiSend(`/empresas/${empresaId}/cuentas-bancarias`, 'POST', {
+        banco, titular, clabe, moneda, validada: true, usuario: getUsuarioActivo()
+      });
+      await apiSend(`/empresas/${empresaId}/cuentas-bancarias/${resp.cuenta_id}`, 'PATCH', {
+        validada: true, usuario: getUsuarioActivo()
+      });
+    }
+    const wasEditing = !!editingId;
+    limpiarFormularioCuentaEmpresa();
     await cargarOnboardingEmpresa();
-    alert('Cuenta bancaria registrada y validada.');
+    alert(wasEditing ? 'Cuenta bancaria actualizada.' : 'Cuenta bancaria registrada y validada.');
   }catch(err){
     alert(`No se pudo guardar cuenta: ${err.message}`);
   }
 }
 
 async function guardarReglasEmpresa(){
+  if(isContabilidad()){
+    alert('Contabilidad solo puede gestionar estados de cuenta y cuentas bancarias de empresas ya existentes.');
+    return;
+  }
   const empresaId = Number(document.getElementById('emp-id')?.value || 0);
   if(!empresaId){
     alert('Selecciona empresa');
@@ -3196,6 +3663,10 @@ async function guardarReglasEmpresa(){
 }
 
 async function enviarRevisionEmpresa(){
+  if(isContabilidad()){
+    alert('Contabilidad solo puede gestionar estados de cuenta y cuentas bancarias de empresas ya existentes.');
+    return;
+  }
   const empresaId = Number(document.getElementById('emp-id')?.value || 0);
   if(!empresaId){
     alert('Selecciona empresa');
@@ -3211,6 +3682,10 @@ async function enviarRevisionEmpresa(){
 }
 
 async function aprobarEmpresa(){
+  if(isContabilidad()){
+    alert('Contabilidad solo puede gestionar estados de cuenta y cuentas bancarias de empresas ya existentes.');
+    return;
+  }
   const empresaId = Number(document.getElementById('emp-id')?.value || 0);
   if(!empresaId){
     alert('Selecciona empresa');
@@ -3740,6 +4215,11 @@ document.getElementById('prov-registrar-btn').addEventListener('click', registra
 document.getElementById('traspaso-confirm-btn').addEventListener('click', confirmarTraspaso);
 document.getElementById('login-btn').addEventListener('click', doLogin);
 document.getElementById('prov-login-btn').addEventListener('click', doProveedorLogin);
+document.getElementById('empresa-login-btn').addEventListener('click', doEmpresaLogin);
+document.getElementById('portal-empresa-admin-select')?.addEventListener('change', function(){
+  PORTAL_EMPRESA_SELECTED_ID = this.value || '';
+  loadPortalEmpresaCliente();
+});
 loadDashboard();
 loadEmpresas();
 loadFoliosForFrontend();
@@ -3750,7 +4230,6 @@ loadTrazabilidad();
 loadReportesPorNivel();
 loadKpisPersonal();
 setTimeout(renderTimeline,100);
-loadLoginUsers();
 if(!AUTH_USER){
   openModal('modal-role');
 }

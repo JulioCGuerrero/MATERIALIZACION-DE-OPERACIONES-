@@ -5,13 +5,17 @@ from flask import Blueprint, current_app, jsonify, request
 from werkzeug.utils import secure_filename
 
 from ..extensions import db
-from ..models import Empresa, EmpresaCuentaBancaria, EmpresaDocumento
+from ..models import Empresa, EmpresaCuentaBancaria, EmpresaDocumento, Folio
+from ..security import get_actor
 from ..services.auditoria import log_event
+from ..services.empresa_credentials import ensure_empresa_credencial
 from ..services.onboarding_empresas import (
     DOCS_REQUERIDOS_EMPRESA,
     REGLAS_NEGOCIO_REQUERIDAS,
     empresa_onboarding_status,
 )
+from ..services.policy_engine import get_policy_status
+from ..services.serializers import expediente_to_dict
 
 empresas_bp = Blueprint("empresas", __name__)
 TIPOS_EMPRESA = {
@@ -37,6 +41,103 @@ def _empresa_dict(e: Empresa) -> dict:
         "onboarding_aprobada_en": e.onboarding_aprobada_en.isoformat() if e.onboarding_aprobada_en else None,
         "onboarding_aprobada_por": e.onboarding_aprobada_por,
         "creado_en": e.creado_en.isoformat() if e.creado_en else None,
+    }
+
+
+def _empresa_cred_dict(username: str, password: str, empresa: Empresa) -> dict:
+    return {
+        "username": username,
+        "password": password,
+        "empresa_id": empresa.id,
+        "empresa_nombre": empresa.nombre,
+    }
+
+
+def _local_empresa_upload_path(base_dir: Path, empresa_id: int, url: str | None) -> Path | None:
+    if not url:
+        return None
+    prefix = f"/uploads/empresas/{empresa_id}/"
+    if not url.startswith(prefix):
+        return None
+    relative_name = url[len(prefix) :].strip()
+    if not relative_name:
+        return None
+    return base_dir / "uploads" / "empresas" / str(empresa_id) / relative_name
+
+
+def _contabilidad_bank_only_response():
+    return jsonify({"error": "El rol contabilidad solo puede gestionar estados de cuenta y cuentas bancarias de empresas ya existentes."}), 403
+
+
+def _actor_is_contabilidad() -> bool:
+    actor = get_actor()
+    return bool(actor and actor.is_internal and actor.role == "contabilidad")
+
+
+def _portal_empresa_payload(empresa: Empresa) -> dict:
+    folios = Folio.query.filter_by(empresa_id=empresa.id).order_by(Folio.creado_en.desc()).all()
+    expedientes = [expediente_to_dict(f.expediente) for f in folios if f.expediente]
+
+    proveedores = []
+    seen = set()
+    for folio in folios:
+        proveedor = folio.proveedor
+        if not proveedor or proveedor.id in seen:
+            continue
+        seen.add(proveedor.id)
+        prov_folios = [f for f in folios if f.proveedor_id == proveedor.id]
+        docs_total = sum(len(f.expediente.documentos) for f in prov_folios if f.expediente)
+        docs_ok = sum(
+            1
+            for f in prov_folios
+            if f.expediente
+            for d in f.expediente.documentos
+            if d.subido
+        )
+        proveedores.append(
+            {
+                "id": proveedor.id,
+                "nombre": proveedor.nombre,
+                "rfc": proveedor.rfc,
+                "tipo": proveedor.tipo,
+                "nivel": proveedor.nivel,
+                "activo": proveedor.activo,
+                "folios": [
+                    {
+                        "id": f.id,
+                        "numero": f.numero,
+                        "periodo": f.periodo,
+                        "presupuesto": f.presupuesto,
+                        "estado": f.estado,
+                        "expediente_id": f.expediente.id if f.expediente else None,
+                        "completitud": f.expediente.completitud if f.expediente else 0.0,
+                        "pago_bloqueado": f.expediente.pago_bloqueado if f.expediente else True,
+                    }
+                    for f in prov_folios
+                ],
+                "documentos_subidos": docs_ok,
+                "documentos_total": docs_total,
+            }
+        )
+
+    return {
+        "empresa": _empresa_dict(empresa),
+        "policy_status": get_policy_status(empresa.id),
+        "onboarding_status": empresa_onboarding_status(empresa),
+        "documentos_empresa": [
+            {
+                "id": d.id,
+                "tipo": d.tipo,
+                "nombre_archivo": d.nombre_archivo,
+                "url": d.url,
+                "estado_validacion": d.estado_validacion,
+                "subido_en": d.subido_en.isoformat() if d.subido_en else None,
+            }
+            for d in empresa.documentos
+        ],
+        "cuentas_bancarias": [_cuenta_dict(c) for c in empresa.cuentas_bancarias],
+        "proveedores": proveedores,
+        "expedientes": expedientes,
     }
 
 
@@ -84,13 +185,16 @@ def crear_empresa():
     )
     db.session.add(empresa)
     db.session.flush()
+    cred, _ = ensure_empresa_credencial(empresa)
     log_event("empresas", empresa.id, "crear", {"rfc": empresa.rfc}, body.get("usuario"))
     db.session.commit()
-    return jsonify(_empresa_dict(empresa)), 201
+    return jsonify({**_empresa_dict(empresa), "credenciales": _empresa_cred_dict(cred.username, cred.password, empresa)}), 201
 
 
 @empresas_bp.patch("/empresas/<int:empresa_id>")
 def actualizar_empresa(empresa_id: int):
+    if _actor_is_contabilidad():
+        return _contabilidad_bank_only_response()
     empresa = Empresa.query.get_or_404(empresa_id)
     body = request.get_json(silent=True) or {}
 
@@ -139,9 +243,22 @@ def onboarding_catalogo():
     )
 
 
+@empresas_bp.get("/portal-empresa/resumen")
+def portal_empresa_resumen():
+    actor = get_actor()
+    empresa_id = request.args.get("empresa_id", type=int)
+    if actor and actor.is_internal and actor.role == "administracion":
+        empresa = Empresa.query.get_or_404(empresa_id) if empresa_id else Empresa.query.order_by(Empresa.nombre.asc()).first_or_404()
+        return jsonify(_portal_empresa_payload(empresa))
+
+    empresa = Empresa.query.get_or_404(actor.empresa_id)
+    return jsonify(_portal_empresa_payload(empresa))
+
+
 @empresas_bp.post("/empresas/<int:empresa_id>/documentos")
 def subir_documento_empresa(empresa_id: int):
     empresa = Empresa.query.get_or_404(empresa_id)
+    base_dir = Path(current_app.config["BASE_DIR"])
     body = request.get_json(silent=True) or {}
     uploaded = request.files.get("archivo")
     if uploaded:
@@ -153,15 +270,19 @@ def subir_documento_empresa(empresa_id: int):
     tipo = (body.get("tipo") or "").strip()
     if tipo not in DOCS_REQUERIDOS_EMPRESA:
         return jsonify({"error": "tipo de documento no permitido para onboarding"}), 400
+    if _actor_is_contabilidad() and tipo != "estado_cuenta_bancario":
+        return _contabilidad_bank_only_response()
 
     doc = EmpresaDocumento.query.filter_by(empresa_id=empresa.id, tipo=tipo).first()
+    previous_local_path = _local_empresa_upload_path(base_dir, empresa.id, doc.url if doc else None)
+    previous_url = doc.url if doc else None
     if not doc:
         doc = EmpresaDocumento(empresa_id=empresa.id, tipo=tipo)
         db.session.add(doc)
 
     if uploaded:
         filename = secure_filename(uploaded.filename or body.get("nombre_archivo") or f"{tipo}.bin")
-        upload_dir = Path(current_app.config["BASE_DIR"]) / "uploads" / "empresas" / str(empresa.id)
+        upload_dir = base_dir / "uploads" / "empresas" / str(empresa.id)
         upload_dir.mkdir(parents=True, exist_ok=True)
         file_path = upload_dir / filename
         uploaded.save(file_path)
@@ -179,6 +300,10 @@ def subir_documento_empresa(empresa_id: int):
     if body.get("vigente_hasta"):
         doc.vigente_hasta = datetime.strptime(body["vigente_hasta"], "%Y-%m-%d").date()
 
+    new_local_path = _local_empresa_upload_path(base_dir, empresa.id, doc.url)
+    if previous_local_path and previous_url != doc.url and previous_local_path != new_local_path and previous_local_path.exists():
+        previous_local_path.unlink()
+
     log_event("empresas", empresa.id, "onboarding_documento_subir", {"tipo": tipo}, body.get("usuario"))
     db.session.commit()
     return jsonify({"ok": True, "empresa_id": empresa.id, "documento_id": doc.id}), 201
@@ -188,6 +313,8 @@ def subir_documento_empresa(empresa_id: int):
 def validar_documento_empresa(empresa_id: int, doc_id: int):
     Empresa.query.get_or_404(empresa_id)
     doc = EmpresaDocumento.query.filter_by(id=doc_id, empresa_id=empresa_id).first_or_404()
+    if _actor_is_contabilidad() and doc.tipo != "estado_cuenta_bancario":
+        return _contabilidad_bank_only_response()
     body = request.get_json(silent=True) or {}
     estado = (body.get("estado_validacion") or "").strip().lower()
     if estado not in {"valido", "observado", "rechazado"}:
@@ -266,6 +393,8 @@ def actualizar_cuenta_bancaria_empresa(empresa_id: int, cuenta_id: int):
 
 @empresas_bp.patch("/empresas/<int:empresa_id>/reglas-negocio")
 def actualizar_reglas_negocio(empresa_id: int):
+    if _actor_is_contabilidad():
+        return _contabilidad_bank_only_response()
     empresa = Empresa.query.get_or_404(empresa_id)
     body = request.get_json(silent=True) or {}
     reglas = empresa.reglas_negocio or {}
@@ -280,6 +409,8 @@ def actualizar_reglas_negocio(empresa_id: int):
 
 @empresas_bp.post("/empresas/<int:empresa_id>/onboarding/enviar-revision")
 def enviar_revision_onboarding(empresa_id: int):
+    if _actor_is_contabilidad():
+        return _contabilidad_bank_only_response()
     empresa = Empresa.query.get_or_404(empresa_id)
     body = request.get_json(silent=True) or {}
     empresa.onboarding_status = "en_revision"
@@ -290,6 +421,8 @@ def enviar_revision_onboarding(empresa_id: int):
 
 @empresas_bp.post("/empresas/<int:empresa_id>/onboarding/aprobar")
 def aprobar_onboarding(empresa_id: int):
+    if _actor_is_contabilidad():
+        return _contabilidad_bank_only_response()
     empresa = Empresa.query.get_or_404(empresa_id)
     body = request.get_json(silent=True) or {}
     status = empresa_onboarding_status(empresa)

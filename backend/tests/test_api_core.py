@@ -3,7 +3,7 @@ from pathlib import Path
 
 from app import create_app
 from app.extensions import db
-from app.models import Expediente, Folio, Usuario
+from app.models import EmpresaCredencial, Expediente, Folio, Usuario
 
 
 def _crear_proveedor(client, nombre="Proveedor Test", rfc="TST010101AAA", tipo="limpieza", monto=10000, repse=False, fisico=False):
@@ -58,6 +58,8 @@ def test_empresa_nueva_aparece_como_activa_en_listado(client):
     empresa = _crear_empresa(client, nombre="Empresa Activa", rfc="EAC010101AAA")
     assert empresa["activo"] is True
     assert empresa["onboarding_status"] == "borrador"
+    assert empresa["credenciales"]["username"].startswith("empresa_")
+    assert empresa["credenciales"]["password"]
 
     res = client.get("/api/empresas")
     assert res.status_code == 200
@@ -91,6 +93,150 @@ def test_empresa_documento_onboarding_acepta_archivo_desde_multipart(client):
     assert constancia["id"] is not None
     assert constancia["presente"] is True
     assert constancia["estado_validacion"] == "pendiente"
+
+
+def test_reemplazo_documento_empresa_elimina_archivo_local_anterior(client):
+    empresa = _crear_empresa(client, nombre="Empresa Reemplazo", rfc="ERP010101AAA")
+    primero = client.post(
+        f"/api/empresas/{empresa['id']}/documentos",
+        data={
+            "tipo": "constancia_fiscal",
+            "nombre_archivo": "primero.pdf",
+            "usuario": "pytest",
+            "archivo": (io.BytesIO(b"pdf-1"), "primero.pdf"),
+        },
+        content_type="multipart/form-data",
+    )
+    assert primero.status_code == 201
+
+    old_path = Path(client.application.config["BASE_DIR"]) / "uploads" / "empresas" / str(empresa["id"]) / "primero.pdf"
+    assert old_path.exists()
+
+    segundo = client.post(
+        f"/api/empresas/{empresa['id']}/documentos",
+        data={
+            "tipo": "constancia_fiscal",
+            "nombre_archivo": "segundo.pdf",
+            "usuario": "pytest",
+            "archivo": (io.BytesIO(b"pdf-2"), "segundo.pdf"),
+        },
+        content_type="multipart/form-data",
+    )
+    assert segundo.status_code == 201
+
+    new_path = Path(client.application.config["BASE_DIR"]) / "uploads" / "empresas" / str(empresa["id"]) / "segundo.pdf"
+    assert new_path.exists()
+    assert not old_path.exists()
+
+
+def test_login_empresa_y_portal_resumen_filtran_por_su_empresa(tmp_path):
+    class EmpresaPortalConfig:
+        BASE_DIR = Path(tmp_path)
+        SQLALCHEMY_DATABASE_URI = f"sqlite:///{tmp_path / 'empresa_portal.db'}"
+        SQLALCHEMY_TRACK_MODIFICATIONS = False
+        TESTING = True
+
+    app = create_app(EmpresaPortalConfig)
+    with app.app_context():
+        db.create_all()
+        db.session.add(Usuario(email="admin@test.local", nombre="Admin", rol="administracion", password="x", activo=True))
+        db.session.commit()
+
+    app.config["TESTING"] = False
+    with app.test_client() as client:
+        headers_admin = {"X-Auth-Email": "admin@test.local", "X-Auth-Role": "administracion"}
+
+        empresa_a = client.post(
+            "/api/empresas",
+            json={"nombre": "Empresa Portal A", "rfc": "EPA010101AAA"},
+            headers=headers_admin,
+        ).get_json()
+        empresa_b = client.post(
+            "/api/empresas",
+            json={"nombre": "Empresa Portal B", "rfc": "EPB010101AAA"},
+            headers=headers_admin,
+        ).get_json()
+
+        for idx, empresa in enumerate((empresa_a, empresa_b), start=1):
+            upload = client.post(
+                f"/api/empresas/{empresa['id']}/policy/upload",
+                data={
+                    "usuario": "admin",
+                    "nota_cambio": f"Politica {idx}",
+                    "archivo": (io.BytesIO(f"policy-{idx}".encode()), f"politica_{idx}.pdf"),
+                },
+                content_type="multipart/form-data",
+                headers=headers_admin,
+            )
+            assert upload.status_code == 201
+
+        prov_a = client.post(
+            "/api/proveedores",
+            json={
+                "nombre": "Proveedor A",
+                "rfc": "PRA010101AAA",
+                "tipo": "limpieza",
+                "monto": 10000,
+                "repse": False,
+                "tiene_fisico": False,
+                "empresa_id": empresa_a["id"],
+                "tipo_empresa": "servicios",
+                "crear_folio": True,
+                "folio_periodo": "2026-06",
+                "folio_presupuesto": 10000,
+            },
+            headers=headers_admin,
+        )
+        assert prov_a.status_code == 201
+
+        prov_b = client.post(
+            "/api/proveedores",
+            json={
+                "nombre": "Proveedor B",
+                "rfc": "PRB010101AAA",
+                "tipo": "limpieza",
+                "monto": 12000,
+                "repse": False,
+                "tiene_fisico": False,
+                "empresa_id": empresa_b["id"],
+                "tipo_empresa": "servicios",
+                "crear_folio": True,
+                "folio_periodo": "2026-06",
+                "folio_presupuesto": 12000,
+            },
+            headers=headers_admin,
+        )
+        assert prov_b.status_code == 201
+
+        login = client.post(
+            "/api/auth/empresa/login",
+            json={
+                "username": empresa_a["credenciales"]["username"],
+                "password": empresa_a["credenciales"]["password"],
+            },
+        )
+        assert login.status_code == 200
+        payload = login.get_json()["usuario"]
+        assert payload["tipo"] == "empresa_cliente"
+        assert payload["empresa_id"] == empresa_a["id"]
+
+        resumen = client.get(
+            "/api/portal-empresa/resumen",
+            headers={"X-Empresa-Username": empresa_a["credenciales"]["username"]},
+        )
+        assert resumen.status_code == 200
+        data = resumen.get_json()
+        assert data["empresa"]["id"] == empresa_a["id"]
+        assert data["policy_status"]["has_active_published_policy"] is True
+        assert len(data["proveedores"]) == 1
+        assert data["proveedores"][0]["nombre"] == "Proveedor A"
+
+    with app.app_context():
+        cred = EmpresaCredencial.query.filter_by(empresa_id=empresa_a["id"]).first()
+        assert cred is not None
+        assert cred.username == empresa_a["credenciales"]["username"]
+        db.session.remove()
+        db.drop_all()
 
 
 def test_empresa_puede_listar_varias_cuentas_bancarias(client):
@@ -461,6 +607,68 @@ def test_administracion_puede_subir_politica_y_activar_empresa(tmp_path):
         policy = client.get(f"/api/empresas/{empresa['id']}/policy", headers=headers_admin)
         assert policy.status_code == 200
         assert policy.get_json()["active_version"]["documento"]["nombre_archivo"] == "politica_empresa.pdf"
+
+    with app.app_context():
+        db.session.remove()
+        db.drop_all()
+
+
+def test_administracion_puede_subir_documento_onboarding_empresa(tmp_path):
+    class EmpresaDocsConfig:
+        BASE_DIR = Path(tmp_path)
+        SQLALCHEMY_DATABASE_URI = f"sqlite:///{tmp_path / 'empresa_docs.db'}"
+        SQLALCHEMY_TRACK_MODIFICATIONS = False
+        TESTING = True
+
+    app = create_app(EmpresaDocsConfig)
+    with app.app_context():
+        db.create_all()
+        db.session.add_all(
+            [
+                Usuario(email="admin@test.local", nombre="Admin", rol="administracion", password="x", activo=True),
+                Usuario(email="teso@test.local", nombre="Teso", rol="tesoreria", password="x", activo=True),
+            ]
+        )
+        db.session.commit()
+
+    app.config["TESTING"] = False
+    with app.test_client() as client:
+        headers_admin = {"X-Auth-Email": "admin@test.local", "X-Auth-Role": "administracion"}
+        headers_teso = {"X-Auth-Email": "teso@test.local", "X-Auth-Role": "tesoreria"}
+
+        empresa = client.post(
+            "/api/empresas",
+            json={"nombre": "Empresa Docs Admin", "rfc": "EDA010101AAA"},
+            headers=headers_admin,
+        ).get_json()
+
+        forbidden = client.post(
+            f"/api/empresas/{empresa['id']}/documentos",
+            data={
+                "tipo": "constancia_fiscal",
+                "nombre_archivo": "constancia.pdf",
+                "usuario": "teso",
+                "archivo": (io.BytesIO(b"demo"), "constancia.pdf"),
+            },
+            content_type="multipart/form-data",
+            headers=headers_teso,
+        )
+        assert forbidden.status_code == 403
+
+        ok = client.post(
+            f"/api/empresas/{empresa['id']}/documentos",
+            data={
+                "tipo": "constancia_fiscal",
+                "nombre_archivo": "constancia.pdf",
+                "usuario": "admin",
+                "archivo": (io.BytesIO(b"demo"), "constancia.pdf"),
+            },
+            content_type="multipart/form-data",
+            headers=headers_admin,
+        )
+        assert ok.status_code == 201
+        payload = ok.get_json()
+        assert payload["ok"] is True
 
     with app.app_context():
         db.session.remove()

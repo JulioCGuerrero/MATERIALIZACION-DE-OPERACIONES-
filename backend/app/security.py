@@ -2,9 +2,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from sqlalchemy import inspect
+
+from .extensions import db
 from flask import current_app, g, request
 
-from .models import ProveedorCredencial, Usuario
+from .models import EmpresaCredencial, ProveedorCredencial, Usuario
+from .services.empresa_credentials import ensure_all_empresa_credenciales_demo
 
 INTERNAL_ROLES = {"direccion", "tesoreria", "administracion", "contabilidad"}
 AUDITORIA_IA_ROLES = {"direccion", "tesoreria", "contabilidad"}
@@ -33,6 +37,10 @@ class AuthActor:
     def is_proveedor(self) -> bool:
         return self.actor_type == "proveedor"
 
+    @property
+    def is_empresa(self) -> bool:
+        return self.actor_type == "empresa"
+
 
 def _path() -> str:
     return request.path or ""
@@ -43,7 +51,7 @@ def _is_public_request() -> bool:
     method = request.method.upper()
     if not path.startswith("/api/"):
         return True
-    if path in {"/api/health", "/api/auth/login", "/api/auth/proveedor/login", "/api/auth/usuarios"}:
+    if path in {"/api/health", "/api/auth/login", "/api/auth/proveedor/login", "/api/auth/empresa/login", "/api/auth/usuarios"}:
         return True
     if method == "GET" and path == "/api/empresas":
         return True
@@ -70,6 +78,12 @@ def _is_auditoria_ia_path(path: str) -> bool:
         "/api/export/reportes/trazabilidad.pdf",
         "/api/export/paquete_sat.zip",
     }
+
+
+def _ensure_empresa_credenciales_table() -> None:
+    inspector = inspect(db.engine)
+    if "empresa_credenciales" not in set(inspector.get_table_names()):
+        db.create_all()
 
 
 def _load_internal_actor() -> AuthActor | None:
@@ -106,11 +120,29 @@ def _load_proveedor_actor() -> AuthActor | None:
     )
 
 
+def _load_empresa_actor() -> AuthActor | None:
+    username = (request.headers.get("X-Empresa-Username") or "").strip()
+    if not username:
+        return None
+    _ensure_empresa_credenciales_table()
+    ensure_all_empresa_credenciales_demo()
+    cred = EmpresaCredencial.query.filter_by(username=username, activo=True).first()
+    if not cred:
+        return None
+    return AuthActor(
+        actor_type="empresa",
+        role="empresa_cliente",
+        empresa_id=cred.empresa_id,
+        username=cred.username,
+        nombre=cred.empresa.nombre if cred.empresa else cred.username,
+    )
+
+
 def get_actor() -> AuthActor | None:
     actor = getattr(g, "auth_actor", None)
     if actor is not None:
         return actor
-    actor = _load_internal_actor() or _load_proveedor_actor()
+    actor = _load_internal_actor() or _load_proveedor_actor() or _load_empresa_actor()
     g.auth_actor = actor
     return actor
 
@@ -130,6 +162,11 @@ def is_allowed(actor: AuthActor, method: str, path: str) -> bool:
         if (method == "GET" and path.startswith("/api/documentos/")) or (
             method == "POST" and path.startswith("/api/documentos/") and path.endswith("/subir")
         ):
+            return True
+        return False
+
+    if actor.is_empresa:
+        if method == "GET" and path in {"/api/auth/me", "/api/portal-empresa/resumen"}:
             return True
         return False
 
@@ -164,6 +201,13 @@ def is_allowed(actor: AuthActor, method: str, path: str) -> bool:
         if method == "POST" and path in {"/api/documentos", "/api/proveedores", "/api/folios", "/api/empresas"}:
             return True
         if method == "POST" and path.startswith("/api/empresas/") and path.endswith("/policy/upload"):
+            return True
+        if method == "POST" and (
+            (path.startswith("/api/empresas/") and path.endswith("/documentos"))
+            or (path.startswith("/api/empresas/") and path.endswith("/cuentas-bancarias"))
+            or (path.startswith("/api/empresas/") and path.endswith("/onboarding/enviar-revision"))
+            or (path.startswith("/api/empresas/") and path.endswith("/onboarding/aprobar"))
+        ):
             return True
         if method == "POST" and path.startswith("/api/documentos/") and path.endswith("/subir"):
             return True

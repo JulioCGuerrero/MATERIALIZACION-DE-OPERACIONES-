@@ -10,6 +10,7 @@ from app.models import (
     Empresa,
     EmpresaCuentaBancaria,
     EmpresaDocumento,
+    EmpresaCredencial,
     Expediente,
     Folio,
     PolicySet,
@@ -129,12 +130,12 @@ EMPRESAS_ONBOARDING = {
 }
 
 USUARIOS = [
-    {"email": "salo@batia.local", "nombre": "Salo", "rol": "direccion", "password": "servicia2026"},
-    {"email": "mgonzalez@batia.local", "nombre": "M. Gonzalez", "rol": "tesoreria", "password": "servicia2026"},
-    {"email": "lhernandez@batia.local", "nombre": "L. Hernandez", "rol": "tesoreria", "password": "servicia2026"},
-    {"email": "rfuentes@batia.local", "nombre": "R. Fuentes", "rol": "administracion", "password": "servicia2026"},
-    {"email": "cmorales@batia.local", "nombre": "C. Morales", "rol": "administracion", "password": "servicia2026"},
-    {"email": "pramirez@batia.local", "nombre": "P. Ramirez", "rol": "contabilidad", "password": "servicia2026"},
+    {"email": "salo@batia.local", "nombre": "Salo", "rol": "direccion", "password": "DirBatia#2026"},
+    {"email": "mgonzalez@batia.local", "nombre": "M. Gonzalez", "rol": "tesoreria", "password": "TesoMgonz#2026"},
+    {"email": "lhernandez@batia.local", "nombre": "L. Hernandez", "rol": "tesoreria", "password": "TesoLhern#2026"},
+    {"email": "rfuentes@batia.local", "nombre": "R. Fuentes", "rol": "administracion", "password": "AdminRfuen#2026"},
+    {"email": "cmorales@batia.local", "nombre": "C. Morales", "rol": "administracion", "password": "AdminCmora#2026"},
+    {"email": "pramirez@batia.local", "nombre": "P. Ramirez", "rol": "contabilidad", "password": "ContaPram#2026"},
 ]
 
 FOLIOS = [
@@ -265,6 +266,14 @@ with app.app_context():
         db.session.add(policy_version)
         db.session.flush()
         policy_set.activa_version_id = policy_version.id
+        db.session.add(
+            EmpresaCredencial(
+                empresa_id=empresa.id,
+                username=f"empresa_{empresa.id}_portal",
+                password=f"demo-empresa-{empresa.id}",
+                activo=True,
+            )
+        )
 
     for p in PROVEEDORES:
         proveedor = Proveedor(
