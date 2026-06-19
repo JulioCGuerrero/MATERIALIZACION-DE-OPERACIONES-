@@ -1,8 +1,6 @@
 from copy import deepcopy
 from datetime import datetime
-from pathlib import Path
-
-from flask import Blueprint, current_app, jsonify, request
+from flask import Blueprint, jsonify, request
 from werkzeug.utils import secure_filename
 
 from ..extensions import db
@@ -16,6 +14,7 @@ from ..services.policy_engine import (
     get_policy_status,
     simulate_policy_impact,
 )
+from ..services.storage import save_upload
 
 policies_bp = Blueprint("policies", __name__)
 
@@ -100,11 +99,7 @@ def upload_policy_document(empresa_id: int):
     usuario = request.form.get("usuario") or "frontend"
     nota = (request.form.get("nota_cambio") or "Carga de política operativa").strip()
     filename = secure_filename(archivo.filename or f"politica_empresa_{empresa.id}.pdf")
-    upload_dir = Path(current_app.config["BASE_DIR"]) / "uploads" / "policies" / str(empresa.id)
-    upload_dir.mkdir(parents=True, exist_ok=True)
-    file_path = upload_dir / filename
-    archivo.save(file_path)
-    public_url = f"/uploads/policies/{empresa.id}/{filename}"
+    public_url = save_upload(archivo, f"policies/{empresa.id}/{filename}")
 
     doc = EmpresaDocumento.query.filter_by(empresa_id=empresa.id, tipo="politica_autorizacion_pagos").first()
     if not doc:

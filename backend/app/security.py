@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from sqlalchemy import inspect
+from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 
 from .extensions import db
 from flask import current_app, g, request
@@ -86,9 +87,33 @@ def _ensure_empresa_credenciales_table() -> None:
         db.create_all()
 
 
-def _load_internal_actor() -> AuthActor | None:
-    email = (request.headers.get("X-Auth-Email") or "").strip().lower()
+def issue_auth_token(actor_type: str, subject: str) -> str:
+    serializer = URLSafeTimedSerializer(current_app.config["SECRET_KEY"], salt="servicia-auth-v1")
+    return serializer.dumps({"actor_type": actor_type, "subject": subject})
+
+
+def _token_identity() -> tuple[str, str] | None:
+    authorization = (request.headers.get("Authorization") or "").strip()
+    if not authorization.lower().startswith("bearer "):
+        return None
+    token = authorization[7:].strip()
+    try:
+        payload = URLSafeTimedSerializer(
+            current_app.config["SECRET_KEY"], salt="servicia-auth-v1"
+        ).loads(token, max_age=current_app.config.get("AUTH_TOKEN_MAX_AGE", 28800))
+    except (BadSignature, SignatureExpired):
+        return None
+    actor_type = str(payload.get("actor_type") or "")
+    subject = str(payload.get("subject") or "")
+    return (actor_type, subject) if actor_type and subject else None
+
+
+def _load_internal_actor(email: str | None = None) -> AuthActor | None:
+    email = (email or request.headers.get("X-Auth-Email") or "").strip().lower()
     role = (request.headers.get("X-Auth-Role") or "").strip().lower()
+    if email and not role:
+        user = Usuario.query.filter_by(email=email, activo=True).first()
+        role = (user.rol or "").strip().lower() if user else ""
     if not email or role not in INTERNAL_ROLES:
         return None
     user = Usuario.query.filter_by(email=email, activo=True).first()
@@ -103,8 +128,8 @@ def _load_internal_actor() -> AuthActor | None:
     )
 
 
-def _load_proveedor_actor() -> AuthActor | None:
-    username = (request.headers.get("X-Proveedor-Username") or "").strip()
+def _load_proveedor_actor(username: str | None = None) -> AuthActor | None:
+    username = (username or request.headers.get("X-Proveedor-Username") or "").strip()
     if not username:
         return None
     cred = ProveedorCredencial.query.filter_by(username=username, activo=True).first()
@@ -120,8 +145,8 @@ def _load_proveedor_actor() -> AuthActor | None:
     )
 
 
-def _load_empresa_actor() -> AuthActor | None:
-    username = (request.headers.get("X-Empresa-Username") or "").strip()
+def _load_empresa_actor(username: str | None = None) -> AuthActor | None:
+    username = (username or request.headers.get("X-Empresa-Username") or "").strip()
     if not username:
         return None
     _ensure_empresa_credenciales_table()
@@ -142,7 +167,19 @@ def get_actor() -> AuthActor | None:
     actor = getattr(g, "auth_actor", None)
     if actor is not None:
         return actor
-    actor = _load_internal_actor() or _load_proveedor_actor() or _load_empresa_actor()
+    identity = _token_identity()
+    actor = None
+    if identity:
+        actor_type, subject = identity
+        loaders = {
+            "internal": _load_internal_actor,
+            "proveedor": _load_proveedor_actor,
+            "empresa": _load_empresa_actor,
+        }
+        loader = loaders.get(actor_type)
+        actor = loader(subject) if loader else None
+    elif current_app.config.get("TESTING") or current_app.config.get("ALLOW_LEGACY_AUTH_HEADERS"):
+        actor = _load_internal_actor() or _load_proveedor_actor() or _load_empresa_actor()
     g.auth_actor = actor
     return actor
 

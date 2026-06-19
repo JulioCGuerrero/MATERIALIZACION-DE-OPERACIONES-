@@ -219,7 +219,15 @@ class PolicySet(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     empresa_id = db.Column(db.Integer, db.ForeignKey("empresas.id"), nullable=False, unique=True)
     nombre = db.Column(db.String, nullable=False, default="Politica Operativa")
-    activa_version_id = db.Column(db.Integer, db.ForeignKey("policy_versions.id"), nullable=True)
+    activa_version_id = db.Column(
+        db.Integer,
+        db.ForeignKey(
+            "policy_versions.id",
+            name="policy_sets_activa_version_id_fkey",
+            use_alter=True,
+        ),
+        nullable=True,
+    )
     creado_en = db.Column(db.DateTime, default=datetime.utcnow)
     actualizado_en = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

@@ -188,10 +188,10 @@ BEGIN
     IF NOT EXISTS (
         SELECT 1
         FROM pg_constraint
-        WHERE conname = 'fk_policy_sets_activa_version'
+        WHERE conname = 'policy_sets_activa_version_id_fkey'
     ) THEN
         ALTER TABLE policy_sets
-            ADD CONSTRAINT fk_policy_sets_activa_version
+            ADD CONSTRAINT policy_sets_activa_version_id_fkey
             FOREIGN KEY (activa_version_id) REFERENCES policy_versions(id);
     END IF;
 END $$;

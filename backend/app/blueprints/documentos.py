@@ -1,7 +1,5 @@
 from datetime import datetime
-from pathlib import Path
-
-from flask import Blueprint, current_app, jsonify, request
+from flask import Blueprint, jsonify, request
 from werkzeug.utils import secure_filename
 
 from ..extensions import db
@@ -11,6 +9,7 @@ from ..services.auditoria import log_event
 from ..services.bloqueo import calcular_completitud
 from ..services.document_review import aplicar_validacion_documento
 from ..services.serializers import doc_to_dict
+from ..services.storage import save_upload
 
 documentos_bp = Blueprint("documentos", __name__)
 
@@ -39,12 +38,8 @@ def subir_documento(documento_id: int):
 
     if uploaded:
         filename = secure_filename(uploaded.filename or f"{doc.tipo}.bin")
-        upload_dir = Path(current_app.config["BASE_DIR"]) / "uploads" / str(doc.expediente_id)
-        upload_dir.mkdir(parents=True, exist_ok=True)
-        file_path = upload_dir / filename
-        uploaded.save(file_path)
+        body["url"] = save_upload(uploaded, f"expedientes/{doc.expediente_id}/{filename}")
         body["nombre_archivo"] = filename
-        body["url"] = f"/uploads/{doc.expediente_id}/{filename}"
         if not body.get("subido_por"):
             body["subido_por"] = request.form.get("subido_por", "frontend")
 

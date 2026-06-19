@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from .catalogo import DOC_LABELS, LEVEL_LABELS
+from .storage import save_bytes
 
 
 def _escape_pdf_text(value: str) -> str:
@@ -72,20 +73,20 @@ def ensure_demo_document_file(
     nivel: int,
     periodo: str,
 ) -> Path:
-    upload_dir = base_dir / "uploads" / str(folio_numero)
-    upload_dir.mkdir(parents=True, exist_ok=True)
-    file_path = upload_dir / filename
-    if not file_path.exists():
-        file_path.write_bytes(
-            build_demo_document_pdf(
-                proveedor=proveedor,
-                empresa=empresa,
-                folio=str(folio_numero),
-                doc_tipo=doc_tipo,
-                nivel=nivel,
-                periodo=periodo,
-            )
-        )
+    file_path = base_dir / "uploads" / str(folio_numero) / filename
+    save_bytes(
+        build_demo_document_pdf(
+            proveedor=proveedor,
+            empresa=empresa,
+            folio=str(folio_numero),
+            doc_tipo=doc_tipo,
+            nivel=nivel,
+            periodo=periodo,
+        ),
+        f"{folio_numero}/{filename}",
+        "application/pdf",
+        only_if_missing=True,
+    )
     return file_path
 
 
@@ -118,16 +119,16 @@ def ensure_demo_empresa_document_file(
     rfc: str,
     doc_tipo: str,
 ) -> Path:
-    upload_dir = base_dir / "uploads" / "empresas" / str(empresa_id)
-    upload_dir.mkdir(parents=True, exist_ok=True)
-    file_path = upload_dir / filename
-    if not file_path.exists():
-        file_path.write_bytes(
-            build_demo_empresa_document_pdf(
-                empresa=empresa,
-                rfc=rfc,
-                doc_tipo=doc_tipo,
-                filename=filename,
-            )
-        )
+    file_path = base_dir / "uploads" / "empresas" / str(empresa_id) / filename
+    save_bytes(
+        build_demo_empresa_document_pdf(
+            empresa=empresa,
+            rfc=rfc,
+            doc_tipo=doc_tipo,
+            filename=filename,
+        ),
+        f"empresas/{empresa_id}/{filename}",
+        "application/pdf",
+        only_if_missing=True,
+    )
     return file_path

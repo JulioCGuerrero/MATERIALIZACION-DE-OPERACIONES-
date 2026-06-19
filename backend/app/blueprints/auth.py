@@ -3,7 +3,7 @@ from flask import Blueprint, jsonify, request
 from ..extensions import db
 from ..models import EmpresaCredencial, ProveedorCredencial, Usuario
 from ..services.empresa_credentials import ensure_all_empresa_credenciales_demo
-from ..security import get_actor
+from ..security import get_actor, issue_auth_token
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -55,7 +55,7 @@ def login():
     if not user or user.password != password:
         return jsonify({"error": "Credenciales inválidas"}), 401
 
-    return jsonify({"ok": True, "usuario": _user_dict(user)})
+    return jsonify({"ok": True, "usuario": _user_dict(user), "token": issue_auth_token("internal", user.email)})
 
 
 @auth_bp.post("/auth/proveedor/login")
@@ -75,6 +75,7 @@ def login_proveedor():
     return jsonify(
         {
             "ok": True,
+            "token": issue_auth_token("proveedor", cred.username),
             "usuario": {
                 "tipo": "proveedor",
                 "username": cred.username,
@@ -107,6 +108,7 @@ def login_empresa():
     return jsonify(
         {
             "ok": True,
+            "token": issue_auth_token("empresa", cred.username),
             "usuario": {
                 "tipo": "empresa_cliente",
                 "username": cred.username,

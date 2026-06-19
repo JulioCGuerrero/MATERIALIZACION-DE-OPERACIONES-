@@ -14,9 +14,7 @@ uploads/
 .gcloud-local/
 env.yaml
 .gcloudignore
-Dockerfile
 cloudbuild.yaml
-deploy.ps1
 env.yaml.example
 wsgi.py
 

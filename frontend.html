@@ -1408,17 +1408,64 @@ input[type=file]{display:none;}
 </div>
 
 <!-- MENU INICIAL -->
-<div class="modal-overlay" id="modal-role" style="z-index:600;" data-backdrop-close="false">
-  <div class="modal" onclick="event.stopPropagation()">
-    <h3>¿Cómo deseas ingresar?</h3>
-    <div class="cg cg2" style="margin-top:8px;">
-      <button class="btn btn-primary" style="height:52px;justify-content:center" onclick="enterAsProveedor()">Soy Proveedor (nuevo)</button>
-      <button class="btn btn-ghost" style="height:52px;justify-content:center" onclick="enterAsProveedorRegistrado()">Proveedor ya registrado</button>
-      <button class="btn btn-ghost" style="height:52px;justify-content:center" onclick="enterAsEmpresaRegistrada()">Empresa cliente registrada</button>
-      <button class="btn btn-ghost" style="height:52px;justify-content:center" onclick="enterAsOperador()">Soy Operador</button>
+<div class="modal-overlay" id="modal-role" style="z-index:600;background:var(--bg);backdrop-filter:none;align-items:center;justify-content:center;" data-backdrop-close="false">
+  <div style="width:100%;max-width:480px;padding:32px 24px;display:flex;flex-direction:column;align-items:center;gap:0;" onclick="event.stopPropagation()">
+
+    <!-- Branding -->
+    <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:36px;gap:10px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 0 24px rgba(79,132,255,.35);">⬡</div>
+        <div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--accent);letter-spacing:.18em;text-transform:uppercase;">Sistema</div>
+          <div style="font-family:var(--display);font-size:22px;font-weight:800;line-height:1.1;letter-spacing:-.3px;">Materialización</div>
+        </div>
+      </div>
+      <p style="font-size:12px;color:var(--muted2);text-align:center;margin-top:4px;">Control de operaciones y expedientes de proveedores</p>
     </div>
-    <div style="margin-top:12px;font-size:12px;color:var(--muted2);">
-      Proveedor: auto-registro a empresa cliente. Empresa: consulta su propio portal. Operador: acceso interno por rol.
+
+    <!-- Tarjetas de acceso -->
+    <div style="width:100%;display:flex;flex-direction:column;gap:10px;">
+
+      <button onclick="enterAsProveedor()" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:16px 18px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:14px;transition:all .15s;font-family:var(--sans);" onmouseover="this.style.borderColor='var(--accent)';this.style.background='var(--surface2)'" onmouseout="this.style.borderColor='var(--border2)';this.style.background='var(--surface)'">
+        <div style="width:36px;height:36px;border-radius:8px;background:rgba(79,132,255,.12);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">🏗️</div>
+        <div>
+          <div style="font-size:14px;font-weight:600;color:var(--text);">Soy Proveedor</div>
+          <div style="font-size:11px;color:var(--muted2);margin-top:2px;">Nuevo registro como proveedor de empresa cliente</div>
+        </div>
+        <div style="margin-left:auto;color:var(--muted);font-size:16px;">›</div>
+      </button>
+
+      <button onclick="enterAsProveedorRegistrado()" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:16px 18px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:14px;transition:all .15s;font-family:var(--sans);" onmouseover="this.style.borderColor='var(--accent)';this.style.background='var(--surface2)'" onmouseout="this.style.borderColor='var(--border2)';this.style.background='var(--surface)'">
+        <div style="width:36px;height:36px;border-radius:8px;background:rgba(32,214,138,.1);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">📋</div>
+        <div>
+          <div style="font-size:14px;font-weight:600;color:var(--text);">Proveedor registrado</div>
+          <div style="font-size:11px;color:var(--muted2);margin-top:2px;">Accede con tus credenciales de proveedor</div>
+        </div>
+        <div style="margin-left:auto;color:var(--muted);font-size:16px;">›</div>
+      </button>
+
+      <button onclick="enterAsEmpresaRegistrada()" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:16px 18px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:14px;transition:all .15s;font-family:var(--sans);" onmouseover="this.style.borderColor='var(--accent2)';this.style.background='var(--surface2)'" onmouseout="this.style.borderColor='var(--border2)';this.style.background='var(--surface)'">
+        <div style="width:36px;height:36px;border-radius:8px;background:rgba(123,94,167,.15);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">🏢</div>
+        <div>
+          <div style="font-size:14px;font-weight:600;color:var(--text);">Empresa cliente</div>
+          <div style="font-size:11px;color:var(--muted2);margin-top:2px;">Consulta el portal de tu empresa</div>
+        </div>
+        <div style="margin-left:auto;color:var(--muted);font-size:16px;">›</div>
+      </button>
+
+      <button onclick="enterAsOperador()" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:16px 18px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:14px;transition:all .15s;font-family:var(--sans);" onmouseover="this.style.borderColor='var(--muted)';this.style.background='var(--surface2)'" onmouseout="this.style.borderColor='var(--border2)';this.style.background='var(--surface)'">
+        <div style="width:36px;height:36px;border-radius:8px;background:rgba(90,99,128,.15);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">🔐</div>
+        <div>
+          <div style="font-size:14px;font-weight:600;color:var(--text);">Operador interno</div>
+          <div style="font-size:11px;color:var(--muted2);margin-top:2px;">Acceso con credenciales del equipo</div>
+        </div>
+        <div style="margin-left:auto;color:var(--muted);font-size:16px;">›</div>
+      </button>
+
+    </div>
+
+    <div style="margin-top:28px;font-size:11px;color:var(--muted);text-align:center;">
+      Batia · Materialización de Operaciones · v2026
     </div>
   </div>
 </div>
@@ -1552,6 +1599,7 @@ let PROVEEDORES_CACHE = [];
 let POLICY_STATUS_BY_EMPRESA = {};
 let ONBOARDING_STATUS_BY_EMPRESA = {};
 let AUTH_USER = null;
+let AUTH_TOKEN = null;
 let PORTAL_DOCS_CACHE = [];
 let EMP_LAST_DOC_ID = {general:null, bank:null};
 let EMP_SELECTED_DOC_FILE = {general:null, bank:null};
@@ -1591,16 +1639,7 @@ function getUsuarioActivo(){
 
 function authHeaders(extra){
   const headers = Object.assign({}, extra || {});
-  if(AUTH_USER){
-    if(AUTH_USER.tipo === 'proveedor'){
-      if(AUTH_USER.username) headers['X-Proveedor-Username'] = AUTH_USER.username;
-    } else if(AUTH_USER.tipo === 'empresa_cliente'){
-      if(AUTH_USER.username) headers['X-Empresa-Username'] = AUTH_USER.username;
-    } else {
-      if(AUTH_USER.email) headers['X-Auth-Email'] = AUTH_USER.email;
-      if(AUTH_USER.rol) headers['X-Auth-Role'] = AUTH_USER.rol;
-    }
-  }
+  if(AUTH_TOKEN) headers.Authorization = `Bearer ${AUTH_TOKEN}`;
   return headers;
 }
 
@@ -1971,8 +2010,9 @@ async function apiSend(path, method, body){
   return data;
 }
 
-function setAuthUser(user){
+function setAuthUser(user, token){
   AUTH_USER = user || null;
+  AUTH_TOKEN = token || null;
   applyRoleUI();
   const badge = document.getElementById('usuario-badge');
   if(badge){
@@ -2089,7 +2129,8 @@ function logout(){
   if(pass) pass.value = '';
   const empresaPass = document.getElementById('empresa-login-password');
   if(empresaPass) empresaPass.value = '';
-  enterAsProveedor();
+  closeRoleModals();
+  openModal('modal-role');
 }
 
 function closeRoleModals(){
@@ -2142,7 +2183,7 @@ async function doLogin(){
       return;
     }
     const data = await apiSend('/auth/login', 'POST', {email, password});
-    setAuthUser(data.usuario);
+    setAuthUser(data.usuario, data.token);
     closeModal('modal-login');
     await loadEmpresas();
     await loadAlertasActivas();
@@ -2169,7 +2210,7 @@ async function doProveedorLogin(){
       proveedor_id: u.proveedor_id,
       empresa_id: u.empresa_id,
       nombre: u.proveedor_nombre || u.username,
-    });
+    }, data.token);
     closeRoleModals();
     await loadEmpresas();
     await loadAlertasActivas();
@@ -2197,7 +2238,7 @@ async function doEmpresaLogin(){
       rol: 'empresa_cliente',
       empresa_id: u.empresa_id,
       nombre: u.empresa_nombre || u.username,
-    });
+    }, data.token);
     closeRoleModals();
     await loadEmpresas();
     await loadPortalEmpresaCliente();

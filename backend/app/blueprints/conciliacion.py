@@ -1,11 +1,10 @@
-from pathlib import Path
-
-from flask import Blueprint, current_app, jsonify, request
+from flask import Blueprint, jsonify, request
 from werkzeug.utils import secure_filename
 
 from ..extensions import db
 from ..models import Traspaso
 from ..services.auditoria import log_event
+from ..services.storage import save_upload
 
 conciliacion_bp = Blueprint("conciliacion", __name__)
 
@@ -21,10 +20,7 @@ def analizar_estado_cuenta():
         return jsonify({"error": "Debes enviar un archivo en el campo 'archivo'"}), 400
 
     filename = secure_filename(archivo.filename or "estado_cuenta.pdf")
-    upload_dir = Path(current_app.config["BASE_DIR"]) / "uploads" / "conciliacion"
-    upload_dir.mkdir(parents=True, exist_ok=True)
-    file_path = upload_dir / filename
-    archivo.save(file_path)
+    save_upload(archivo, f"conciliacion/{filename}")
 
     q = Traspaso.query.join(Traspaso.folio)
     if empresa_id:

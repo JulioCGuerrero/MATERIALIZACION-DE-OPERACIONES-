@@ -1,7 +1,5 @@
 from datetime import datetime
-from pathlib import Path
-
-from flask import Blueprint, current_app, jsonify, request
+from flask import Blueprint, jsonify, request
 from werkzeug.utils import secure_filename
 
 from ..extensions import db
@@ -16,6 +14,7 @@ from ..services.onboarding_empresas import (
 )
 from ..services.policy_engine import get_policy_status
 from ..services.serializers import expediente_to_dict
+from ..services.storage import delete_object_url, save_upload
 
 empresas_bp = Blueprint("empresas", __name__)
 TIPOS_EMPRESA = {
@@ -51,18 +50,6 @@ def _empresa_cred_dict(username: str, password: str, empresa: Empresa) -> dict:
         "empresa_id": empresa.id,
         "empresa_nombre": empresa.nombre,
     }
-
-
-def _local_empresa_upload_path(base_dir: Path, empresa_id: int, url: str | None) -> Path | None:
-    if not url:
-        return None
-    prefix = f"/uploads/empresas/{empresa_id}/"
-    if not url.startswith(prefix):
-        return None
-    relative_name = url[len(prefix) :].strip()
-    if not relative_name:
-        return None
-    return base_dir / "uploads" / "empresas" / str(empresa_id) / relative_name
 
 
 def _contabilidad_bank_only_response():
@@ -258,7 +245,6 @@ def portal_empresa_resumen():
 @empresas_bp.post("/empresas/<int:empresa_id>/documentos")
 def subir_documento_empresa(empresa_id: int):
     empresa = Empresa.query.get_or_404(empresa_id)
-    base_dir = Path(current_app.config["BASE_DIR"])
     body = request.get_json(silent=True) or {}
     uploaded = request.files.get("archivo")
     if uploaded:
@@ -274,7 +260,6 @@ def subir_documento_empresa(empresa_id: int):
         return _contabilidad_bank_only_response()
 
     doc = EmpresaDocumento.query.filter_by(empresa_id=empresa.id, tipo=tipo).first()
-    previous_local_path = _local_empresa_upload_path(base_dir, empresa.id, doc.url if doc else None)
     previous_url = doc.url if doc else None
     if not doc:
         doc = EmpresaDocumento(empresa_id=empresa.id, tipo=tipo)
@@ -282,12 +267,8 @@ def subir_documento_empresa(empresa_id: int):
 
     if uploaded:
         filename = secure_filename(uploaded.filename or body.get("nombre_archivo") or f"{tipo}.bin")
-        upload_dir = base_dir / "uploads" / "empresas" / str(empresa.id)
-        upload_dir.mkdir(parents=True, exist_ok=True)
-        file_path = upload_dir / filename
-        uploaded.save(file_path)
+        body["url"] = save_upload(uploaded, f"empresas/{empresa.id}/{filename}")
         body["nombre_archivo"] = filename
-        body["url"] = f"/uploads/empresas/{empresa.id}/{filename}"
         if not body.get("usuario"):
             body["usuario"] = request.form.get("usuario", "frontend")
 
@@ -300,9 +281,8 @@ def subir_documento_empresa(empresa_id: int):
     if body.get("vigente_hasta"):
         doc.vigente_hasta = datetime.strptime(body["vigente_hasta"], "%Y-%m-%d").date()
 
-    new_local_path = _local_empresa_upload_path(base_dir, empresa.id, doc.url)
-    if previous_local_path and previous_url != doc.url and previous_local_path != new_local_path and previous_local_path.exists():
-        previous_local_path.unlink()
+    if previous_url and previous_url != doc.url:
+        delete_object_url(previous_url)
 
     log_event("empresas", empresa.id, "onboarding_documento_subir", {"tipo": tipo}, body.get("usuario"))
     db.session.commit()

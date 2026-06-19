@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, send_from_directory
+from flask import Flask, jsonify, send_file, send_from_directory
 from flask_cors import CORS
 from sqlalchemy import inspect, text
 
@@ -24,6 +24,7 @@ from .blueprints.traspasos import traspasos_bp
 from .config import Config
 from .extensions import db
 from .security import check_request_access
+from .services.storage import download_object
 
 
 def _create_schema(app: Flask) -> None:
@@ -84,6 +85,10 @@ def _ensure_runtime_columns(connection, dialect: str) -> None:
 def create_app(config_object=Config) -> Flask:
     app = Flask(__name__)
     app.config.from_object(config_object)
+    if not app.config.get("SECRET_KEY"):
+        app.config["SECRET_KEY"] = "test-or-local-development-only"
+    if "ALLOW_LEGACY_AUTH_HEADERS" not in app.config:
+        app.config["ALLOW_LEGACY_AUTH_HEADERS"] = bool(app.config.get("TESTING"))
 
     db.init_app(app)
     CORS(app, resources={r"/api/*": {"origins": "*"}})
@@ -127,6 +132,10 @@ def create_app(config_object=Config) -> Flask:
 
     @app.get("/uploads/<path:filename>")
     def uploads(filename: str):
-        return send_from_directory(str(app.config["BASE_DIR"] / "uploads"), filename)
+        try:
+            payload, content_type, download_name = download_object(filename)
+        except FileNotFoundError:
+            return jsonify({"error": "Archivo no encontrado"}), 404
+        return send_file(payload, mimetype=content_type, download_name=download_name)
 
     return app
