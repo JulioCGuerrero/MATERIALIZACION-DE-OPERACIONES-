@@ -73,8 +73,8 @@ PROVEEDORES = [
 ]
 
 EMPRESAS = [
-    {"nombre": "Batia", "rfc": "BAT010101AAA", "tipo_empresa": "servicios"},
-    {"nombre": "Grupo Norte", "rfc": "GRN010101BBB", "tipo_empresa": "industrial"},
+    {"nombre": "Batia", "cliente_nombre": "Grupo Batia", "rfc": "BAT010101AAA", "tipo_empresa": "servicios"},
+    {"nombre": "Grupo Norte", "cliente_nombre": "Grupo Norte", "rfc": "GRN010101BBB", "tipo_empresa": "industrial"},
 ]
 
 EMPRESAS_ONBOARDING = {
@@ -191,6 +191,7 @@ with app.app_context():
     for e in EMPRESAS:
         empresa = Empresa(
             nombre=e["nombre"],
+            cliente_nombre=e.get("cliente_nombre", e["nombre"]),
             rfc=e["rfc"],
             tipo_empresa=e.get("tipo_empresa", "servicios"),
             activo=True,

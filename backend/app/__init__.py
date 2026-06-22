@@ -60,6 +60,7 @@ def _ensure_runtime_columns(connection, dialect: str) -> None:
     existing = {c["name"] for c in inspector.get_columns("empresas")}
     wanted = (
         {
+            "cliente_nombre": "TEXT NOT NULL DEFAULT 'Sin cliente'",
             "onboarding_status": "TEXT NOT NULL DEFAULT 'borrador'",
             "onboarding_aprobada_en": "TIMESTAMP",
             "onboarding_aprobada_por": "TEXT",
@@ -67,6 +68,7 @@ def _ensure_runtime_columns(connection, dialect: str) -> None:
         }
         if dialect == "postgresql"
         else {
+            "cliente_nombre": "TEXT NOT NULL DEFAULT 'Sin cliente'",
             "onboarding_status": "TEXT NOT NULL DEFAULT 'borrador'",
             "onboarding_aprobada_en": "TIMESTAMP",
             "onboarding_aprobada_por": "TEXT",
@@ -80,6 +82,23 @@ def _ensure_runtime_columns(connection, dialect: str) -> None:
             connection.execute(text(f'ALTER TABLE empresas ADD COLUMN IF NOT EXISTS "{col}" {col_type}'))
         else:
             connection.execute(text(f"ALTER TABLE empresas ADD COLUMN {col} {col_type}"))
+
+    # Las instalaciones existentes no tenían el nivel cliente. Cada razón
+    # social conserva un grupo aislado, salvo las razones conocidas de Batia.
+    connection.execute(
+        text(
+            """
+            UPDATE empresas
+            SET cliente_nombre = CASE
+                WHEN lower(nombre) IN ('batia', 'grupo_batia') THEN 'Grupo Batia'
+                ELSE nombre
+            END
+            WHERE cliente_nombre IS NULL
+               OR trim(cliente_nombre) = ''
+               OR cliente_nombre = 'Sin cliente'
+            """
+        )
+    )
 
 
 def create_app(config_object=Config) -> Flask:

@@ -84,6 +84,7 @@ def login_proveedor():
                 "proveedor_nombre": proveedor.nombre if proveedor else None,
                 "empresa_id": cred.empresa_id,
                 "empresa_nombre": empresa.nombre if empresa else None,
+                "cliente_nombre": (empresa.cliente_nombre or empresa.nombre) if empresa else None,
                 "activo": cred.activo,
             },
         }

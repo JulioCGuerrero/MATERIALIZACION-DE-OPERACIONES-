@@ -33,6 +33,7 @@ def _empresa_dict(e: Empresa) -> dict:
     return {
         "id": e.id,
         "nombre": e.nombre,
+        "cliente_nombre": e.cliente_nombre or e.nombre,
         "rfc": e.rfc,
         "tipo_empresa": e.tipo_empresa,
         "activo": e.activo,
@@ -164,6 +165,7 @@ def crear_empresa():
 
     empresa = Empresa(
         nombre=body["nombre"].strip(),
+        cliente_nombre=(body.get("cliente_nombre") or body["nombre"]).strip(),
         rfc=body["rfc"].strip().upper(),
         tipo_empresa=tipo_empresa,
         activo=bool(body.get("activo", True)),
@@ -190,6 +192,12 @@ def actualizar_empresa(empresa_id: int):
         if not nombre:
             return jsonify({"error": "nombre no puede estar vacío"}), 400
         empresa.nombre = nombre
+
+    if "cliente_nombre" in body:
+        cliente_nombre = (body.get("cliente_nombre") or "").strip()
+        if not cliente_nombre:
+            return jsonify({"error": "cliente_nombre no puede estar vacío"}), 400
+        empresa.cliente_nombre = cliente_nombre
 
     if "rfc" in body:
         rfc = (body.get("rfc") or "").strip().upper()
@@ -236,10 +244,20 @@ def portal_empresa_resumen():
     empresa_id = request.args.get("empresa_id", type=int)
     if actor and actor.is_internal and actor.role == "administracion":
         empresa = Empresa.query.get_or_404(empresa_id) if empresa_id else Empresa.query.order_by(Empresa.nombre.asc()).first_or_404()
-        return jsonify(_portal_empresa_payload(empresa))
+        razones = Empresa.query.filter_by(cliente_nombre=empresa.cliente_nombre, activo=True).order_by(Empresa.nombre.asc()).all()
+    else:
+        empresa_base = Empresa.query.get_or_404(actor.empresa_id)
+        cliente_nombre = empresa_base.cliente_nombre or empresa_base.nombre
+        razones = Empresa.query.filter_by(cliente_nombre=cliente_nombre, activo=True).order_by(Empresa.nombre.asc()).all()
+        allowed_ids = {item.id for item in razones}
+        if empresa_id and empresa_id not in allowed_ids:
+            return jsonify({"error": "No tienes acceso a esta razón social"}), 403
+        empresa = Empresa.query.get_or_404(empresa_id) if empresa_id else empresa_base
 
-    empresa = Empresa.query.get_or_404(actor.empresa_id)
-    return jsonify(_portal_empresa_payload(empresa))
+    payload = _portal_empresa_payload(empresa)
+    payload["cliente"] = {"nombre": empresa.cliente_nombre or empresa.nombre}
+    payload["razones_sociales"] = [_empresa_dict(item) for item in razones]
+    return jsonify(payload)
 
 
 @empresas_bp.post("/empresas/<int:empresa_id>/documentos")

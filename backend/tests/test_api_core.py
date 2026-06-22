@@ -3,7 +3,35 @@ from pathlib import Path
 
 from app import create_app
 from app.extensions import db
-from app.models import EmpresaCredencial, Expediente, Folio, Usuario
+from app.models import Empresa, EmpresaCredencial, Expediente, Folio, Usuario
+
+
+def test_portal_cliente_lista_solo_sus_razones_sociales(client, app):
+    with app.app_context():
+        razon_a = Empresa(nombre="Razón A", cliente_nombre="Cliente Uno", rfc="RAA010101AAA")
+        razon_b = Empresa(nombre="Razón B", cliente_nombre="Cliente Uno", rfc="RAB010101AAA")
+        ajena = Empresa(nombre="Razón Ajena", cliente_nombre="Cliente Dos", rfc="RAC010101AAA")
+        db.session.add_all([razon_a, razon_b, ajena])
+        db.session.flush()
+        db.session.add(EmpresaCredencial(empresa_id=razon_a.id, username="cliente_uno", password="demo", activo=True))
+        db.session.commit()
+        razon_b_id = razon_b.id
+        ajena_id = ajena.id
+
+    login = client.post("/api/auth/empresa/login", json={"username": "cliente_uno", "password": "demo"})
+    assert login.status_code == 200
+    token = login.get_json()["token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    resumen = client.get(f"/api/portal-empresa/resumen?empresa_id={razon_b_id}", headers=headers)
+    assert resumen.status_code == 200
+    payload = resumen.get_json()
+    assert payload["cliente"]["nombre"] == "Cliente Uno"
+    assert {item["nombre"] for item in payload["razones_sociales"]} == {"Razón A", "Razón B"}
+    assert payload["empresa"]["id"] == razon_b_id
+
+    forbidden = client.get(f"/api/portal-empresa/resumen?empresa_id={ajena_id}", headers=headers)
+    assert forbidden.status_code == 403
 
 
 def _crear_proveedor(client, nombre="Proveedor Test", rfc="TST010101AAA", tipo="limpieza", monto=10000, repse=False, fisico=False):

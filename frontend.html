@@ -411,6 +411,20 @@ input[type=file]{display:none;}
     <span>Batia</span>
     <small>PILOTO</small>
   </div>
+  <div id="global-client-context" style="display:none;padding:0 14px 14px;">
+    <div class="field" style="margin-bottom:8px;">
+      <label>Cliente</label>
+      <select id="global-cliente-select" onchange="globalClienteChange(this.value)">
+        <option value="">— Seleccionar cliente —</option>
+      </select>
+    </div>
+    <div class="field" style="margin-bottom:0;">
+      <label>Razón social</label>
+      <select id="global-razon-select" onchange="globalRazonChange(this.value)" disabled>
+        <option value="">— Seleccionar razón social —</option>
+      </select>
+    </div>
+  </div>
   <nav>
     <div class="ns">Principal</div>
     <div class="ni active" data-view="dashboard" onclick="goNav(this,'dashboard')"><span class="ico">◈</span>Dashboard General</div>
@@ -1200,10 +1214,11 @@ input[type=file]{display:none;}
         </div>
       </div>
       <div class="field-row">
+        <div class="field"><label>Cliente</label><input id="emp-cliente-nombre" type="text" placeholder="Grupo o nombre comercial del cliente" /></div>
         <div class="field"><label>Razón social</label><input id="emp-nombre" type="text" placeholder="Empresa Cliente SA de CV" /></div>
-        <div class="field"><label>RFC</label><input id="emp-rfc" type="text" placeholder="ABC010101AAA" /></div>
       </div>
       <div class="field-row">
+        <div class="field"><label>RFC</label><input id="emp-rfc" type="text" placeholder="ABC010101AAA" /></div>
         <div class="field">
           <label>Tipo de empresa</label>
           <select id="emp-tipo">
@@ -1607,6 +1622,7 @@ let EMPRESA_CUENTAS_CACHE = [];
 let POLICY_SELECTED_FILE = null;
 let PORTAL_EMPRESA_CACHE = null;
 let PORTAL_EMPRESA_SELECTED_ID = '';
+let ACTIVE_EMPRESA_ID = '';
 let EMP_CUENTA_EDITING_ID = null;
 const TIPO_EMPRESA_LABEL = {
   servicios: 'Servicios',
@@ -1653,6 +1669,47 @@ function empresaLabel(e){
     ? ' · Política: validando...'
     : (st.has_active_published_policy ? ' · Política OK' : ' · Sin política publicada');
   return `${e.nombre} (${e.rfc}) · ${tipo}${onbTag}${policyTag}`;
+}
+
+function populateGlobalClientContext(){
+  const clientSelect = document.getElementById('global-cliente-select');
+  if(!clientSelect) return;
+  const current = clientSelect.value;
+  const clientes = Array.from(new Set(EMPRESAS_CACHE
+    .filter(e=>e.activo)
+    .map(e=>(e.cliente_nombre || e.nombre || '').trim())
+    .filter(Boolean))).sort((a,b)=>a.localeCompare(b, 'es'));
+  clientSelect.innerHTML = '<option value="">— Seleccionar cliente —</option>' +
+    clientes.map(nombre=>`<option value="${nombre}">${nombre}</option>`).join('');
+  if(clientes.includes(current)) clientSelect.value = current;
+  globalClienteChange(clientSelect.value, false);
+}
+
+function globalClienteChange(clienteNombre, clearSelection=true){
+  const reasonSelect = document.getElementById('global-razon-select');
+  if(!reasonSelect) return;
+  const current = clearSelection ? '' : reasonSelect.value;
+  const razones = EMPRESAS_CACHE.filter(e=>e.activo && (e.cliente_nombre || e.nombre) === clienteNombre);
+  reasonSelect.disabled = !clienteNombre;
+  reasonSelect.innerHTML = '<option value="">— Seleccionar razón social —</option>' +
+    razones.map(e=>`<option value="${e.id}">${e.nombre} · ${e.rfc}</option>`).join('');
+  if(razones.some(e=>String(e.id)===String(current))) reasonSelect.value = current;
+}
+
+function globalRazonChange(empresaId){
+  if(!empresaId) return;
+  ACTIVE_EMPRESA_ID = String(empresaId);
+  PORTAL_EMPRESA_SELECTED_ID = String(empresaId);
+  ['tr-empresa-filter','ai-empresa-filter','sat-empresa-filter','policy-company-select','policy-empresa-select'].forEach(id=>{
+    const select = document.getElementById(id);
+    if(select && Array.from(select.options).some(op=>op.value===String(empresaId))) select.value = String(empresaId);
+  });
+  loadTrazabilidad();
+  loadPolicyByEmpresa();
+  loadDashboard();
+  loadAlertasActivas();
+  loadReportesPorNivel();
+  loadSemaforo();
 }
 
 
@@ -1970,9 +2027,11 @@ function syncEmpresaFormFromSelected(){
   if(!empresaId) return;
   const empresa = EMPRESAS_CACHE.find(e=>Number(e.id)===empresaId);
   if(!empresa) return;
+  const clienteInput = document.getElementById('emp-cliente-nombre');
   const nombreInput = document.getElementById('emp-nombre');
   const rfcInput = document.getElementById('emp-rfc');
   const tipoSel = document.getElementById('emp-tipo');
+  if(clienteInput) clienteInput.value = empresa.cliente_nombre || empresa.nombre || '';
   if(nombreInput) nombreInput.value = empresa.nombre || '';
   if(rfcInput) rfcInput.value = empresa.rfc || '';
   if(tipoSel && empresa.tipo_empresa) tipoSel.value = empresa.tipo_empresa;
@@ -2051,6 +2110,8 @@ function applyRoleUI(){
   const canAdmin = isAdministracion();
   const canManageOnboarding = canManageEmpresaOnboarding();
   const canAudit = canAccessAuditoriaIA();
+  const globalContext = document.getElementById('global-client-context');
+  if(globalContext) globalContext.style.display = AUTH_USER && !isProveedor && !isEmpresaCliente ? '' : 'none';
   const btnNuevo = document.getElementById('btn-nuevo-proveedor');
   if(btnNuevo) btnNuevo.style.display = canAdmin ? '' : 'none';
   const btnNuevaEmpresa = document.getElementById('btn-nueva-empresa');
@@ -2237,8 +2298,10 @@ async function doEmpresaLogin(){
       username: u.username,
       rol: 'empresa_cliente',
       empresa_id: u.empresa_id,
+      cliente_nombre: u.cliente_nombre,
       nombre: u.empresa_nombre || u.username,
     }, data.token);
+    PORTAL_EMPRESA_SELECTED_ID = String(u.empresa_id || '');
     closeRoleModals();
     await loadEmpresas();
     await loadPortalEmpresaCliente();
@@ -2677,6 +2740,8 @@ function renderPortalEmpresaCliente(data){
     return;
   }
   const empresa = data.empresa || {};
+  const cliente = data.cliente || {};
+  const razonesSociales = Array.isArray(data.razones_sociales) ? data.razones_sociales : [];
   const policy = data.policy_status || {};
   const onboarding = data.onboarding_status || {};
   const docs = Array.isArray(data.documentos_empresa) ? data.documentos_empresa : [];
@@ -2767,12 +2832,13 @@ function renderPortalEmpresaCliente(data){
           const docsExp = Array.isArray(exp.documentos) ? exp.documentos : [];
           const resumenDocs = docsExp.length
             ? docsExp.map(doc=>{
-                const ok = !!doc.subido;
-                const badgeClass = ok ? 'g' : 'r';
-                const badgeLabel = ok ? 'Subido' : 'Faltante';
-                const link = ok && doc.url ? `<a class="btn btn-ghost" href="${doc.url}" target="_blank" rel="noopener noreferrer">Abrir</a>` : '';
-                return `<tr>
-                  <td>${doc.label || doc.tipo}</td>
+                const ok = !!doc.subido && doc.validacion_estado === 'valido';
+                const uploaded = !!doc.subido;
+                const badgeClass = ok ? 'g' : (uploaded ? 'y' : 'r');
+                const badgeLabel = ok ? 'Validado' : (uploaded ? 'En revisión' : 'Faltante');
+                const link = ok && doc.url ? `<button class="btn btn-ghost" onclick="openPortalEvidence(${exp.id},${doc.id})">Ver evidencia</button>` : '';
+                return `<tr class="${ok && doc.url ? 'clickable' : ''}" ${ok && doc.url ? `onclick="openPortalEvidence(${exp.id},${doc.id})"` : ''}>
+                  <td><strong>${doc.label || doc.tipo}</strong>${ok && doc.url ? '<div class="csub">Selecciona para abrir la documentación</div>' : ''}</td>
                   <td><span class="badge ${badgeClass}">${badgeLabel}</span></td>
                   <td>${doc.nombre_archivo || '—'}</td>
                   <td>${doc.subido_en ? new Date(doc.subido_en).toLocaleString('es-MX') : '—'}</td>
@@ -2791,7 +2857,7 @@ function renderPortalEmpresaCliente(data){
         }).join('')
       : '<div class="account-empty" style="margin-top:12px;">Este proveedor aún no tiene expedientes ligados a esta empresa.</div>';
 
-    return `<details class="provider-fold" ${idx === 0 ? 'open' : ''}>
+    return `<details class="provider-fold">
       <summary>
         <div class="account-icon">N${prov.nivel}</div>
         <div class="provider-fold-copy">
@@ -2815,9 +2881,18 @@ function renderPortalEmpresaCliente(data){
     : '<div class="account-empty" style="margin-top:10px;">Aún no existen expedientes de proveedores para esta empresa.</div>';
 
   wrap.innerHTML = `
+    <div class="card" style="padding:14px;margin-bottom:12px;">
+      <div class="sh"><h3>Razones sociales</h3><span>Cliente: ${cliente.nombre || empresa.cliente_nombre || empresa.nombre || '—'}</span></div>
+      <div class="field" style="margin-bottom:0;max-width:560px;">
+        <label>Razón social a consultar</label>
+        <select id="portal-razon-social-select" onchange="portalRazonSocialChange(this.value)">
+          ${razonesSociales.map(r=>`<option value="${r.id}" ${String(r.id)===String(empresa.id)?'selected':''}>${r.nombre} · ${r.rfc}</option>`).join('')}
+        </select>
+      </div>
+    </div>
     <div class="cg cg2" style="margin-bottom:12px;">
       <div class="card" style="padding:14px;">
-        <div class="clabel">Empresa cliente</div>
+        <div class="clabel">Razón social</div>
         <div class="cval" style="font-size:24px;">${empresa.nombre || 'Sin nombre'}</div>
         <div class="csub">RFC: <strong>${empresa.rfc || 's/d'}</strong> · Tipo: <strong>${TIPO_EMPRESA_LABEL[empresa.tipo_empresa] || (empresa.tipo_empresa || 'Sin tipo')}</strong></div>
         <div class="csub">Onboarding: <strong>${onboarding.onboarding_status || 'desconocido'}</strong> · Completitud: <strong>${onboarding.completitud || 0}%</strong></div>
@@ -2853,6 +2928,22 @@ function renderPortalEmpresaCliente(data){
   `;
 }
 
+function portalRazonSocialChange(empresaId){
+  PORTAL_EMPRESA_SELECTED_ID = String(empresaId || '');
+  loadPortalEmpresaCliente();
+}
+
+function openPortalEvidence(expedienteId, documentoId){
+  const expedientes = Array.isArray(PORTAL_EMPRESA_CACHE?.expedientes) ? PORTAL_EMPRESA_CACHE.expedientes : [];
+  const expediente = expedientes.find(item=>Number(item.id) === Number(expedienteId));
+  const documento = (expediente?.documentos || []).find(item=>Number(item.id) === Number(documentoId));
+  if(!documento?.subido || documento?.validacion_estado !== 'valido' || !documento?.url){
+    alert('Este concepto todavía no tiene documentación validada disponible.');
+    return;
+  }
+  window.open(documento.url, '_blank', 'noopener,noreferrer');
+}
+
 async function loadPortalEmpresaCliente(){
   const wrap = document.getElementById('portal-empresa-resumen');
   if(!wrap) return;
@@ -2872,6 +2963,8 @@ async function loadPortalEmpresaCliente(){
       }
       PORTAL_EMPRESA_SELECTED_ID = empresaId;
       path = `/portal-empresa/resumen?empresa_id=${encodeURIComponent(empresaId)}`;
+    }else if(AUTH_USER.tipo === 'empresa_cliente' && PORTAL_EMPRESA_SELECTED_ID){
+      path = `/portal-empresa/resumen?empresa_id=${encodeURIComponent(PORTAL_EMPRESA_SELECTED_ID)}`;
     }
     PORTAL_EMPRESA_CACHE = await apiGet(path);
     renderPortalEmpresaCliente(PORTAL_EMPRESA_CACHE);
@@ -2986,7 +3079,8 @@ async function loadAuditLog(){
 let SEMAFORO_CACHE = null;
 async function loadSemaforo(){
   try{
-    const data = await apiGet('/semaforo');
+    const query = ACTIVE_EMPRESA_ID ? `?empresa_id=${encodeURIComponent(ACTIVE_EMPRESA_ID)}` : '';
+    const data = await apiGet(`/semaforo${query}`);
     SEMAFORO_CACHE = data;
     document.querySelectorAll('[data-sem-key]').forEach(box=>{
       const key = box.getAttribute('data-sem-key');
@@ -3134,10 +3228,12 @@ async function loadKpisPersonal(){
 
 async function loadReportesPorNivel(){
   try{
+    const empresaParam = ACTIVE_EMPRESA_ID ? `&empresa_id=${encodeURIComponent(ACTIVE_EMPRESA_ID)}` : '';
+    const allQuery = ACTIVE_EMPRESA_ID ? `?empresa_id=${encodeURIComponent(ACTIVE_EMPRESA_ID)}` : '';
     const [n3, n4, all] = await Promise.all([
-      apiGet('/reportes/nivel?nivel=3'),
-      apiGet('/reportes/nivel?nivel=4'),
-      apiGet('/reportes/nivel'),
+      apiGet(`/reportes/nivel?nivel=3${empresaParam}`),
+      apiGet(`/reportes/nivel?nivel=4${empresaParam}`),
+      apiGet(`/reportes/nivel${allQuery}`),
     ]);
     const b = all.items.filter(i=>i.pago_bloqueado);
     const etBloq = document.getElementById('etab-bloq');
@@ -3361,7 +3457,8 @@ function renderTimeline(){
 
 async function loadDashboard(){
   try{
-    const dash = await apiGet('/dashboard');
+    const query = ACTIVE_EMPRESA_ID ? `?empresa_id=${encodeURIComponent(ACTIVE_EMPRESA_ID)}` : '';
+    const dash = await apiGet(`/dashboard${query}`);
     const cards = document.querySelectorAll('#view-dashboard .cg.cg4 .card .cval');
     if(cards.length >= 4){
       cards[0].textContent = String(dash.folios_activos);
@@ -3377,6 +3474,7 @@ async function loadDashboard(){
 async function loadEmpresas(){
   try{
     EMPRESAS_CACHE = await apiGet('/empresas');
+    populateGlobalClientContext();
     POLICY_STATUS_BY_EMPRESA = {};
     ONBOARDING_STATUS_BY_EMPRESA = {};
     await Promise.all(
@@ -3501,15 +3599,16 @@ async function loadEmpresas(){
 
 async function registrarEmpresaCliente(){
   try{
+    const clienteNombre = (document.getElementById('emp-cliente-nombre')?.value || '').trim();
     const nombre = (document.getElementById('emp-nombre')?.value || '').trim();
     const rfc = (document.getElementById('emp-rfc')?.value || '').trim().toUpperCase();
     const tipo = (document.getElementById('emp-tipo')?.value || 'servicios').trim();
-    if(!nombre || !rfc){
-      alert('Captura razón social y RFC');
+    if(!clienteNombre || !nombre || !rfc){
+      alert('Captura cliente, razón social y RFC');
       return;
     }
     const resp = await apiSend('/empresas', 'POST', {
-      nombre, rfc, tipo_empresa: tipo, usuario: getUsuarioActivo()
+      cliente_nombre: clienteNombre, nombre, rfc, tipo_empresa: tipo, usuario: getUsuarioActivo()
     });
     await loadEmpresas();
     const sel = document.getElementById('emp-id');
@@ -3534,15 +3633,16 @@ async function actualizarEmpresaCliente(){
     return;
   }
   try{
+    const clienteNombre = (document.getElementById('emp-cliente-nombre')?.value || '').trim();
     const nombre = (document.getElementById('emp-nombre')?.value || '').trim();
     const rfc = (document.getElementById('emp-rfc')?.value || '').trim().toUpperCase();
     const tipo = (document.getElementById('emp-tipo')?.value || 'servicios').trim();
-    if(!nombre || !rfc){
-      alert('Captura razón social y RFC');
+    if(!clienteNombre || !nombre || !rfc){
+      alert('Captura cliente, razón social y RFC');
       return;
     }
     const resp = await apiSend(`/empresas/${empresaId}`, 'PATCH', {
-      nombre, rfc, tipo_empresa: tipo, usuario: getUsuarioActivo()
+      cliente_nombre: clienteNombre, nombre, rfc, tipo_empresa: tipo, usuario: getUsuarioActivo()
     });
     await loadEmpresas();
     const sel = document.getElementById('emp-id');
@@ -3980,7 +4080,8 @@ async function loadPolicyContext(){
 async function loadAlertasActivas(){
   try{
     await apiSend('/alertas/generar', 'POST', {periodo: new Date().toISOString().slice(0,7)});
-    const items = await apiGet('/alertas?estado=activa');
+    const empresaParam = ACTIVE_EMPRESA_ID ? `&empresa_id=${encodeURIComponent(ACTIVE_EMPRESA_ID)}` : '';
+    const items = await apiGet(`/alertas?estado=activa${empresaParam}`);
     const wrap = document.getElementById('dashboard-alertas-list');
     if(!wrap) return;
     if(!items.length){
